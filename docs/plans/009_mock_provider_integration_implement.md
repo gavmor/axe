@@ -66,61 +66,61 @@
 
 ## 10. Integration Test File Setup (`cmd/run_integration_test.go`)
 
-- [ ] Create `cmd/run_integration_test.go` with `package cmd` declaration and imports
-- [ ] Implement file-local `writeAgentConfig(t *testing.T, configDir, name, toml string)` helper (Req 5.0)
+- [x] Create `cmd/run_integration_test.go` with `package cmd` declaration and imports
+- [x] Implement file-local `writeAgentConfig(t *testing.T, configDir, name, toml string)` helper (Req 5.0)
 
 ## 11. Single-Shot Run Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_SingleShot_Anthropic` — verify stdout, request count, path, method, model, default user message (Req 5.1)
-- [ ] Write failing test `TestIntegration_SingleShot_OpenAI` — verify stdout, request count, path, model (Req 5.2)
-- [ ] Write failing test `TestIntegration_SingleShot_StdinPiped` — verify stdin override replaces default message (Req 5.3)
-- [ ] Make all 3 single-shot tests pass with `make test`
+- [x] Write failing test `TestIntegration_SingleShot_Anthropic` — verify stdout, request count, path, method, model, default user message (Req 5.1)
+- [x] Write failing test `TestIntegration_SingleShot_OpenAI` — verify stdout, request count, path, model (Req 5.2)
+- [x] Write failing test `TestIntegration_SingleShot_StdinPiped` — verify stdin override replaces default message (Req 5.3)
+- [x] Make all 3 single-shot tests pass with `make test`
 
 ## 12. Conversation Loop Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_ConversationLoop_SingleToolCall` — 3-response queue, verify stdout, request count, sub-agent task, tool result (Req 5.4)
-- [ ] Write failing test `TestIntegration_ConversationLoop_MultipleRoundTrips` — 5-response queue, verify request count (Req 5.5)
-- [ ] Write failing test `TestIntegration_ConversationLoop_MaxTurnsExceeded` — 51 tool-call responses, verify ExitError Code 1 and error message (Req 5.6)
-- [ ] Make all 3 conversation loop tests pass with `make test`
+- [x] Write failing test `TestIntegration_ConversationLoop_SingleToolCall` — 3-response queue, verify stdout, request count, sub-agent task, tool result (Req 5.4)
+- [x] Write failing test `TestIntegration_ConversationLoop_MultipleRoundTrips` — 5-response queue, verify request count (Req 5.5)
+- [x] Write failing test `TestIntegration_ConversationLoop_MaxTurnsExceeded` — 51 tool-call responses, verify ExitError Code 1 and error message (Req 5.6)
+- [x] Make all 3 conversation loop tests pass with `make test`
 
 ## 13. Sub-Agent Orchestration Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_SubAgent_DepthLimit` — max_depth=1, child has no tools injected, verify request count and missing tools (Req 5.7)
-- [ ] Write failing test `TestIntegration_SubAgent_ParallelExecution` — two simultaneous tool calls, verify request count (Req 5.8)
-- [ ] Write failing test `TestIntegration_SubAgent_SequentialExecution` — parallel=false, verify deterministic request order (Req 5.9)
-- [ ] Make all 3 sub-agent orchestration tests pass with `make test`
+- [x] Write failing test `TestIntegration_SubAgent_DepthLimit` — max_depth=1, child has no tools injected, verify request count and missing tools (Req 5.7)
+- [x] Write failing test `TestIntegration_SubAgent_ParallelExecution` — two simultaneous tool calls, verify request count (Req 5.8)
+- [x] Write failing test `TestIntegration_SubAgent_SequentialExecution` — parallel=false, verify deterministic request order (Req 5.9)
+- [x] Make all 3 sub-agent orchestration tests pass with `make test`
 
 ## 14. Memory Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_MemoryAppend_AfterSuccessfulRun` — verify memory file created with entry header, task, result (Req 5.10)
-- [ ] Write failing test `TestIntegration_MemoryAppend_NotOnError` — verify memory file does NOT exist after provider error (Req 5.11)
-- [ ] Write failing test `TestIntegration_MemoryLoad_IntoSystemPrompt` — pre-seed memory, verify last_n entries appear in request body (Req 5.12)
-- [ ] Make all 3 memory tests pass with `make test`
+- [x] Write failing test `TestIntegration_MemoryAppend_AfterSuccessfulRun` — verify memory file created with entry header, task, result (Req 5.10)
+- [x] Write failing test `TestIntegration_MemoryAppend_NotOnError` — verify memory file does NOT exist after provider error (Req 5.11)
+- [x] Write failing test `TestIntegration_MemoryLoad_IntoSystemPrompt` — pre-seed memory, verify last_n entries appear in request body (Req 5.12)
+- [x] Make all 3 memory tests pass with `make test`
 
 ## 15. JSON Output Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_JSONOutput_Structure` — verify valid JSON with all required fields, correct values (Req 5.13)
-- [ ] Write failing test `TestIntegration_JSONOutput_WithToolCalls` — verify tool_calls count and token sums (Req 5.14)
-- [ ] Make both JSON output tests pass with `make test`
+- [x] Write failing test `TestIntegration_JSONOutput_Structure` — verify valid JSON with all required fields, correct values (Req 5.13)
+- [x] Write failing test `TestIntegration_JSONOutput_WithToolCalls` — verify tool_calls count and token sums (Req 5.14)
+- [x] Make both JSON output tests pass with `make test`
 
 ## 16. Timeout Handling Test — Red then Green
 
-- [ ] Write failing test `TestIntegration_Timeout_ContextDeadlineExceeded` — SlowResponse with --timeout 1, verify ExitError Code 3 (Req 5.15)
-- [ ] Make timeout test pass with `make test`
+- [x] Write failing test `TestIntegration_Timeout_ContextDeadlineExceeded` — SlowResponse with --timeout 1, verify ExitError Code 3 (Req 5.15)
+- [x] Make timeout test pass with `make test`
 
 ## 17. Error Mapping Tests — Red then Green
 
-- [ ] Write failing test `TestIntegration_ErrorMapping_Auth401` — Anthropic 401, verify ExitError Code 3 (Req 5.16)
-- [ ] Write failing test `TestIntegration_ErrorMapping_RateLimit429` — Anthropic 429, verify ExitError Code 3 (Req 5.17)
-- [ ] Write failing test `TestIntegration_ErrorMapping_Server500` — Anthropic 500, verify ExitError Code 3 (Req 5.18)
-- [ ] Write failing test `TestIntegration_ErrorMapping_OpenAI401` — OpenAI 401, verify ExitError Code 3 (Req 5.19)
-- [ ] Write failing test `TestIntegration_ErrorMapping_OpenAI429` — OpenAI 429, verify ExitError Code 3 (Req 5.20)
-- [ ] Write failing test `TestIntegration_ErrorMapping_OpenAI500` — OpenAI 500, verify ExitError Code 3 (Req 5.21)
-- [ ] Make all 6 error mapping tests pass with `make test`
+- [x] Write failing test `TestIntegration_ErrorMapping_Auth401` — Anthropic 401, verify ExitError Code 3 (Req 5.16)
+- [x] Write failing test `TestIntegration_ErrorMapping_RateLimit429` — Anthropic 429, verify ExitError Code 3 (Req 5.17)
+- [x] Write failing test `TestIntegration_ErrorMapping_Server500` — Anthropic 500, verify ExitError Code 3 (Req 5.18)
+- [x] Write failing test `TestIntegration_ErrorMapping_OpenAI401` — OpenAI 401, verify ExitError Code 3 (Req 5.19)
+- [x] Write failing test `TestIntegration_ErrorMapping_OpenAI429` — OpenAI 429, verify ExitError Code 3 (Req 5.20)
+- [x] Write failing test `TestIntegration_ErrorMapping_OpenAI500` — OpenAI 500, verify ExitError Code 3 (Req 5.21)
+- [x] Make all 6 error mapping tests pass with `make test`
 
 ## 18. Final Validation
 
-- [ ] Run full `make test` — all tests pass, including pre-existing tests
-- [ ] Verify no existing files were modified (only new files added)
-- [ ] Verify `go.mod` is unchanged (no new dependencies)
-- [ ] Verify `internal/testutil/` is not imported by any non-test file
+- [x] Run full `make test` — all tests pass, including pre-existing tests
+- [x] Verify no existing files were modified (only new files added)
+- [x] Verify `go.mod` is unchanged (no new dependencies)
+- [x] Verify `internal/testutil/` is not imported by any non-test file
