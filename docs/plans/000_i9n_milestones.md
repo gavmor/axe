@@ -1,6 +1,7 @@
 # Integration Testing Milestones
 
 High-level phases for adding integration/e2e tests to axe.
+
 Goal: fully automated test suite that runs before every release.
 
 Status key: `[ ]` not started · `[-]` in progress · `[x]` done
@@ -11,10 +12,10 @@ Status key: `[ ]` not started · `[-]` in progress · `[x]` done
 
 Set up the foundation everything else builds on.
 
-- [ ] Create `testdata/agents/` with minimal TOML configs covering common shapes (basic, with skill, with files, with memory, with sub-agents)
-- [ ] Create `testdata/skills/` with stub SKILL.md files referenced by fixture agents
-- [ ] Add helper to build the axe binary into a temp dir for CLI-level tests
-- [ ] Add helper to override XDG config/data dirs so tests never touch the real user config
+- [x] Create `testdata/agents/` with minimal TOML configs covering common shapes (basic, with skill, with files, with memory, with sub-agents)
+- [x] Create `testdata/skills/` with stub SKILL.md files referenced by fixture agents
+- [x] Add helper to build the axe binary into a temp dir for CLI-level tests
+- [x] Add helper to override XDG config/data dirs so tests never touch the real user config
 
 ---
 

@@ -1,0 +1,7 @@
+name = "with-memory"
+model = "openai/gpt-4o"
+
+[memory]
+enabled = true
+last_n = 5
+max_entries = 50
