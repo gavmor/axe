@@ -1,0 +1,24 @@
+=== Dry Run ===
+
+Model:    openai/gpt-4o
+Workdir:  {{WORKDIR}}
+Timeout:  120s
+Params:   temperature=0, max_tokens=0
+
+--- System Prompt ---
+
+
+--- Skill ---
+(none)
+
+--- Files (0) ---
+(none)
+
+--- Stdin ---
+(none)
+
+--- Memory ---
+(none)
+
+--- Sub-Agents ---
+(none)

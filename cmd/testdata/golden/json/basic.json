@@ -1,0 +1,9 @@
+{
+  "content": "Hello from mock.",
+  "duration_ms": "{{DURATION_MS}}",
+  "input_tokens": 10,
+  "model": "gpt-4o",
+  "output_tokens": 5,
+  "stop_reason": "stop",
+  "tool_calls": 0
+}

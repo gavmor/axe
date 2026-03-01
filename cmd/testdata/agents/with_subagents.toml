@@ -1,6 +1,6 @@
 name = "with-subagents"
 model = "anthropic/claude-sonnet-4-20250514"
-sub_agents = ["basic", "with-skill"]
+sub_agents = ["basic", "with_skill"]
 
 [sub_agents_config]
 max_depth = 3

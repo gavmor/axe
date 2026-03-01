@@ -134,8 +134,8 @@ func TestFixtureAgents_WithSubagentsConfig(t *testing.T) {
 	if cfg.SubAgents[0] != "basic" {
 		t.Errorf("SubAgents[0] = %q, want %q", cfg.SubAgents[0], "basic")
 	}
-	if cfg.SubAgents[1] != "with-skill" {
-		t.Errorf("SubAgents[1] = %q, want %q", cfg.SubAgents[1], "with-skill")
+	if cfg.SubAgents[1] != "with_skill" {
+		t.Errorf("SubAgents[1] = %q, want %q", cfg.SubAgents[1], "with_skill")
 	}
 
 	// Verify sub_agents_config

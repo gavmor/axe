@@ -23,15 +23,15 @@ Set up the foundation everything else builds on.
 
 Test the full `axe run` flow without hitting real APIs.
 
-- [ ] Implement a reusable `httptest` mock server that speaks the OpenAI chat completions shape
-- [ ] Extend mock to support Anthropic messages shape
-- [ ] Test: single-shot run (no tools) → correct stdout output
-- [ ] Test: conversation loop with tool calls → correct round-trips and final output
-- [ ] Test: sub-agent orchestration (depth limits, parallel vs sequential)
-- [ ] Test: memory append after successful run
-- [ ] Test: `--json` output envelope structure and fields
-- [ ] Test: timeout handling (slow mock → context deadline exceeded)
-- [ ] Test: error mapping (mock returns 401/429/500 → correct exit codes 1/3)
+- [x] Implement a reusable `httptest` mock server that speaks the OpenAI chat completions shape
+- [x] Extend mock to support Anthropic messages shape
+- [x] Test: single-shot run (no tools) → correct stdout output
+- [x] Test: conversation loop with tool calls → correct round-trips and final output
+- [x] Test: sub-agent orchestration (depth limits, parallel vs sequential)
+- [x] Test: memory append after successful run
+- [x] Test: `--json` output envelope structure and fields
+- [x] Test: timeout handling (slow mock → context deadline exceeded)
+- [x] Test: error mapping (mock returns 401/429/500 → correct exit codes 1/3)
 
 ---
 
@@ -39,14 +39,14 @@ Test the full `axe run` flow without hitting real APIs.
 
 Test the compiled binary end-to-end via shell invocation.
 
-- [ ] `axe version` → prints version string, exit 0
-- [ ] `axe config path` → prints valid path, exit 0
-- [ ] `axe config init` → creates expected files/dirs, exit 0
-- [ ] `axe run nonexistent-agent` → exit 2, stderr contains meaningful error
-- [ ] `axe run <fixture> --dry-run` → validates full resolution pipeline output
-- [ ] Bad `--model` format → exit 1
-- [ ] Missing API key → exit 3
-- [ ] Piped stdin content arrives in dry-run output
+- [x] `axe version` → prints version string, exit 0
+- [x] `axe config path` → prints valid path, exit 0
+- [x] `axe config init` → creates expected files/dirs, exit 0
+- [x] `axe run nonexistent-agent` → exit 2, stderr contains meaningful error
+- [x] `axe run <fixture> --dry-run` → validates full resolution pipeline output
+- [x] Bad `--model` format → exit 1
+- [x] Missing API key → exit 3
+- [x] Piped stdin content arrives in dry-run output
 
 ---
 
@@ -54,10 +54,10 @@ Test the compiled binary end-to-end via shell invocation.
 
 Catch unintended output regressions.
 
-- [ ] Store expected `--dry-run` output as golden files in `testdata/golden/`
-- [ ] Store expected `--json` envelopes as golden files
-- [ ] Add test runner that compares actual vs golden, with `-update` flag to refresh
-- [ ] Cover at least 3 fixture agents (basic, with skill+files, with sub-agents)
+- [x] Store expected `--dry-run` output as golden files in `testdata/golden/`
+- [x] Store expected `--json` envelopes as golden files
+- [x] Add test runner that compares actual vs golden, with `-update` flag to refresh
+- [x] Cover at least 3 fixture agents (basic, with skill+files, with sub-agents)
 
 ---
 
