@@ -192,7 +192,7 @@ func TestGolden(t *testing.T) {
 	t.Parallel()
 
 	// Build the list of dry-run test cases.
-	agents := []string{"basic", "with_skill", "with_files", "with_memory", "with_subagents"}
+	agents := []string{"basic", "with_skill", "with_files", "with_memory", "with_subagents", "with_tools"}
 
 	var cases []goldenTestCase
 
@@ -226,6 +226,14 @@ func TestGolden(t *testing.T) {
 				testutil.OpenAIResponse("Hello from basic."),
 				testutil.OpenAIResponse("Hello from with_skill."),
 				testutil.AnthropicResponse("Final answer from sub-agents."),
+			}
+		case "with_tools":
+			// OpenAI agent with tools. Turn 1: tool call, Turn 2: final response.
+			tc.mockResponses = []testutil.MockLLMResponse{
+				testutil.OpenAIToolCallResponse("Let me list the directory.", []testutil.MockToolCall{
+					{ID: "tc_1", Name: "list_directory", Input: map[string]string{"path": "."}},
+				}),
+				testutil.OpenAIResponse("Directory listed successfully."),
 			}
 		default:
 			// All other agents use openai.

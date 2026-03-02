@@ -20,5 +20,8 @@ Params:   temperature=0, max_tokens=0
 --- Memory ---
 (none)
 
+--- Tools ---
+(none)
+
 --- Sub-Agents ---
 (none)

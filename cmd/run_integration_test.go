@@ -1000,3 +1000,563 @@ model = "openai/gpt-4o"
 		t.Errorf("expected exit code 3, got %d", exitErr.Code)
 	}
 }
+
+// --- Phase 18: Tool Integration Tests ---
+
+func TestIntegration_Tools_ReadOnly(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: LLM requests read_file
+		testutil.AnthropicToolUseResponse("Let me read the file.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "hello.txt"}},
+		}),
+		// Turn 2: LLM receives tool result, returns final response
+		testutil.AnthropicResponse("The file says: Hello, World!"),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "ro-tools", `name = "ro-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file", "list_directory"]
+`)
+
+	// Create temp workdir with hello.txt
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "hello.txt"), []byte("Hello, World!"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "ro-tools", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "The file says: Hello, World!") {
+		t.Errorf("expected stdout to contain final response, got %q", output)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Errorf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	// First request should contain tool definitions for both read_file and list_directory
+	body0 := mock.Requests[0].Body
+	if !strings.Contains(body0, "read_file") {
+		t.Errorf("expected first request to contain read_file tool definition, body: %s", body0)
+	}
+	if !strings.Contains(body0, "list_directory") {
+		t.Errorf("expected first request to contain list_directory tool definition, body: %s", body0)
+	}
+
+	// Second request should contain the tool result with file content
+	body1 := mock.Requests[1].Body
+	if !strings.Contains(body1, "Hello, World!") {
+		t.Errorf("expected second request to contain tool result with file content, body: %s", body1)
+	}
+}
+
+func TestIntegration_Tools_Mutation(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: LLM requests write_file
+		testutil.AnthropicToolUseResponse("Writing the file.", []testutil.MockToolCall{
+			{ID: "tc_wf1", Name: "write_file", Input: map[string]string{"path": "output.txt", "content": "first draft"}},
+		}),
+		// Turn 2: LLM requests edit_file
+		testutil.AnthropicToolUseResponse("Editing the file.", []testutil.MockToolCall{
+			{ID: "tc_ef1", Name: "edit_file", Input: map[string]string{"path": "output.txt", "old_string": "first", "new_string": "final"}},
+		}),
+		// Turn 3: final response
+		testutil.AnthropicResponse("File updated successfully."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "mut-tools", `name = "mut-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["write_file", "edit_file"]
+`)
+
+	workdir := t.TempDir()
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "mut-tools", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	// Verify the file was created and edited correctly
+	data, readErr := os.ReadFile(filepath.Join(workdir, "output.txt"))
+	if readErr != nil {
+		t.Fatalf("expected output.txt to exist: %v", readErr)
+	}
+	if string(data) != "final draft" {
+		t.Errorf("expected file content %q, got %q", "final draft", string(data))
+	}
+
+	if mock.RequestCount() != 3 {
+		t.Errorf("expected 3 requests, got %d", mock.RequestCount())
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "File updated successfully.") {
+		t.Errorf("expected stdout to contain final response, got %q", output)
+	}
+
+	// Verify write_file success message in second request
+	body1 := mock.Requests[1].Body
+	if !strings.Contains(body1, "wrote 11 bytes to output.txt") {
+		t.Errorf("expected second request to contain write success message, body: %s", body1)
+	}
+
+	// Verify edit_file success message in third request
+	body2 := mock.Requests[2].Body
+	if !strings.Contains(body2, "replaced 1 occurrence(s) in output.txt") {
+		t.Errorf("expected third request to contain edit success message, body: %s", body2)
+	}
+}
+
+func TestIntegration_Tools_RunCommand(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: LLM requests run_command
+		testutil.AnthropicToolUseResponse("Running command.", []testutil.MockToolCall{
+			{ID: "tc_rc1", Name: "run_command", Input: map[string]string{"command": "echo hello"}},
+		}),
+		// Turn 2: final response
+		testutil.AnthropicResponse("Command executed."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "rc-tools", `name = "rc-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["run_command"]
+`)
+
+	workdir := t.TempDir()
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "rc-tools", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Errorf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	// Second request should contain the command output
+	body1 := mock.Requests[1].Body
+	if !strings.Contains(body1, "hello") {
+		t.Errorf("expected second request to contain command output 'hello', body: %s", body1)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "Command executed.") {
+		t.Errorf("expected stdout to contain final response, got %q", output)
+	}
+}
+
+func TestIntegration_Tools_MixedWithSubAgents_Sequential(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: LLM requests read_file
+		testutil.AnthropicToolUseResponse("Reading file first.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "data.txt"}},
+		}),
+		// Turn 2: LLM requests call_agent
+		testutil.AnthropicToolUseResponse("Now calling helper.", []testutil.MockToolCall{
+			{ID: "tc_ca1", Name: "call_agent", Input: map[string]string{"agent": "seq-helper", "task": "summarize this"}},
+		}),
+		// Sub-agent response
+		testutil.AnthropicResponse("summary result"),
+		// Turn 3: parent final
+		testutil.AnthropicResponse("Done."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "seq-mixed-parent", `name = "seq-mixed-parent"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file"]
+sub_agents = ["seq-helper"]
+`)
+	writeAgentConfig(t, configDir, "seq-helper", `name = "seq-helper"
+model = "anthropic/claude-sonnet-4-20250514"
+`)
+
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "data.txt"), []byte("test data content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "seq-mixed-parent", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	if mock.RequestCount() != 4 {
+		t.Errorf("expected 4 requests, got %d", mock.RequestCount())
+	}
+
+	output := buf.String()
+	if output != "Done." {
+		t.Errorf("expected stdout %q, got %q", "Done.", output)
+	}
+
+	// First request should contain both read_file and call_agent tool definitions
+	body0 := mock.Requests[0].Body
+	if !strings.Contains(body0, "read_file") {
+		t.Errorf("expected first request to contain read_file tool, body: %s", body0)
+	}
+	if !strings.Contains(body0, "call_agent") {
+		t.Errorf("expected first request to contain call_agent tool, body: %s", body0)
+	}
+
+	// Second request should contain the read_file tool result
+	body1 := mock.Requests[1].Body
+	if !strings.Contains(body1, "test data content") {
+		t.Errorf("expected second request to contain file content, body: %s", body1)
+	}
+
+	// Fourth request should contain the call_agent tool result
+	body3 := mock.Requests[3].Body
+	if !strings.Contains(body3, "summary result") {
+		t.Errorf("expected fourth request to contain sub-agent result, body: %s", body3)
+	}
+}
+
+func TestIntegration_Tools_MixedWithSubAgents_Parallel(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: LLM requests both read_file and call_agent simultaneously
+		testutil.AnthropicToolUseResponse("Doing both at once.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "info.txt"}},
+			{ID: "tc_ca1", Name: "call_agent", Input: map[string]string{"agent": "par-helper", "task": "do work"}},
+		}),
+		// Sub-agent response (read_file completes synchronously, so sub-agent HTTP call is next)
+		testutil.AnthropicResponse("sub-agent done"),
+		// Turn 2: parent final (after both tool results)
+		testutil.AnthropicResponse("All done."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "par-mixed-parent", `name = "par-mixed-parent"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file"]
+sub_agents = ["par-helper"]
+`)
+	writeAgentConfig(t, configDir, "par-helper", `name = "par-helper"
+model = "anthropic/claude-sonnet-4-20250514"
+`)
+
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "info.txt"), []byte("info content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "par-mixed-parent", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	if mock.RequestCount() != 3 {
+		t.Errorf("expected 3 requests, got %d", mock.RequestCount())
+	}
+
+	output := buf.String()
+	if output != "All done." {
+		t.Errorf("expected stdout %q, got %q", "All done.", output)
+	}
+
+	// Final request should contain both tool results
+	body2 := mock.Requests[2].Body
+	if !strings.Contains(body2, "info content") {
+		t.Errorf("expected final request to contain read_file result, body: %s", body2)
+	}
+	if !strings.Contains(body2, "sub-agent done") {
+		t.Errorf("expected final request to contain call_agent result, body: %s", body2)
+	}
+}
+
+func TestIntegration_Tools_MultiTurnConversation(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: list_directory
+		testutil.AnthropicToolUseResponse("Listing directory.", []testutil.MockToolCall{
+			{ID: "tc_ld1", Name: "list_directory", Input: map[string]string{"path": "."}},
+		}),
+		// Turn 2: read_file
+		testutil.AnthropicToolUseResponse("Reading file.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "readme.txt"}},
+		}),
+		// Turn 3: run_command
+		testutil.AnthropicToolUseResponse("Running command.", []testutil.MockToolCall{
+			{ID: "tc_rc1", Name: "run_command", Input: map[string]string{"command": "echo done"}},
+		}),
+		// Turn 4: final response
+		testutil.AnthropicResponse("Completed all three steps."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "multi-turn-tools", `name = "multi-turn-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["list_directory", "read_file", "run_command"]
+`)
+
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "readme.txt"), []byte("project readme"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "multi-turn-tools", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	if mock.RequestCount() != 4 {
+		t.Errorf("expected 4 requests, got %d", mock.RequestCount())
+	}
+
+	output := buf.String()
+	if output != "Completed all three steps." {
+		t.Errorf("expected stdout %q, got %q", "Completed all three steps.", output)
+	}
+
+	// Turn 1 tool result in request 2 should contain directory listing with readme.txt
+	body1 := mock.Requests[1].Body
+	if !strings.Contains(body1, "readme.txt") {
+		t.Errorf("expected request 2 to contain directory listing with readme.txt, body: %s", body1)
+	}
+
+	// Turn 2 tool result in request 3 should contain file content
+	body2 := mock.Requests[2].Body
+	if !strings.Contains(body2, "project readme") {
+		t.Errorf("expected request 3 to contain file content 'project readme', body: %s", body2)
+	}
+
+	// Turn 3 tool result in request 4 should contain command output
+	body3 := mock.Requests[3].Body
+	if !strings.Contains(body3, "done") {
+		t.Errorf("expected request 4 to contain command output 'done', body: %s", body3)
+	}
+}
+
+func TestIntegration_JSONOutput_WithBuiltInToolCalls(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: 2 tool calls
+		testutil.AnthropicToolUseResponse("Reading files.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "a.txt"}},
+			{ID: "tc_ld1", Name: "list_directory", Input: map[string]string{"path": "."}},
+		}),
+		// Turn 2: 1 tool call
+		testutil.AnthropicToolUseResponse("Running command.", []testutil.MockToolCall{
+			{ID: "tc_rc1", Name: "run_command", Input: map[string]string{"command": "echo final"}},
+		}),
+		// Turn 3: final
+		testutil.AnthropicResponse("final"),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "json-builtin-tools", `name = "json-builtin-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file", "list_directory", "run_command"]
+`)
+
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "a.txt"), []byte("file a"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "json-builtin-tools", "--json", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	var result map[string]interface{}
+	if jsonErr := json.Unmarshal(buf.Bytes(), &result); jsonErr != nil {
+		t.Fatalf("expected valid JSON output, got parse error: %v\nraw: %q", jsonErr, buf.String())
+	}
+
+	// tool_calls should be 3 (2 from turn 1 + 1 from turn 2)
+	if toolCalls, ok := result["tool_calls"].(float64); !ok || toolCalls != 3 {
+		t.Errorf("expected tool_calls 3, got %v", result["tool_calls"])
+	}
+
+	if content, ok := result["content"].(string); !ok || content != "final" {
+		t.Errorf("expected content %q, got %v", "final", result["content"])
+	}
+
+	if _, ok := result["model"]; !ok {
+		t.Error("expected model field to be present")
+	}
+
+	// Token sums: 3 turns × Anthropic (tool_use: 10+20, tool_use: 10+20, response: 10+5)
+	if inputTokens, ok := result["input_tokens"].(float64); !ok || inputTokens != 30 {
+		t.Errorf("expected input_tokens 30, got %v", result["input_tokens"])
+	}
+
+	if outputTokens, ok := result["output_tokens"].(float64); !ok || outputTokens != 45 {
+		t.Errorf("expected output_tokens 45, got %v", result["output_tokens"])
+	}
+}
+
+func TestIntegration_Verbose_ToolExecution(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		// Turn 1: read_file tool call
+		testutil.AnthropicToolUseResponse("Reading.", []testutil.MockToolCall{
+			{ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "test.txt"}},
+		}),
+		// Turn 2: final
+		testutil.AnthropicResponse("done"),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "verbose-tools", `name = "verbose-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file"]
+`)
+
+	workdir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(workdir, "test.txt"), []byte("line one\nline two"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "verbose-tools", "--verbose", "--workdir", workdir})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	output := buf.String()
+	if output != "done" {
+		t.Errorf("expected stdout %q, got %q", "done", output)
+	}
+
+	stderrStr := errBuf.String()
+	if !strings.Contains(stderrStr, "[turn 1]") {
+		t.Errorf("expected stderr to contain '[turn 1]', got: %s", stderrStr)
+	}
+	if !strings.Contains(stderrStr, "[tool] read_file:") {
+		t.Errorf("expected stderr to contain '[tool] read_file:', got: %s", stderrStr)
+	}
+	if !strings.Contains(stderrStr, "(success)") {
+		t.Errorf("expected stderr to contain '(success)', got: %s", stderrStr)
+	}
+	if !strings.Contains(stderrStr, "Duration:") {
+		t.Errorf("expected stderr to contain 'Duration:', got: %s", stderrStr)
+	}
+}
+
+func TestIntegration_DryRun_ShowsTools(t *testing.T) {
+	resetRunCmd(t)
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "dryrun-tools", `name = "dryrun-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["write_file", "run_command"]
+`)
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "dryrun-tools", "--dry-run"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "--- Tools ---") {
+		t.Errorf("expected stdout to contain '--- Tools ---', got: %s", output)
+	}
+	if !strings.Contains(output, "write_file, run_command") {
+		t.Errorf("expected stdout to contain 'write_file, run_command', got: %s", output)
+	}
+	if strings.Contains(output, "read_file") {
+		t.Errorf("expected stdout to NOT contain 'read_file', got: %s", output)
+	}
+	if strings.Contains(output, "list_directory") {
+		t.Errorf("expected stdout to NOT contain 'list_directory', got: %s", output)
+	}
+}

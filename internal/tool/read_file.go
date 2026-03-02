@@ -44,8 +44,22 @@ func readFileDefinition() provider.Tool {
 	}
 }
 
-func readFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult {
+func readFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
 	path := call.Arguments["path"]
+
+	defer func() {
+		var summary string
+		if result.IsError {
+			summary = fmt.Sprintf("path %q: %s", path, result.Content)
+		} else {
+			lineCount := 0
+			if result.Content != "" {
+				lineCount = strings.Count(result.Content, "\n") + 1
+			}
+			summary = fmt.Sprintf("path %q (%d lines)", path, lineCount)
+		}
+		toolVerboseLog(ec, toolname.ReadFile, result, summary)
+	}()
 
 	resolved, err := validatePath(ec.Workdir, path)
 	if err != nil {

@@ -17,6 +17,9 @@ Params:   temperature=0, max_tokens=0
 --- Stdin ---
 (none)
 
+--- Tools ---
+(none)
+
 --- Sub-Agents ---
 basic, with_skill
 Max Depth: 3

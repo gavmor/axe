@@ -49,5 +49,8 @@ Plain text, single line.
 --- Stdin ---
 (none)
 
+--- Tools ---
+(none)
+
 --- Sub-Agents ---
 (none)

@@ -2,6 +2,7 @@ package tool
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 
@@ -31,8 +32,18 @@ func listDirectoryDefinition() provider.Tool {
 	}
 }
 
-func listDirectoryExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult {
+func listDirectoryExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
 	path := call.Arguments["path"]
+
+	defer func() {
+		var summary string
+		if result.IsError {
+			summary = fmt.Sprintf("path %q: %s", path, result.Content)
+		} else {
+			summary = fmt.Sprintf("path %q", path)
+		}
+		toolVerboseLog(ec, toolname.ListDirectory, result, summary)
+	}()
 
 	resolved, err := validatePath(ec.Workdir, path)
 	if err != nil {

@@ -37,8 +37,18 @@ func writeFileDefinition() provider.Tool {
 	}
 }
 
-func writeFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult {
+func writeFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
 	path := call.Arguments["path"]
+
+	defer func() {
+		var summary string
+		if result.IsError {
+			summary = fmt.Sprintf("path %q: %s", path, result.Content)
+		} else {
+			summary = fmt.Sprintf("path %q (%d bytes)", path, len(call.Arguments["content"]))
+		}
+		toolVerboseLog(ec, toolname.WriteFile, result, summary)
+	}()
 
 	// Empty path check.
 	if path == "" {

@@ -454,6 +454,14 @@ func printDryRun(cmd *cobra.Command, cfg *agent.AgentConfig, provName, modelName
 	}
 
 	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "--- Tools ---")
+	if len(cfg.Tools) > 0 {
+		_, _ = fmt.Fprintln(out, strings.Join(cfg.Tools, ", "))
+	} else {
+		_, _ = fmt.Fprintln(out, "(none)")
+	}
+
+	_, _ = fmt.Fprintln(out)
 	_, _ = fmt.Fprintln(out, "--- Sub-Agents ---")
 	if len(cfg.SubAgents) > 0 {
 		_, _ = fmt.Fprintln(out, strings.Join(cfg.SubAgents, ", "))

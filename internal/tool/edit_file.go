@@ -48,8 +48,19 @@ func editFileDefinition() provider.Tool {
 	}
 }
 
-func editFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult {
+func editFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
 	path := call.Arguments["path"]
+	replacedCount := 0
+
+	defer func() {
+		var summary string
+		if result.IsError {
+			summary = fmt.Sprintf("path %q: %s", path, result.Content)
+		} else {
+			summary = fmt.Sprintf("path %q (%d occurrence(s))", path, replacedCount)
+		}
+		toolVerboseLog(ec, toolname.EditFile, result, summary)
+	}()
 
 	// Path validation (handles empty, absolute, traversal, symlink escape, nonexistent).
 	resolved, err := validatePath(ec.Workdir, path)
@@ -153,6 +164,8 @@ func editFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext
 			IsError: true,
 		}
 	}
+
+	replacedCount = replaced
 
 	return provider.ToolResult{
 		CallID:  call.ID,
