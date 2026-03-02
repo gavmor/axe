@@ -128,16 +128,16 @@ Shell execution. Most powerful tool — implemented last intentionally.
 
 End-to-end wiring, integration tests, documentation.
 
-- [ ] Integration test: agent with `tools = ["read_file", "list_directory"]` can read files via LLM tool calls (mock provider)
-- [ ] Integration test: agent with `tools = ["run_command"]` executes commands via LLM tool calls (mock provider)
-- [ ] Integration test: agent with `tools = ["write_file", "edit_file"]` modifies files via LLM tool calls (mock provider)
-- [ ] Integration test: agent with tools AND sub_agents — both tool types work together
-- [ ] Integration test: multi-turn conversation with mixed tool calls
-- [ ] Verify `--dry-run` shows enabled tools list
-- [ ] Verify `--json` output includes tool call counts
-- [ ] Verify `--verbose` logs tool execution details
-- [ ] Update golden file tests for new output format
-- [ ] All tests pass: `make test`
+- [x] Integration test: agent with `tools = ["read_file", "list_directory"]` can read files via LLM tool calls (mock provider)
+- [x] Integration test: agent with `tools = ["run_command"]` executes commands via LLM tool calls (mock provider)
+- [x] Integration test: agent with `tools = ["write_file", "edit_file"]` modifies files via LLM tool calls (mock provider)
+- [x] Integration test: agent with tools AND sub_agents — both tool types work together (sequential + parallel)
+- [x] Integration test: multi-turn conversation with mixed tool calls
+- [x] Verify `--dry-run` shows enabled tools list — `--- Tools ---` section added to `printDryRun()`
+- [x] Verify `--json` output includes tool call counts — `tool_calls` field verified with cumulative counts
+- [x] Verify `--verbose` logs tool execution details — per-tool `[tool]` prefix lines via `toolVerboseLog` helper
+- [x] Update golden file tests for new output format — `with_tools` added to matrix, all 5 existing dry-run golden files updated
+- [x] All tests pass: `make test`
 
 ---
 
