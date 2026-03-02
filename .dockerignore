@@ -1,0 +1,9 @@
+.git
+.github
+.goreleaser.yml
+.opencode
+docs
+*.md
+!go.mod
+!go.sum
+!skills/sample/SKILL.md

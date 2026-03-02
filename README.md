@@ -50,6 +50,126 @@ cd axe
 go build .
 ```
 
+## Docker
+
+Axe provides a Docker image for running agents in an isolated, hardened container.
+
+### Build the Image
+
+```bash
+docker build -t axe .
+```
+
+Multi-architecture builds (linux/amd64, linux/arm64) are supported via buildx:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t axe:latest .
+```
+
+### Run an Agent
+
+Mount your config directory and pass API keys as environment variables:
+
+```bash
+docker run --rm \
+  -v ./my-config:/home/axe/.config/axe \
+  -e ANTHROPIC_API_KEY \
+  axe run my-agent
+```
+
+Pipe stdin with the `-i` flag:
+
+```bash
+git diff | docker run --rm -i \
+  -v ./my-config:/home/axe/.config/axe \
+  -e ANTHROPIC_API_KEY \
+  axe run pr-reviewer
+```
+
+Without a config volume mounted, axe exits with code 2 (config error) because no
+agent TOML files exist.
+
+### Persistent Data
+
+Agent memory persists across runs when you mount a data volume:
+
+```bash
+docker run --rm \
+  -v ./my-config:/home/axe/.config/axe \
+  -v axe-data:/home/axe/.local/share/axe \
+  -e ANTHROPIC_API_KEY \
+  axe run my-agent
+```
+
+### Docker Compose
+
+A `docker-compose.yml` is included for running axe alongside a local Ollama
+instance.
+
+**Cloud provider only (no Ollama):**
+
+```bash
+docker compose run --rm axe run my-agent
+```
+
+**With Ollama sidecar:**
+
+```bash
+docker compose --profile ollama up -d ollama
+docker compose --profile cli run --rm axe run my-agent
+```
+
+**Pull an Ollama model:**
+
+```bash
+docker compose --profile ollama exec ollama ollama pull llama3
+```
+
+> **Note:** The compose `axe` service declares `depends_on: ollama`. Docker
+> Compose will attempt to start the Ollama service whenever axe is started via
+> compose, even for cloud-only runs. For cloud-only usage without Ollama, use
+> `docker run` directly instead of `docker compose run`.
+
+### Ollama on the Host
+
+If Ollama runs directly on the host (not via compose), point to it with:
+
+- **Linux:** `--add-host=host.docker.internal:host-gateway -e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`
+- **macOS / Windows (Docker Desktop):** `-e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`
+
+### Security
+
+The container runs with the following hardening by default (via compose):
+
+- **Non-root user** — UID 10001
+- **Read-only root filesystem** — writable locations are the config mount, data mount, and `/tmp/axe` tmpfs
+- **All capabilities dropped** — `cap_drop: ALL`
+- **No privilege escalation** — `no-new-privileges:true`
+
+These settings do not restrict outbound network access. To isolate an agent that
+only talks to a local Ollama instance, add `--network=none` and connect it to the
+shared Docker network manually.
+
+### Volume Mounts
+
+| Container Path | Purpose | Default Access |
+|---|---|---|
+| `/home/axe/.config/axe/` | Agent TOML files, skills, `config.toml` | Read-write |
+| `/home/axe/.local/share/axe/` | Persistent memory files | Read-write |
+
+Config is read-write because `axe config init` and `axe agents init` write into
+it. Mount as `:ro` if you only run agents.
+
+### Environment Variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | If using Anthropic | API authentication |
+| `OPENAI_API_KEY` | If using OpenAI | API authentication |
+| `AXE_OLLAMA_BASE_URL` | If using Ollama | Ollama endpoint (default in compose: `http://ollama:11434`) |
+| `AXE_ANTHROPIC_BASE_URL` | No | Override Anthropic API endpoint |
+| `AXE_OPENAI_BASE_URL` | No | Override OpenAI API endpoint |
+
 ## Quick Start
 
 Initialize the configuration directory:
