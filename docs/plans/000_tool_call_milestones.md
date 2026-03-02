@@ -77,14 +77,14 @@ Read-only file access for the LLM.
 
 File creation and overwrite.
 
-- [ ] Create `internal/tool/write_file.go`
-- [ ] Parameters: `path` (required), `content` (required)
-- [ ] Creates parent directories if needed (`os.MkdirAll`)
-- [ ] Writes content to file (overwrite if exists, create if not)
-- [ ] Path validation: relative to workdir, no escape
-- [ ] Returns confirmation message with bytes written
-- [ ] Register in registry
-- [ ] Tests: create new file, overwrite existing, create with nested dirs, path traversal rejection, empty content
+- [x] Create `internal/tool/write_file.go`
+- [x] Parameters: `path` (required), `content` (optional — missing/empty creates 0-byte file)
+- [x] Creates parent directories if needed (`os.MkdirAll` with `0o755`)
+- [x] Writes content to file (overwrite if exists, create if not) via `os.WriteFile` with `0o644`
+- [x] Path validation: inline (not `validatePath`) — rejects empty, absolute, `..` traversal via `isWithinDir`, symlink escape check on parent via `filepath.EvalSymlinks`
+- [x] Returns confirmation message: `"wrote %d bytes to %s"` (byte count, not rune count)
+- [x] Register in registry
+- [x] Tests: create new file, overwrite existing, create with nested dirs, path traversal rejection, absolute path rejection, empty content, missing content key, missing path, symlink escape rejection, CallID passthrough, UTF-8 byte count accuracy, registry registration + resolution
 
 ---
 
@@ -92,15 +92,15 @@ File creation and overwrite.
 
 Find-and-replace within existing files.
 
-- [ ] Create `internal/tool/edit_file.go`
-- [ ] Parameters: `path` (required), `old_string` (required), `new_string` (required), `replace_all` (optional bool, default false)
-- [ ] Reads file, performs exact string replacement, writes back
-- [ ] Error if `old_string` not found
-- [ ] Error if `old_string` found multiple times and `replace_all` is false
-- [ ] Path validation: relative to workdir, no escape
-- [ ] Returns confirmation with replacement count
-- [ ] Register in registry
-- [ ] Tests: single replace, replace_all, not found error, multiple matches without replace_all error, path traversal rejection
+- [x] Create `internal/tool/edit_file.go`
+- [x] Parameters: `path` (required), `old_string` (required), `new_string` (required), `replace_all` (optional string parsed via `strconv.ParseBool`, default false)
+- [x] Reads file, performs exact string replacement, writes back with `0o644`
+- [x] Error if `old_string` not found: `"old_string not found in file"`
+- [x] Error if `old_string` found multiple times and `replace_all` is false: `"old_string found %d times; set replace_all to true or provide a more unique string"`
+- [x] Path validation: reuses `validatePath` (same as `read_file`) — rejects empty, absolute, `..` traversal, symlink escape, nonexistent files. Directory paths rejected via `os.Stat` + `IsDir()`.
+- [x] Returns confirmation: `"replaced %d occurrence(s) in %s"` with replacement count and original relative path
+- [x] Register in registry via `RegisterAll`
+- [x] Tests: single replace, replace_all, not found error, multiple matches without replace_all error, path traversal rejection, absolute path rejection, missing path, missing old_string, empty new_string deletion, symlink escape rejection, CallID passthrough, nonexistent file, directory path rejection, invalid replace_all value, multiline match, registry registration + resolution
 
 ---
 
@@ -108,16 +108,19 @@ Find-and-replace within existing files.
 
 Shell execution. Most powerful tool — implemented last intentionally.
 
-- [ ] Create `internal/tool/run_command.go`
-- [ ] Parameters: `command` (required string)
-- [ ] Executes via `exec.Command("sh", "-c", command)` with `Dir` set to agent's workdir
-- [ ] Captures combined stdout+stderr
-- [ ] Inherits context timeout (cancels on context deadline)
-- [ ] Non-zero exit code: `IsError: true`, content includes exit code + output
-- [ ] Zero exit code: `IsError: false`, content is the command output
-- [ ] Truncate output if excessively large (e.g., >100KB) with a note about truncation
-- [ ] Register in registry
-- [ ] Tests: successful command, failing command (non-zero exit), timeout/cancellation, output capture, large output truncation
+- [x] Create `internal/tool/run_command.go`: `runCommandEntry()` returning `ToolEntry` with `Definition` (name from `toolname.RunCommand`, `command` parameter) and `Execute`
+- [x] Parameters: `command` (required string) — single parameter, no type conversion needed (`map[string]string`)
+- [x] Executes via `exec.CommandContext(ctx, "sh", "-c", command)` with `cmd.Dir` set to `ec.Workdir`
+- [x] Captures combined stdout+stderr via `cmd.CombinedOutput()`
+- [x] Inherits context timeout — `exec.CommandContext` sends SIGKILL on context cancellation
+- [x] Non-zero exit code: `IsError: true`, content format `"exit code %d\n%s"` via `errors.As(*exec.ExitError)` with `exitErr.ExitCode()`
+- [x] Zero exit code: `IsError: false`, content is raw command output as string
+- [x] Non-exit errors (command not found, context cancelled): `IsError: true`, content is `err.Error()`
+- [x] Truncate output exceeding 102400 bytes (100KB) with `"\n... [output truncated, exceeded 100KB]"` — byte-level truncation before exit code prefix
+- [x] Empty/missing `command` argument: `IsError: true`, content `"command is required"`
+- [x] Register in registry via `RegisterAll`
+- [x] Tests — `run_command_test.go` (10 tests): success, failing command (exit 42), stdout+stderr capture, context timeout (50ms), large output truncation (>100KB), missing command, empty command, workdir respected (pwd + EvalSymlinks), CallID passthrough, failing command with output
+- [x] Tests — `registry_test.go` (2 new): `RegisterAll` registers run_command, resolves with correct name and `command` parameter
 
 ---
 

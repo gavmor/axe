@@ -113,4 +113,4 @@ Add `with_tools` agent to the golden test matrix.
 
 ## Phase 13: Full Test Suite (Spec §12)
 
-- [ ] Run `make test` — all tests pass with zero failures across all packages.
+- [x] Run `make test` — all tests pass with zero failures across all packages.
