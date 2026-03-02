@@ -35,9 +35,9 @@ var agentsListCmd = &cobra.Command{
 
 		for _, a := range agents {
 			if a.Description != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s - %s\n", a.Name, a.Description)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s - %s\n", a.Name, a.Description)
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), a.Name)
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), a.Name)
 			}
 		}
 
@@ -58,50 +58,50 @@ var agentsShowCmd = &cobra.Command{
 		w := cmd.OutOrStdout()
 
 		// Always print required fields
-		fmt.Fprintf(w, "%-16s%s\n", "Name:", cfg.Name)
+		_, _ = fmt.Fprintf(w, "%-16s%s\n", "Name:", cfg.Name)
 		if cfg.Description != "" {
-			fmt.Fprintf(w, "%-16s%s\n", "Description:", cfg.Description)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Description:", cfg.Description)
 		}
-		fmt.Fprintf(w, "%-16s%s\n", "Model:", cfg.Model)
+		_, _ = fmt.Fprintf(w, "%-16s%s\n", "Model:", cfg.Model)
 		if cfg.SystemPrompt != "" {
-			fmt.Fprintf(w, "%-16s%s\n", "System Prompt:", cfg.SystemPrompt)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "System Prompt:", cfg.SystemPrompt)
 		}
 		if cfg.Skill != "" {
-			fmt.Fprintf(w, "%-16s%s\n", "Skill:", cfg.Skill)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Skill:", cfg.Skill)
 		}
 		if len(cfg.Files) > 0 {
-			fmt.Fprintf(w, "%-16s%s\n", "Files:", strings.Join(cfg.Files, ", "))
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Files:", strings.Join(cfg.Files, ", "))
 		}
 		if cfg.Workdir != "" {
-			fmt.Fprintf(w, "%-16s%s\n", "Workdir:", cfg.Workdir)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Workdir:", cfg.Workdir)
 		}
 		if len(cfg.SubAgents) > 0 {
-			fmt.Fprintf(w, "%-16s%s\n", "Sub-Agents:", strings.Join(cfg.SubAgents, ", "))
-			fmt.Fprintf(w, "%-16s%d\n", "Max Depth:", cfg.SubAgentsConf.MaxDepth)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Sub-Agents:", strings.Join(cfg.SubAgents, ", "))
+			_, _ = fmt.Fprintf(w, "%-16s%d\n", "Max Depth:", cfg.SubAgentsConf.MaxDepth)
 			parallelDisplay := true // default
 			if cfg.SubAgentsConf.Parallel != nil {
 				parallelDisplay = *cfg.SubAgentsConf.Parallel
 			}
-			fmt.Fprintf(w, "%-16s%v\n", "Parallel:", parallelDisplay)
-			fmt.Fprintf(w, "%-16s%d\n", "Timeout:", cfg.SubAgentsConf.Timeout)
+			_, _ = fmt.Fprintf(w, "%-16s%v\n", "Parallel:", parallelDisplay)
+			_, _ = fmt.Fprintf(w, "%-16s%d\n", "Timeout:", cfg.SubAgentsConf.Timeout)
 		}
 		if cfg.Memory.Enabled {
-			fmt.Fprintf(w, "%-16s%v\n", "Memory Enabled:", cfg.Memory.Enabled)
+			_, _ = fmt.Fprintf(w, "%-16s%v\n", "Memory Enabled:", cfg.Memory.Enabled)
 		}
 		if cfg.Memory.Path != "" {
-			fmt.Fprintf(w, "%-16s%s\n", "Memory Path:", cfg.Memory.Path)
+			_, _ = fmt.Fprintf(w, "%-16s%s\n", "Memory Path:", cfg.Memory.Path)
 		}
 		if cfg.Memory.LastN != 0 {
-			fmt.Fprintf(w, "%-16s%d\n", "Memory LastN:", cfg.Memory.LastN)
+			_, _ = fmt.Fprintf(w, "%-16s%d\n", "Memory LastN:", cfg.Memory.LastN)
 		}
 		if cfg.Memory.MaxEntries != 0 {
-			fmt.Fprintf(w, "%-16s%d\n", "Memory MaxEntries:", cfg.Memory.MaxEntries)
+			_, _ = fmt.Fprintf(w, "%-16s%d\n", "Memory MaxEntries:", cfg.Memory.MaxEntries)
 		}
 		if cfg.Params.Temperature != 0 {
-			fmt.Fprintf(w, "%-16s%g\n", "Temperature:", cfg.Params.Temperature)
+			_, _ = fmt.Fprintf(w, "%-16s%g\n", "Temperature:", cfg.Params.Temperature)
 		}
 		if cfg.Params.MaxTokens != 0 {
-			fmt.Fprintf(w, "%-16s%d\n", "Max Tokens:", cfg.Params.MaxTokens)
+			_, _ = fmt.Fprintf(w, "%-16s%d\n", "Max Tokens:", cfg.Params.MaxTokens)
 		}
 
 		return nil
@@ -140,7 +140,7 @@ var agentsInitCmd = &cobra.Command{
 			return fmt.Errorf("failed to write agent config: %w", err)
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), path)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
 		return nil
 	},
 }

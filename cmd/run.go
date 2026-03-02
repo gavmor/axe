@@ -149,20 +149,20 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		var memErr error
 		memoryPath, memErr = memory.FilePath(agentName, cfg.Memory.Path)
 		if memErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 		} else {
 			memoryEntries, memErr = memory.LoadEntries(memoryPath, cfg.Memory.LastN)
 			if memErr != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 			} else if memoryEntries != "" {
 				systemPrompt += "\n\n---\n\n## Memory\n\n" + memoryEntries
 			}
 
 			memoryCount, memErr = memory.CountEntries(memoryPath)
 			if memErr != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 			} else if cfg.Memory.MaxEntries > 0 && memoryCount >= cfg.Memory.MaxEntries {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\n", agentName, memoryCount, cfg.Memory.MaxEntries, agentName)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\n", agentName, memoryCount, cfg.Memory.MaxEntries, agentName)
 			}
 		}
 	}
@@ -231,18 +231,18 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		if strings.TrimSpace(stdinContent) != "" {
 			stdinDisplay = "yes"
 		}
-		fmt.Fprintf(cmd.ErrOrStderr(), "Model:    %s/%s\n", provName, modelName)
-		fmt.Fprintf(cmd.ErrOrStderr(), "Workdir:  %s\n", workdir)
-		fmt.Fprintf(cmd.ErrOrStderr(), "Skill:    %s\n", skillDisplay)
-		fmt.Fprintf(cmd.ErrOrStderr(), "Files:    %d file(s)\n", len(files))
-		fmt.Fprintf(cmd.ErrOrStderr(), "Stdin:    %s\n", stdinDisplay)
-		fmt.Fprintf(cmd.ErrOrStderr(), "Timeout:  %ds\n", timeout)
-		fmt.Fprintf(cmd.ErrOrStderr(), "Params:   temperature=%g, max_tokens=%d\n", cfg.Params.Temperature, cfg.Params.MaxTokens)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Model:    %s/%s\n", provName, modelName)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Workdir:  %s\n", workdir)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Skill:    %s\n", skillDisplay)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Files:    %d file(s)\n", len(files))
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Stdin:    %s\n", stdinDisplay)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Timeout:  %ds\n", timeout)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Params:   temperature=%g, max_tokens=%d\n", cfg.Params.Temperature, cfg.Params.MaxTokens)
 		if cfg.Memory.Enabled {
 			if memoryCount > 0 {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Memory:   %d entries loaded from %s\n", memoryCount, memoryPath)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Memory:   %d entries loaded from %s\n", memoryCount, memoryPath)
 			} else {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Memory:   0 entries (no memory file)\n")
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Memory:   0 entries (no memory file)\n")
 			}
 		}
 	}
@@ -273,7 +273,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			durationMs := time.Since(start).Milliseconds()
 			if verbose {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
 			}
 			return mapProviderError(err)
 		}
@@ -282,9 +282,9 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 		if verbose {
 			durationMs := time.Since(start).Milliseconds()
-			fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-			fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output\n", resp.InputTokens, resp.OutputTokens)
-			fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output\n", resp.InputTokens, resp.OutputTokens)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
 		}
 	} else {
 		// Conversation loop: handle tool calls
@@ -296,14 +296,14 @@ func runAgent(cmd *cobra.Command, args []string) error {
 						pendingToolCalls += len(m.ToolResults)
 					}
 				}
-				fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Sending request (%d messages, %d tool calls pending)\n", turn+1, len(req.Messages), pendingToolCalls)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Sending request (%d messages, %d tool calls pending)\n", turn+1, len(req.Messages), pendingToolCalls)
 			}
 
 			resp, err = prov.Send(ctx, req)
 			if err != nil {
 				durationMs := time.Since(start).Milliseconds()
 				if verbose {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
 				}
 				return mapProviderError(err)
 			}
@@ -312,7 +312,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 			totalOutputTokens += resp.OutputTokens
 
 			if verbose {
-				fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Received response: %s (%d tool calls)\n", turn+1, resp.StopReason, len(resp.ToolCalls))
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Received response: %s (%d tool calls)\n", turn+1, resp.StopReason, len(resp.ToolCalls))
 			}
 
 			// No tool calls: conversation is done
@@ -347,9 +347,9 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 		if verbose {
 			durationMs := time.Since(start).Milliseconds()
-			fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-			fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output (cumulative)\n", totalInputTokens, totalOutputTokens)
-			fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output (cumulative)\n", totalInputTokens, totalOutputTokens)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
 		}
 	}
 
@@ -370,20 +370,20 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return &ExitError{Code: 1, Err: fmt.Errorf("failed to marshal JSON output: %w", err)}
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), string(data))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(data))
 	} else {
 		// Step 20: Default output
-		fmt.Fprint(cmd.OutOrStdout(), resp.Content)
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), resp.Content)
 	}
 
 	// Step 21: Append memory entry after successful response
 	if cfg.Memory.Enabled {
 		appendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)
 		if appendErr != nil {
-			fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
 		} else {
 			if appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
 			}
 		}
 	}
@@ -394,57 +394,57 @@ func runAgent(cmd *cobra.Command, args []string) error {
 func printDryRun(cmd *cobra.Command, cfg *agent.AgentConfig, provName, modelName, workdir string, timeout int, systemPrompt, skillContent string, files []resolve.FileContent, stdinContent string, memoryEntries string) error {
 	out := cmd.OutOrStdout()
 
-	fmt.Fprintln(out, "=== Dry Run ===")
-	fmt.Fprintln(out)
-	fmt.Fprintf(out, "Model:    %s/%s\n", provName, modelName)
-	fmt.Fprintf(out, "Workdir:  %s\n", workdir)
-	fmt.Fprintf(out, "Timeout:  %ds\n", timeout)
-	fmt.Fprintf(out, "Params:   temperature=%g, max_tokens=%d\n", cfg.Params.Temperature, cfg.Params.MaxTokens)
+	_, _ = fmt.Fprintln(out, "=== Dry Run ===")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "Model:    %s/%s\n", provName, modelName)
+	_, _ = fmt.Fprintf(out, "Workdir:  %s\n", workdir)
+	_, _ = fmt.Fprintf(out, "Timeout:  %ds\n", timeout)
+	_, _ = fmt.Fprintf(out, "Params:   temperature=%g, max_tokens=%d\n", cfg.Params.Temperature, cfg.Params.MaxTokens)
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "--- System Prompt ---")
-	fmt.Fprintln(out, systemPrompt)
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "--- System Prompt ---")
+	_, _ = fmt.Fprintln(out, systemPrompt)
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "--- Skill ---")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "--- Skill ---")
 	if skillContent != "" {
-		fmt.Fprintln(out, skillContent)
+		_, _ = fmt.Fprintln(out, skillContent)
 	} else {
-		fmt.Fprintln(out, "(none)")
+		_, _ = fmt.Fprintln(out, "(none)")
 	}
 
-	fmt.Fprintln(out)
-	fmt.Fprintf(out, "--- Files (%d) ---\n", len(files))
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "--- Files (%d) ---\n", len(files))
 	if len(files) > 0 {
 		for _, f := range files {
-			fmt.Fprintln(out, f.Path)
+			_, _ = fmt.Fprintln(out, f.Path)
 		}
 	} else {
-		fmt.Fprintln(out, "(none)")
+		_, _ = fmt.Fprintln(out, "(none)")
 	}
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "--- Stdin ---")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "--- Stdin ---")
 	if strings.TrimSpace(stdinContent) != "" {
-		fmt.Fprintln(out, stdinContent)
+		_, _ = fmt.Fprintln(out, stdinContent)
 	} else {
-		fmt.Fprintln(out, "(none)")
+		_, _ = fmt.Fprintln(out, "(none)")
 	}
 
 	if cfg.Memory.Enabled {
-		fmt.Fprintln(out)
-		fmt.Fprintln(out, "--- Memory ---")
+		_, _ = fmt.Fprintln(out)
+		_, _ = fmt.Fprintln(out, "--- Memory ---")
 		if memoryEntries != "" {
-			fmt.Fprintln(out, memoryEntries)
+			_, _ = fmt.Fprintln(out, memoryEntries)
 		} else {
-			fmt.Fprintln(out, "(none)")
+			_, _ = fmt.Fprintln(out, "(none)")
 		}
 	}
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "--- Sub-Agents ---")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "--- Sub-Agents ---")
 	if len(cfg.SubAgents) > 0 {
-		fmt.Fprintln(out, strings.Join(cfg.SubAgents, ", "))
+		_, _ = fmt.Fprintln(out, strings.Join(cfg.SubAgents, ", "))
 		effectiveMaxDepth := 3
 		if cfg.SubAgentsConf.MaxDepth > 0 && cfg.SubAgentsConf.MaxDepth <= 5 {
 			effectiveMaxDepth = cfg.SubAgentsConf.MaxDepth
@@ -454,11 +454,11 @@ func printDryRun(cmd *cobra.Command, cfg *agent.AgentConfig, provName, modelName
 			parallelVal = "no"
 		}
 		timeoutVal := cfg.SubAgentsConf.Timeout
-		fmt.Fprintf(out, "Max Depth: %d\n", effectiveMaxDepth)
-		fmt.Fprintf(out, "Parallel:  %s\n", parallelVal)
-		fmt.Fprintf(out, "Timeout:   %ds\n", timeoutVal)
+		_, _ = fmt.Fprintf(out, "Max Depth: %d\n", effectiveMaxDepth)
+		_, _ = fmt.Fprintf(out, "Parallel:  %s\n", parallelVal)
+		_, _ = fmt.Fprintf(out, "Timeout:   %ds\n", timeoutVal)
 	} else {
-		fmt.Fprintln(out, "(none)")
+		_, _ = fmt.Fprintln(out, "(none)")
 	}
 
 	return nil

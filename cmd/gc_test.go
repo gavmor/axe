@@ -17,9 +17,9 @@ import (
 // resetGCCmd resets all gc command flags between tests.
 func resetGCCmd(t *testing.T) {
 	t.Helper()
-	gcCmd.Flags().Set("dry-run", "false")
-	gcCmd.Flags().Set("all", "false")
-	gcCmd.Flags().Set("model", "")
+	_ = gcCmd.Flags().Set("dry-run", "false")
+	_ = gcCmd.Flags().Set("all", "false")
+	_ = gcCmd.Flags().Set("model", "")
 }
 
 // --- Phase 2a: Argument Validation ---
@@ -103,13 +103,13 @@ func startGCMockServer(t *testing.T, capturedBody *string, mu *sync.Mutex, respo
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		mu.Lock()
 		*capturedBody = body.String()
 		mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_gc",
 			"type": "message",
 			"role": "assistant",
@@ -127,7 +127,7 @@ func startGCMockServerError(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(500)
-		w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "internal server error"}}`))
+		_, _ = w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "internal server error"}}`))
 	}))
 }
 
@@ -920,7 +920,7 @@ last_n = 3
 	if err := os.Chmod(badMemPath, 0000); err != nil {
 		t.Fatalf("failed to chmod memory file: %v", err)
 	}
-	t.Cleanup(func() { os.Chmod(badMemPath, 0644) })
+	t.Cleanup(func() { _ = os.Chmod(badMemPath, 0644) })
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)

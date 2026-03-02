@@ -18,13 +18,13 @@ import (
 // resetRunCmd resets all run command flags and stdin to their defaults between tests.
 func resetRunCmd(t *testing.T) {
 	t.Helper()
-	runCmd.Flags().Set("skill", "")
-	runCmd.Flags().Set("workdir", "")
-	runCmd.Flags().Set("model", "")
-	runCmd.Flags().Set("timeout", "120")
-	runCmd.Flags().Set("dry-run", "false")
-	runCmd.Flags().Set("verbose", "false")
-	runCmd.Flags().Set("json", "false")
+	_ = runCmd.Flags().Set("skill", "")
+	_ = runCmd.Flags().Set("workdir", "")
+	_ = runCmd.Flags().Set("model", "")
+	_ = runCmd.Flags().Set("timeout", "120")
+	_ = runCmd.Flags().Set("dry-run", "false")
+	_ = runCmd.Flags().Set("verbose", "false")
+	_ = runCmd.Flags().Set("json", "false")
 	rootCmd.SetIn(os.Stdin)
 }
 
@@ -49,7 +49,7 @@ func startMockAnthropicServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -136,7 +136,7 @@ func TestRun_MissingAgent(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.MkdirAll(agentsDir, 0755)
+	_ = os.MkdirAll(agentsDir, 0755)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -201,13 +201,13 @@ system_prompt = "You are a test agent."
 `)
 	// Create a skill file
 	skillDir := filepath.Join(tmpDir, "axe", "skills")
-	os.MkdirAll(skillDir, 0755)
+	_ = os.MkdirAll(skillDir, 0755)
 	skillPath := filepath.Join(skillDir, "test.md")
-	os.WriteFile(skillPath, []byte("# Test Skill"), 0644)
+	_ = os.WriteFile(skillPath, []byte("# Test Skill"), 0644)
 
 	// Set the agent to use the skill (relative path from config dir)
 	agentPath := filepath.Join(tmpDir, "axe", "agents", "dry-agent.toml")
-	os.WriteFile(agentPath, []byte(`name = "dry-agent"
+	_ = os.WriteFile(agentPath, []byte(`name = "dry-agent"
 model = "anthropic/claude-sonnet-4-20250514"
 system_prompt = "You are a test agent."
 skill = "skills/test.md"
@@ -302,11 +302,11 @@ func TestRun_StdinPiped(t *testing.T) {
 	var receivedBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		receivedBody = body.String()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -347,11 +347,11 @@ func TestRun_ModelOverride(t *testing.T) {
 	var receivedBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		receivedBody = body.String()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -390,11 +390,11 @@ func TestRun_SkillOverride(t *testing.T) {
 	var receivedBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		receivedBody = body.String()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -415,7 +415,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 	// Create a separate skill file
 	skillDir := t.TempDir()
 	skillFile := filepath.Join(skillDir, "override-skill.md")
-	os.WriteFile(skillFile, []byte("# Override Skill Content"), 0644)
+	_ = os.WriteFile(skillFile, []byte("# Override Skill Content"), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -442,7 +442,7 @@ files = ["*.txt"]
 
 	// Create a separate workdir with a file
 	workdir := t.TempDir()
-	os.WriteFile(filepath.Join(workdir, "test.txt"), []byte("workdir file content"), 0644)
+	_ = os.WriteFile(filepath.Join(workdir, "test.txt"), []byte("workdir file content"), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -580,7 +580,7 @@ func TestRun_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(500)
-		w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "Internal server error"}}`))
+		_, _ = w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "Internal server error"}}`))
 	}))
 	defer server.Close()
 
@@ -616,7 +616,7 @@ func startMockOpenAIServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{"message": map[string]string{"content": "Hello from OpenAI mock"}, "finish_reason": "stop"},
@@ -630,7 +630,7 @@ func startMockOllamaServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":             "llama3",
 			"message":           map[string]string{"content": "Hello from Ollama mock"},
 			"done_reason":       "stop",
@@ -748,7 +748,7 @@ func TestRun_APIKeyFromConfigFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedAuth = r.Header.Get("x-api-key")
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test", "type": "message", "role": "assistant",
 			"content": [{"type": "text", "text": "ok"}],
 			"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -765,7 +765,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 
 	// Write config.toml with API key
 	configDir := filepath.Join(tmpDir, "axe")
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
+	_ = os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(`
 [providers.anthropic]
 api_key = "from-config-file"
 `), 0644)
@@ -793,7 +793,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 
 	// Write invalid config.toml
 	configDir := filepath.Join(tmpDir, "axe")
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte("[invalid toml\nblah"), 0644)
+	_ = os.WriteFile(filepath.Join(configDir, "config.toml"), []byte("[invalid toml\nblah"), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -822,11 +822,11 @@ func TestRun_SubAgentToolInjection(t *testing.T) {
 	var receivedBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		receivedBody = body.String()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -870,11 +870,11 @@ func TestRun_NoSubAgents_NoTools(t *testing.T) {
 	var receivedBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		receivedBody = body.String()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -921,7 +921,7 @@ func TestRun_ConversationLoop_ToolCall(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if parentCallCount == 1 {
 			// First call: return a tool_use calling "helper"
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_1",
 				"type": "message",
 				"role": "assistant",
@@ -935,7 +935,7 @@ func TestRun_ConversationLoop_ToolCall(t *testing.T) {
 			}`))
 		} else {
 			// Second call: return final text
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_2",
 				"type": "message",
 				"role": "assistant",
@@ -951,7 +951,7 @@ func TestRun_ConversationLoop_ToolCall(t *testing.T) {
 	// Helper sub-agent server
 	helperServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_helper",
 			"type": "message",
 			"role": "assistant",
@@ -970,7 +970,7 @@ sub_agents = ["helper-loop"]
 `)
 	// Create helper agent TOML
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "helper-loop.toml"), []byte(`name = "helper-loop"
+	_ = os.WriteFile(filepath.Join(agentsDir, "helper-loop.toml"), []byte(`name = "helper-loop"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1004,7 +1004,7 @@ func TestRun_ConversationLoop_MaxTurns(t *testing.T) {
 	// Server always returns tool calls (never a final text response)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_loop",
 			"type": "message",
 			"role": "assistant",
@@ -1023,7 +1023,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 sub_agents = ["helper-turns"]
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "helper-turns.toml"), []byte(`name = "helper-turns"
+	_ = os.WriteFile(filepath.Join(agentsDir, "helper-turns.toml"), []byte(`name = "helper-turns"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1062,7 +1062,7 @@ func TestRun_SubAgent_Error_PropagatesAsToolResult(t *testing.T) {
 		parentCallCount++
 		w.Header().Set("Content-Type", "application/json")
 		if parentCallCount == 1 {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_1",
 				"type": "message",
 				"role": "assistant",
@@ -1074,7 +1074,7 @@ func TestRun_SubAgent_Error_PropagatesAsToolResult(t *testing.T) {
 				"usage": {"input_tokens": 10, "output_tokens": 10}
 			}`))
 		} else {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_2",
 				"type": "message",
 				"role": "assistant",
@@ -1127,7 +1127,7 @@ func TestRun_ParallelToolCalls(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		bodyStr := body.String()
 		w.Header().Set("Content-Type", "application/json")
 
@@ -1141,7 +1141,7 @@ func TestRun_ParallelToolCalls(t *testing.T) {
 			mu.Lock()
 			subAgentCalls["agent-a"] = true
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_a", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "result from a"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1153,7 +1153,7 @@ func TestRun_ParallelToolCalls(t *testing.T) {
 			mu.Lock()
 			subAgentCalls["agent-b"] = true
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_b", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "result from b"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1165,7 +1165,7 @@ func TestRun_ParallelToolCalls(t *testing.T) {
 		// Parent calls
 		if currentCall == 1 {
 			// First parent call: return two tool calls
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p1", "type": "message", "role": "assistant",
 				"content": [
 					{"type": "tool_use", "id": "toolu_a", "name": "call_agent", "input": {"agent": "par-agent-a", "task": "task for agent-a"}},
@@ -1176,7 +1176,7 @@ func TestRun_ParallelToolCalls(t *testing.T) {
 			}`))
 		} else {
 			// Second parent call: final response
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p2", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "Both agents completed successfully."}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1194,10 +1194,10 @@ sub_agents = ["par-agent-a", "par-agent-b"]
 parallel = true
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "par-agent-a.toml"), []byte(`name = "par-agent-a"
+	_ = os.WriteFile(filepath.Join(agentsDir, "par-agent-a.toml"), []byte(`name = "par-agent-a"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
-	os.WriteFile(filepath.Join(agentsDir, "par-agent-b.toml"), []byte(`name = "par-agent-b"
+	_ = os.WriteFile(filepath.Join(agentsDir, "par-agent-b.toml"), []byte(`name = "par-agent-b"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1239,7 +1239,7 @@ func TestRun_SequentialToolCalls(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		bodyStr := body.String()
 		w.Header().Set("Content-Type", "application/json")
 
@@ -1252,7 +1252,7 @@ func TestRun_SequentialToolCalls(t *testing.T) {
 			mu.Lock()
 			callOrder = append(callOrder, "a")
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_a", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "seq result a"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1264,7 +1264,7 @@ func TestRun_SequentialToolCalls(t *testing.T) {
 			mu.Lock()
 			callOrder = append(callOrder, "b")
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_b", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "seq result b"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1274,7 +1274,7 @@ func TestRun_SequentialToolCalls(t *testing.T) {
 		}
 
 		if currentCall == 1 {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p1", "type": "message", "role": "assistant",
 				"content": [
 					{"type": "tool_use", "id": "toolu_a", "name": "call_agent", "input": {"agent": "seq-agent-a", "task": "seq task a"}},
@@ -1284,7 +1284,7 @@ func TestRun_SequentialToolCalls(t *testing.T) {
 				"usage": {"input_tokens": 10, "output_tokens": 20}
 			}`))
 		} else {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p2", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "Sequential done."}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1302,10 +1302,10 @@ sub_agents = ["seq-agent-a", "seq-agent-b"]
 parallel = false
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "seq-agent-a.toml"), []byte(`name = "seq-agent-a"
+	_ = os.WriteFile(filepath.Join(agentsDir, "seq-agent-a.toml"), []byte(`name = "seq-agent-a"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
-	os.WriteFile(filepath.Join(agentsDir, "seq-agent-b.toml"), []byte(`name = "seq-agent-b"
+	_ = os.WriteFile(filepath.Join(agentsDir, "seq-agent-b.toml"), []byte(`name = "seq-agent-b"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1418,13 +1418,13 @@ func TestRun_JSON_IncludesToolCalls(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		bodyStr := body.String()
 		w.Header().Set("Content-Type", "application/json")
 
 		// Sub-agent call
 		if strings.Contains(bodyStr, "Task: test task") {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_h", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "sub-result"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1435,7 +1435,7 @@ func TestRun_JSON_IncludesToolCalls(t *testing.T) {
 
 		callCount++
 		if callCount == 1 {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_1", "type": "message", "role": "assistant",
 				"content": [
 					{"type": "tool_use", "id": "toolu_1", "name": "call_agent", "input": {"agent": "json-helper", "task": "test task"}}
@@ -1444,7 +1444,7 @@ func TestRun_JSON_IncludesToolCalls(t *testing.T) {
 				"usage": {"input_tokens": 10, "output_tokens": 15}
 			}`))
 		} else {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_2", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "Final json result."}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1459,7 +1459,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 sub_agents = ["json-helper"]
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "json-helper.toml"), []byte(`name = "json-helper"
+	_ = os.WriteFile(filepath.Join(agentsDir, "json-helper.toml"), []byte(`name = "json-helper"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1504,12 +1504,12 @@ func TestRun_Verbose_ConversationTurns(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		bodyStr := body.String()
 		w.Header().Set("Content-Type", "application/json")
 
 		if strings.Contains(bodyStr, "Task: verbose task") {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_h", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "verbose sub-result"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1520,7 +1520,7 @@ func TestRun_Verbose_ConversationTurns(t *testing.T) {
 
 		callCount++
 		if callCount == 1 {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_1", "type": "message", "role": "assistant",
 				"content": [
 					{"type": "tool_use", "id": "toolu_v", "name": "call_agent", "input": {"agent": "verbose-helper", "task": "verbose task"}}
@@ -1529,7 +1529,7 @@ func TestRun_Verbose_ConversationTurns(t *testing.T) {
 				"usage": {"input_tokens": 10, "output_tokens": 15}
 			}`))
 		} else {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_2", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "Verbose final."}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1544,7 +1544,7 @@ model = "anthropic/claude-sonnet-4-20250514"
 sub_agents = ["verbose-helper"]
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "verbose-helper.toml"), []byte(`name = "verbose-helper"
+	_ = os.WriteFile(filepath.Join(agentsDir, "verbose-helper.toml"), []byte(`name = "verbose-helper"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1591,7 +1591,7 @@ func TestRun_ParallelDefault_MultipleToolCalls(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		bodyStr := body.String()
 		w.Header().Set("Content-Type", "application/json")
 
@@ -1599,7 +1599,7 @@ func TestRun_ParallelDefault_MultipleToolCalls(t *testing.T) {
 			mu.Lock()
 			subAgentCalls["a"] = true
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_a", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "result a"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1611,7 +1611,7 @@ func TestRun_ParallelDefault_MultipleToolCalls(t *testing.T) {
 			mu.Lock()
 			subAgentCalls["b"] = true
 			mu.Unlock()
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_b", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "result b"}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1626,7 +1626,7 @@ func TestRun_ParallelDefault_MultipleToolCalls(t *testing.T) {
 		mu.Unlock()
 
 		if cc == 1 {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p1", "type": "message", "role": "assistant",
 				"content": [
 					{"type": "tool_use", "id": "t_a", "name": "call_agent", "input": {"agent": "def-a", "task": "default-task-a"}},
@@ -1636,7 +1636,7 @@ func TestRun_ParallelDefault_MultipleToolCalls(t *testing.T) {
 				"usage": {"input_tokens": 10, "output_tokens": 20}
 			}`))
 		} else {
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"id": "msg_p2", "type": "message", "role": "assistant",
 				"content": [{"type": "text", "text": "Default parallel done."}],
 				"model": "claude-sonnet-4-20250514", "stop_reason": "end_turn",
@@ -1652,10 +1652,10 @@ model = "anthropic/claude-sonnet-4-20250514"
 sub_agents = ["def-a", "def-b"]
 `)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.WriteFile(filepath.Join(agentsDir, "def-a.toml"), []byte(`name = "def-a"
+	_ = os.WriteFile(filepath.Join(agentsDir, "def-a.toml"), []byte(`name = "def-a"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
-	os.WriteFile(filepath.Join(agentsDir, "def-b.toml"), []byte(`name = "def-b"
+	_ = os.WriteFile(filepath.Join(agentsDir, "def-b.toml"), []byte(`name = "def-b"
 model = "anthropic/claude-sonnet-4-20250514"
 `), 0644)
 
@@ -1691,13 +1691,13 @@ func startMockAnthropicServerCapture(t *testing.T, capturedBody *string, mu *syn
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := new(bytes.Buffer)
-		body.ReadFrom(r.Body)
+		_, _ = body.ReadFrom(r.Body)
 		mu.Lock()
 		*capturedBody = body.String()
 		mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": "msg_test",
 			"type": "message",
 			"role": "assistant",
@@ -1761,9 +1761,9 @@ enabled = true
 
 	// Pre-populate a memory file
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	memoryContent := "## 2026-02-28T10:00:00Z\n**Task:** previous task\n**Result:** previous result\n\n"
-	os.WriteFile(filepath.Join(memoryDir, "mem-load.md"), []byte(memoryContent), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-load.md"), []byte(memoryContent), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -1812,12 +1812,12 @@ last_n = 2
 
 	// Pre-populate a memory file with 5 entries
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	var memContent strings.Builder
 	for i := 1; i <= 5; i++ {
-		memContent.WriteString(fmt.Sprintf("## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i))
+		_, _ = fmt.Fprintf(&memContent, "## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i)
 	}
-	os.WriteFile(filepath.Join(memoryDir, "mem-lastn.md"), []byte(memContent.String()), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-lastn.md"), []byte(memContent.String()), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -1873,12 +1873,12 @@ max_entries = 3
 
 	// Pre-populate memory file with 3 entries (meets max_entries)
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	var memContent strings.Builder
 	for i := 1; i <= 3; i++ {
-		memContent.WriteString(fmt.Sprintf("## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i))
+		_, _ = fmt.Fprintf(&memContent, "## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i)
 	}
-	os.WriteFile(filepath.Join(memoryDir, "mem-maxwarn.md"), []byte(memContent.String()), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-maxwarn.md"), []byte(memContent.String()), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -1924,12 +1924,12 @@ max_entries = 10
 
 	// Pre-populate memory file with 3 entries (below max_entries=10)
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	var memContent strings.Builder
 	for i := 1; i <= 3; i++ {
-		memContent.WriteString(fmt.Sprintf("## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i))
+		_, _ = fmt.Fprintf(&memContent, "## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i)
 	}
-	os.WriteFile(filepath.Join(memoryDir, "mem-nowarn.md"), []byte(memContent.String()), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-nowarn.md"), []byte(memContent.String()), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -2003,7 +2003,7 @@ func TestRun_MemoryEnabled_APIError_NoEntryAppended(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(500)
-		w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "Internal server error"}}`))
+		_, _ = w.Write([]byte(`{"type": "error", "error": {"type": "server_error", "message": "Internal server error"}}`))
 	}))
 	defer server.Close()
 
@@ -2050,9 +2050,9 @@ enabled = true
 
 	// Pre-populate memory file
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	memoryContent := "## 2026-02-28T10:00:00Z\n**Task:** dry run task\n**Result:** dry run result\n\n"
-	os.WriteFile(filepath.Join(memoryDir, "mem-dryrun.md"), []byte(memoryContent), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-dryrun.md"), []byte(memoryContent), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)
@@ -2133,12 +2133,12 @@ enabled = true
 
 	// Pre-populate memory file with 3 entries
 	memoryDir := filepath.Join(tmpDir, "data", "axe", "memory")
-	os.MkdirAll(memoryDir, 0755)
+	_ = os.MkdirAll(memoryDir, 0755)
 	var memContent strings.Builder
 	for i := 1; i <= 3; i++ {
 		memContent.WriteString(fmt.Sprintf("## 2026-02-28T10:0%d:00Z\n**Task:** task %d\n**Result:** result %d\n\n", i, i, i))
 	}
-	os.WriteFile(filepath.Join(memoryDir, "mem-verbose.md"), []byte(memContent.String()), 0644)
+	_ = os.WriteFile(filepath.Join(memoryDir, "mem-verbose.md"), []byte(memContent.String()), 0644)
 
 	buf := new(bytes.Buffer)
 	errBuf := new(bytes.Buffer)

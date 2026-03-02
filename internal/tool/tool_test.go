@@ -260,15 +260,15 @@ func TestExecuteCallAgent_Success(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
 	// Write sub-agent TOML pointing at our test server
-	toml := fmt.Sprintf(`name = "helper"
+	toml := `name = "helper"
 model = "anthropic/claude-sonnet-4-20250514"
 system_prompt = "You are a helper."
-`)
+`
 	writeToolTestAgent(t, agentsDir, "helper", toml)
 
 	// Set API key env var for anthropic
@@ -304,7 +304,7 @@ func TestExecuteCallAgent_WithContext(t *testing.T) {
 
 	var receivedBody map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
+		_ = json.NewDecoder(r.Body).Decode(&receivedBody)
 		resp := map[string]interface{}{
 			"id":    "msg_123",
 			"type":  "message",
@@ -317,7 +317,7 @@ func TestExecuteCallAgent_WithContext(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -368,7 +368,7 @@ func TestExecuteCallAgent_WithoutContext(t *testing.T) {
 
 	var receivedBody map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
+		_ = json.NewDecoder(r.Body).Decode(&receivedBody)
 		resp := map[string]interface{}{
 			"id":    "msg_123",
 			"type":  "message",
@@ -381,7 +381,7 @@ func TestExecuteCallAgent_WithoutContext(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -430,7 +430,7 @@ func TestExecuteCallAgent_APIError(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"type":"error","error":{"type":"server_error","message":"Internal server error"}}`))
+		_, _ = w.Write([]byte(`{"type":"error","error":{"type":"server_error","message":"Internal server error"}}`))
 	}))
 	defer server.Close()
 
@@ -483,7 +483,7 @@ func TestExecuteCallAgent_DepthLimitNoTools(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -537,7 +537,7 @@ func TestExecuteCallAgent_Timeout(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -589,7 +589,7 @@ func TestExecuteCallAgent_MemoryEnabled_LoadsIntoPrompt(t *testing.T) {
 	// Mock provider that captures the system prompt from the request body
 	var receivedBody map[string]interface{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
+		_ = json.NewDecoder(r.Body).Decode(&receivedBody)
 		resp := map[string]interface{}{
 			"id":    "msg_mem",
 			"type":  "message",
@@ -602,7 +602,7 @@ func TestExecuteCallAgent_MemoryEnabled_LoadsIntoPrompt(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -678,7 +678,7 @@ func TestExecuteCallAgent_MemoryEnabled_AppendsEntry(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -750,7 +750,7 @@ func TestExecuteCallAgent_MemoryDisabled_NoFileCreated(t *testing.T) {
 			"usage":       map[string]int{"input_tokens": 10, "output_tokens": 5},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -796,7 +796,7 @@ func TestExecuteCallAgent_MemoryEnabled_Error_NoEntryAppended(t *testing.T) {
 	// Mock provider that returns an error
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"type":"error","error":{"type":"server_error","message":"Internal server error"}}`))
+		_, _ = w.Write([]byte(`{"type":"error","error":{"type":"server_error","message":"Internal server error"}}`))
 	}))
 	defer server.Close()
 

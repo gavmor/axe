@@ -201,7 +201,7 @@ func BuildBinary(t *testing.T) string {
 // from TestMain after all tests have run.
 func CleanupBinary() {
 	if buildCacheDir != "" {
-		os.RemoveAll(buildCacheDir)
+		_ = os.RemoveAll(buildCacheDir)
 	}
 }
 

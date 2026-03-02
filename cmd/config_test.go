@@ -311,11 +311,11 @@ func TestConfigInit_DoesNotOverwriteConfigTOML(t *testing.T) {
 
 	// Create a custom config.toml first
 	configDir := filepath.Join(tmpDir, "axe")
-	os.MkdirAll(configDir, 0755)
+	_ = os.MkdirAll(configDir, 0755)
 	customContent := `[providers.anthropic]
 api_key = "my-secret-key"
 `
-	os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(customContent), 0600)
+	_ = os.WriteFile(filepath.Join(configDir, "config.toml"), []byte(customContent), 0600)
 
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)

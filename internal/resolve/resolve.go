@@ -236,7 +236,7 @@ func readTextFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read only the first 512 bytes for binary detection.
 	header := make([]byte, 512)

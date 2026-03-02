@@ -35,7 +35,7 @@ func TestNewAnthropic_ValidAPIKey(t *testing.T) {
 func TestAnthropic_Send_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content": []map[string]string{
 				{"type": "text", "text": "Hello from Claude"},
 			},
@@ -94,10 +94,10 @@ func TestAnthropic_Send_RequestFormat(t *testing.T) {
 		gotHeaders = r.Header
 
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -107,7 +107,7 @@ func TestAnthropic_Send_RequestFormat(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("my-api-key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:       "claude-sonnet-4-20250514",
 		System:      "Be helpful",
 		Messages:    []Message{{Role: "user", Content: "Hi"}},
@@ -160,10 +160,10 @@ func TestAnthropic_Send_OmitsEmptySystem(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -173,7 +173,7 @@ func TestAnthropic_Send_OmitsEmptySystem(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:    "claude-sonnet-4-20250514",
 		System:   "", // empty
 		Messages: []Message{{Role: "user", Content: "Hi"}},
@@ -189,10 +189,10 @@ func TestAnthropic_Send_OmitsZeroTemperature(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -202,7 +202,7 @@ func TestAnthropic_Send_OmitsZeroTemperature(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:       "claude-sonnet-4-20250514",
 		Temperature: 0, // zero
 		Messages:    []Message{{Role: "user", Content: "Hi"}},
@@ -218,10 +218,10 @@ func TestAnthropic_Send_DefaultMaxTokens(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -231,7 +231,7 @@ func TestAnthropic_Send_DefaultMaxTokens(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:     "claude-sonnet-4-20250514",
 		MaxTokens: 0, // zero → default to 4096
 		Messages:  []Message{{Role: "user", Content: "Hi"}},
@@ -247,7 +247,7 @@ func TestAnthropic_Send_DefaultMaxTokens(t *testing.T) {
 func TestAnthropic_Send_EmptyContent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 0},
@@ -274,7 +274,7 @@ func TestAnthropic_Send_EmptyContent(t *testing.T) {
 func TestAnthropic_Send_AuthError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "authentication_error",
@@ -302,7 +302,7 @@ func TestAnthropic_Send_AuthError(t *testing.T) {
 func TestAnthropic_Send_RateLimitError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(429)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "rate_limit_error",
@@ -330,7 +330,7 @@ func TestAnthropic_Send_RateLimitError(t *testing.T) {
 func TestAnthropic_Send_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "api_error",
@@ -358,7 +358,7 @@ func TestAnthropic_Send_ServerError(t *testing.T) {
 func TestAnthropic_Send_OverloadedError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(529)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "overloaded_error",
@@ -386,7 +386,7 @@ func TestAnthropic_Send_OverloadedError(t *testing.T) {
 func TestAnthropic_Send_BadRequestError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "invalid_request_error",
@@ -439,7 +439,7 @@ func TestAnthropic_Send_Timeout(t *testing.T) {
 func TestAnthropic_Send_ErrorResponseParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"type": "error",
 			"error": map[string]string{
 				"type":    "invalid_request_error",
@@ -471,10 +471,10 @@ func TestAnthropic_Send_WithTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -484,7 +484,7 @@ func TestAnthropic_Send_WithTools(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:    "claude-sonnet-4-20250514",
 		Messages: []Message{{Role: "user", Content: "Hi"}},
 		Tools: []Tool{
@@ -516,30 +516,30 @@ func TestAnthropic_Send_WithTools(t *testing.T) {
 
 	// Verify tool name
 	var name string
-	json.Unmarshal(tools[0]["name"], &name)
+	_ = json.Unmarshal(tools[0]["name"], &name)
 	if name != "call_agent" {
 		t.Errorf("tools[0].name = %q, want %q", name, "call_agent")
 	}
 
 	// Verify tool description
 	var desc string
-	json.Unmarshal(tools[0]["description"], &desc)
+	_ = json.Unmarshal(tools[0]["description"], &desc)
 	if desc != "Delegate a task to a sub-agent." {
 		t.Errorf("tools[0].description = %q, want %q", desc, "Delegate a task to a sub-agent.")
 	}
 
 	// Verify input_schema
 	var schema map[string]json.RawMessage
-	json.Unmarshal(tools[0]["input_schema"], &schema)
+	_ = json.Unmarshal(tools[0]["input_schema"], &schema)
 	var schemaType string
-	json.Unmarshal(schema["type"], &schemaType)
+	_ = json.Unmarshal(schema["type"], &schemaType)
 	if schemaType != "object" {
 		t.Errorf("input_schema.type = %q, want %q", schemaType, "object")
 	}
 
 	// Verify properties exist
 	var props map[string]map[string]interface{}
-	json.Unmarshal(schema["properties"], &props)
+	_ = json.Unmarshal(schema["properties"], &props)
 	if _, ok := props["agent"]; !ok {
 		t.Error("input_schema.properties missing 'agent'")
 	}
@@ -552,7 +552,7 @@ func TestAnthropic_Send_WithTools(t *testing.T) {
 
 	// Verify required array contains agent and task but not context
 	var required []string
-	json.Unmarshal(schema["required"], &required)
+	_ = json.Unmarshal(schema["required"], &required)
 	requiredMap := make(map[string]bool)
 	for _, r := range required {
 		requiredMap[r] = true
@@ -573,10 +573,10 @@ func TestAnthropic_Send_WithoutTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -586,7 +586,7 @@ func TestAnthropic_Send_WithoutTools(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model:    "claude-sonnet-4-20250514",
 		Messages: []Message{{Role: "user", Content: "Hi"}},
 		Tools:    nil,
@@ -610,7 +610,7 @@ func TestAnthropic_Send_ToolCallResponse(t *testing.T) {
 			"stop_reason": "tool_use",
 			"usage": {"input_tokens": 10, "output_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -658,7 +658,7 @@ func TestAnthropic_Send_ToolCallWithText(t *testing.T) {
 			"stop_reason": "tool_use",
 			"usage": {"input_tokens": 10, "output_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -693,7 +693,7 @@ func TestAnthropic_Send_ToolCallNoText(t *testing.T) {
 			"stop_reason": "tool_use",
 			"usage": {"input_tokens": 10, "output_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -728,7 +728,7 @@ func TestAnthropic_Send_ToolsStopReason(t *testing.T) {
 			"stop_reason": "tool_use",
 			"usage": {"input_tokens": 10, "output_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -756,10 +756,10 @@ func TestAnthropic_Send_ToolResultMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -769,7 +769,7 @@ func TestAnthropic_Send_ToolResultMessage(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model: "claude-sonnet-4-20250514",
 		Messages: []Message{
 			{Role: "user", Content: "Hi"},
@@ -783,20 +783,20 @@ func TestAnthropic_Send_ToolResultMessage(t *testing.T) {
 	})
 
 	var messages []json.RawMessage
-	json.Unmarshal(gotBody["messages"], &messages)
+	_ = json.Unmarshal(gotBody["messages"], &messages)
 
 	// The tool result message (index 2) should be role "user" with tool_result content blocks
 	var toolMsg map[string]json.RawMessage
-	json.Unmarshal(messages[2], &toolMsg)
+	_ = json.Unmarshal(messages[2], &toolMsg)
 
 	var role string
-	json.Unmarshal(toolMsg["role"], &role)
+	_ = json.Unmarshal(toolMsg["role"], &role)
 	if role != "user" {
 		t.Errorf("tool result message role = %q, want %q", role, "user")
 	}
 
 	var content []map[string]interface{}
-	json.Unmarshal(toolMsg["content"], &content)
+	_ = json.Unmarshal(toolMsg["content"], &content)
 	if len(content) != 1 {
 		t.Fatalf("tool result content blocks = %d, want 1", len(content))
 	}
@@ -819,10 +819,10 @@ func TestAnthropic_Send_AssistantToolCallMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"content":     []map[string]string{{"type": "text", "text": "ok"}},
 			"model":       "claude-sonnet-4-20250514",
 			"usage":       map[string]int{"input_tokens": 1, "output_tokens": 1},
@@ -832,7 +832,7 @@ func TestAnthropic_Send_AssistantToolCallMessage(t *testing.T) {
 	defer server.Close()
 
 	a, _ := NewAnthropic("key", WithBaseURL(server.URL))
-	a.Send(context.Background(), &Request{
+	_, _ = a.Send(context.Background(), &Request{
 		Model: "claude-sonnet-4-20250514",
 		Messages: []Message{
 			{Role: "user", Content: "Hi"},
@@ -846,20 +846,20 @@ func TestAnthropic_Send_AssistantToolCallMessage(t *testing.T) {
 	})
 
 	var messages []json.RawMessage
-	json.Unmarshal(gotBody["messages"], &messages)
+	_ = json.Unmarshal(gotBody["messages"], &messages)
 
 	// The assistant message (index 1) should have tool_use content blocks
 	var assistMsg map[string]json.RawMessage
-	json.Unmarshal(messages[1], &assistMsg)
+	_ = json.Unmarshal(messages[1], &assistMsg)
 
 	var role string
-	json.Unmarshal(assistMsg["role"], &role)
+	_ = json.Unmarshal(assistMsg["role"], &role)
 	if role != "assistant" {
 		t.Errorf("assistant message role = %q, want %q", role, "assistant")
 	}
 
 	var content []map[string]interface{}
-	json.Unmarshal(assistMsg["content"], &content)
+	_ = json.Unmarshal(assistMsg["content"], &content)
 
 	// Should have text block + tool_use block
 	if len(content) < 2 {

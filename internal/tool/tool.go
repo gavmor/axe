@@ -120,7 +120,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 		if len(taskPreview) > 80 {
 			taskPreview = taskPreview[:80] + "..."
 		}
-		fmt.Fprintf(opts.Stderr, "[sub-agent] Calling %q (depth %d) with task: %s\n", agentName, opts.Depth+1, taskPreview)
+		_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Calling %q (depth %d) with task: %s\n", agentName, opts.Depth+1, taskPreview)
 	}
 
 	start := time.Now()
@@ -162,13 +162,13 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 		memPath, memErr := memory.FilePath(agentName, cfg.Memory.Path)
 		if memErr != nil {
 			if opts.Verbose && opts.Stderr != nil {
-				fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to load memory for %q: %v\n", agentName, memErr)
+				_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to load memory for %q: %v\n", agentName, memErr)
 			}
 		} else {
 			entries, memErr := memory.LoadEntries(memPath, cfg.Memory.LastN)
 			if memErr != nil {
 				if opts.Verbose && opts.Stderr != nil {
-					fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to load memory for %q: %v\n", agentName, memErr)
+					_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to load memory for %q: %v\n", agentName, memErr)
 				}
 			} else if entries != "" {
 				systemPrompt += "\n\n---\n\n## Memory\n\n" + entries
@@ -177,11 +177,11 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 			memCount, memErr := memory.CountEntries(memPath)
 			if memErr != nil {
 				if opts.Verbose && opts.Stderr != nil {
-					fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to count memory entries for %q: %v\n", agentName, memErr)
+					_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to count memory entries for %q: %v\n", agentName, memErr)
 				}
 			} else if cfg.Memory.MaxEntries > 0 && memCount >= cfg.Memory.MaxEntries {
 				if opts.Verbose && opts.Stderr != nil {
-					fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\n", agentName, memCount, cfg.Memory.MaxEntries, agentName)
+					_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\n", agentName, memCount, cfg.Memory.MaxEntries, agentName)
 				}
 			}
 		}
@@ -245,7 +245,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 	if err != nil {
 		durationMs := time.Since(start).Milliseconds()
 		if opts.Verbose && opts.Stderr != nil {
-			fmt.Fprintf(opts.Stderr, "[sub-agent] %q failed: %s\n", agentName, err)
+			_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] %q failed: %s\n", agentName, err)
 		}
 		_ = durationMs
 		return errorResult(call.ID, agentName, err.Error(), opts)
@@ -256,12 +256,12 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 		appendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)
 		if appendErr != nil {
 			if opts.Verbose && opts.Stderr != nil {
-				fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to save memory for %q: %v\n", agentName, appendErr)
+				_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to save memory for %q: %v\n", agentName, appendErr)
 			}
 		} else {
 			if appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {
 				if opts.Verbose && opts.Stderr != nil {
-					fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to save memory for %q: %v\n", agentName, appendErr)
+					_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] Warning: failed to save memory for %q: %v\n", agentName, appendErr)
 				}
 			}
 		}
@@ -270,7 +270,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 	// Step 15: Return result
 	durationMs := time.Since(start).Milliseconds()
 	if opts.Verbose && opts.Stderr != nil {
-		fmt.Fprintf(opts.Stderr, "[sub-agent] %q completed in %dms (%d chars returned)\n", agentName, durationMs, len(resp.Content))
+		_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] %q completed in %dms (%d chars returned)\n", agentName, durationMs, len(resp.Content))
 	}
 
 	return provider.ToolResult{
@@ -345,7 +345,7 @@ func runConversationLoop(ctx context.Context, prov provider.Provider, req *provi
 // errorResult creates an error ToolResult for a sub-agent failure.
 func errorResult(callID, agentName, errMsg string, opts ExecuteOptions) provider.ToolResult {
 	if opts.Verbose && opts.Stderr != nil {
-		fmt.Fprintf(opts.Stderr, "[sub-agent] %q failed: %s\n", agentName, errMsg)
+		_, _ = fmt.Fprintf(opts.Stderr, "[sub-agent] %q failed: %s\n", agentName, errMsg)
 	}
 	return provider.ToolResult{
 		CallID:  callID,

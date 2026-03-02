@@ -267,7 +267,7 @@ func (o *OpenAI) Send(ctx context.Context, req *Request) (*Response, error) {
 			Err:      err,
 		}
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {

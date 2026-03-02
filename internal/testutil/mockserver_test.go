@@ -24,7 +24,7 @@ func TestNewMockLLMServer_ServesResponses(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error on first request: %v", err)
 	}
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	if resp1.StatusCode != 200 {
 		t.Errorf("first response status: got %d, want 200", resp1.StatusCode)
@@ -39,7 +39,7 @@ func TestNewMockLLMServer_ServesResponses(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error on second request: %v", err)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	if resp2.StatusCode != 201 {
 		t.Errorf("second response status: got %d, want 201", resp2.StatusCode)
@@ -60,7 +60,7 @@ func TestNewMockLLMServer_CapturesRequests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if len(mock.Requests) != 1 {
 		t.Fatalf("expected 1 captured request, got %d", len(mock.Requests))
@@ -91,7 +91,7 @@ func TestNewMockLLMServer_RequestCount(t *testing.T) {
 		if err != nil {
 			t.Fatalf("request %d failed: %v", i+1, err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	if got := mock.RequestCount(); got != 2 {
@@ -431,7 +431,7 @@ func TestSlowResponse_Delays(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	elapsed := time.Since(start)
 	if elapsed < 400*time.Millisecond {

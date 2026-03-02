@@ -46,7 +46,7 @@ func ollamaSuccessResponse() map[string]interface{} {
 
 func TestOllama_Send_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -88,10 +88,10 @@ func TestOllama_Send_RequestFormat(t *testing.T) {
 
 		body, _ := io.ReadAll(r.Body)
 		var req map[string]interface{}
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 		gotStream = req["stream"]
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -129,7 +129,7 @@ func TestOllama_Send_SystemMessage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var req map[string]interface{}
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 
 		if msgs, ok := req["messages"].([]interface{}); ok {
 			gotMsgCount = len(msgs)
@@ -140,7 +140,7 @@ func TestOllama_Send_SystemMessage(t *testing.T) {
 			}
 		}
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -168,13 +168,13 @@ func TestOllama_Send_OmitsEmptySystem(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var req map[string]interface{}
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 
 		if msgs, ok := req["messages"].([]interface{}); ok {
 			gotMsgCount = len(msgs)
 		}
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -198,15 +198,15 @@ func TestOllama_Send_OmitsZeroTemperature(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 
 		if opts, ok := raw["options"]; ok {
 			var optsMap map[string]json.RawMessage
-			json.Unmarshal(opts, &optsMap)
+			_ = json.Unmarshal(opts, &optsMap)
 			_, hasTemperature = optsMap["temperature"]
 		}
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -231,15 +231,15 @@ func TestOllama_Send_OmitsZeroMaxTokens(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 
 		if opts, ok := raw["options"]; ok {
 			var optsMap map[string]json.RawMessage
-			json.Unmarshal(opts, &optsMap)
+			_ = json.Unmarshal(opts, &optsMap)
 			_, hasNumPredict = optsMap["num_predict"]
 		}
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -264,10 +264,10 @@ func TestOllama_Send_OmitsOptionsWhenEmpty(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 		_, hasOptions = raw["options"]
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -292,17 +292,17 @@ func TestOllama_Send_IncludesOptions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 
 		if opts, ok := raw["options"]; ok {
 			hasOptions = true
 			var optsMap map[string]json.RawMessage
-			json.Unmarshal(opts, &optsMap)
+			_ = json.Unmarshal(opts, &optsMap)
 			_, hasTemperature = optsMap["temperature"]
 			_, hasNumPredict = optsMap["num_predict"]
 		}
 
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -330,7 +330,7 @@ func TestOllama_Send_IncludesOptions(t *testing.T) {
 func TestOllama_Send_BadRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"invalid model"}`))
+		_, _ = w.Write([]byte(`{"error":"invalid model"}`))
 	}))
 	defer server.Close()
 
@@ -349,7 +349,7 @@ func TestOllama_Send_BadRequest(t *testing.T) {
 func TestOllama_Send_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-		w.Write([]byte(`{"error":"model 'xyz' not found"}`))
+		_, _ = w.Write([]byte(`{"error":"model 'xyz' not found"}`))
 	}))
 	defer server.Close()
 
@@ -429,7 +429,7 @@ func TestOllama_Send_ConnectionRefused(t *testing.T) {
 
 func TestOllama_Send_EmptyContent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "llama3",
 			"message": map[string]string{"content": ""},
 		})
@@ -454,7 +454,7 @@ func TestOllama_Send_EmptyContent(t *testing.T) {
 func TestOllama_Send_ErrorResponseParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"model requires more memory"}`))
+		_, _ = w.Write([]byte(`{"error":"model requires more memory"}`))
 	}))
 	defer server.Close()
 
@@ -473,7 +473,7 @@ func TestOllama_Send_ErrorResponseParsing(t *testing.T) {
 func TestOllama_Send_UnparseableErrorBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte("not json"))
+		_, _ = w.Write([]byte("not json"))
 	}))
 	defer server.Close()
 
@@ -492,7 +492,7 @@ func TestOllama_Send_UnparseableErrorBody(t *testing.T) {
 
 func TestOllama_Send_ZeroTokenCounts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "llama3",
 			"message": map[string]string{"content": "Hello"},
 		})
@@ -519,8 +519,8 @@ func TestOllama_Send_WithTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.Unmarshal(body, &gotBody)
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -616,8 +616,8 @@ func TestOllama_Send_WithoutTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.Unmarshal(body, &gotBody)
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -669,7 +669,7 @@ func TestOllama_Send_ToolCallResponse(t *testing.T) {
 			"prompt_eval_count": 10,
 			"eval_count":        5,
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -720,7 +720,7 @@ func TestOllama_Send_ToolCallResponse(t *testing.T) {
 func TestOllama_Send_NoToolCallsWithTools(t *testing.T) {
 	// Model ignores tools and returns a normal text response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -751,7 +751,7 @@ func TestOllama_Send_ToolResultMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotBody, _ = io.ReadAll(r.Body)
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -795,7 +795,7 @@ func TestOllama_Send_ToolResultMessage(t *testing.T) {
 	// Verify tool result messages (indices 2 and 3)
 	for i, idx := range []int{2, 3} {
 		var msg map[string]interface{}
-		json.Unmarshal(req.Messages[idx], &msg)
+		_ = json.Unmarshal(req.Messages[idx], &msg)
 		if msg["role"] != "tool" {
 			t.Errorf("message %d: expected role 'tool', got %v", idx, msg["role"])
 		}
@@ -816,7 +816,7 @@ func TestOllama_Send_AssistantToolCallMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotBody, _ = io.ReadAll(r.Body)
-		json.NewEncoder(w).Encode(ollamaSuccessResponse())
+		_ = json.NewEncoder(w).Encode(ollamaSuccessResponse())
 	}))
 	defer server.Close()
 
@@ -858,7 +858,7 @@ func TestOllama_Send_AssistantToolCallMessage(t *testing.T) {
 
 	// Verify assistant message with tool_calls (index 1)
 	var assistantMsg map[string]interface{}
-	json.Unmarshal(req.Messages[1], &assistantMsg)
+	_ = json.Unmarshal(req.Messages[1], &assistantMsg)
 
 	if assistantMsg["role"] != "assistant" {
 		t.Errorf("expected role 'assistant', got %v", assistantMsg["role"])

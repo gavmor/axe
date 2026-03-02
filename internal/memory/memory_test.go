@@ -771,7 +771,7 @@ func TestTrimEntries_OriginalUnmodifiedOnWriteError(t *testing.T) {
 	if err := os.Chmod(dir, 0555); err != nil {
 		t.Fatalf("failed to chmod dir: %v", err)
 	}
-	defer os.Chmod(dir, 0755) // restore for cleanup
+	defer func() { _ = os.Chmod(dir, 0755) }() // restore for cleanup
 
 	_, err := TrimEntries(path, 2)
 	if err == nil {
@@ -779,7 +779,7 @@ func TestTrimEntries_OriginalUnmodifiedOnWriteError(t *testing.T) {
 	}
 
 	// Restore permissions to read the file
-	os.Chmod(dir, 0755)
+	_ = os.Chmod(dir, 0755)
 
 	data, err := os.ReadFile(path)
 	if err != nil {

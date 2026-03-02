@@ -33,7 +33,7 @@ var configPathCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), configDir)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), configDir)
 		return nil
 	},
 }
@@ -100,7 +100,7 @@ var configInitCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), configDir)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), configDir)
 		return nil
 	},
 }

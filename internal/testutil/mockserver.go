@@ -54,7 +54,7 @@ func NewMockLLMServer(t *testing.T, responses []MockLLMResponse) *MockLLMServer 
 	}
 
 	m.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer func() { _ = r.Body.Close() }()
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Errorf("mock server: failed to read request body: %v", err)
@@ -96,13 +96,13 @@ func NewMockLLMServer(t *testing.T, responses []MockLLMResponse) *MockLLMServer 
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"id":"msg_mock","type":"message","role":"assistant","content":[{"type":"text","text":""}],"model":"claude-sonnet-4-20250514","stop_reason":"end_turn","usage":{"input_tokens":0,"output_tokens":0}}`)
+			_, _ = fmt.Fprint(w, `{"id":"msg_mock","type":"message","role":"assistant","content":[{"type":"text","text":""}],"model":"claude-sonnet-4-20250514","stop_reason":"end_turn","usage":{"input_tokens":0,"output_tokens":0}}`)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
-		fmt.Fprint(w, resp.Body)
+		_, _ = fmt.Fprint(w, resp.Body)
 	}))
 
 	t.Cleanup(m.Server.Close)

@@ -34,7 +34,7 @@ func TestNewOpenAI_ValidAPIKey(t *testing.T) {
 
 func TestOpenAI_Send_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{
@@ -89,7 +89,7 @@ func TestOpenAI_Send_RequestFormat(t *testing.T) {
 
 		body, _ := io.ReadAll(r.Body)
 		var req map[string]interface{}
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 
 		gotModel, _ = req["model"].(string)
 		if msgs, ok := req["messages"].([]interface{}); ok {
@@ -106,7 +106,7 @@ func TestOpenAI_Send_RequestFormat(t *testing.T) {
 			}
 		}
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []map[string]interface{}{{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"}},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 1},
@@ -157,7 +157,7 @@ func TestOpenAI_Send_OmitsEmptySystem(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var req map[string]interface{}
-		json.Unmarshal(body, &req)
+		_ = json.Unmarshal(body, &req)
 
 		if msgs, ok := req["messages"].([]interface{}); ok {
 			gotMsgCount = len(msgs)
@@ -168,7 +168,7 @@ func TestOpenAI_Send_OmitsEmptySystem(t *testing.T) {
 			}
 		}
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []map[string]interface{}{{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"}},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 1},
@@ -199,10 +199,10 @@ func TestOpenAI_Send_OmitsZeroTemperature(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 		_, hasTemperature = raw["temperature"]
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []map[string]interface{}{{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"}},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 1},
@@ -230,10 +230,10 @@ func TestOpenAI_Send_OmitsZeroMaxTokens(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 		_, hasMaxTokens = raw["max_tokens"]
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []map[string]interface{}{{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"}},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 1},
@@ -261,10 +261,10 @@ func TestOpenAI_Send_IncludesMaxTokens(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
-		json.Unmarshal(body, &raw)
+		_ = json.Unmarshal(body, &raw)
 		_, hasMaxTokens = raw["max_tokens"]
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []map[string]interface{}{{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"}},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 1},
@@ -289,7 +289,7 @@ func TestOpenAI_Send_IncludesMaxTokens(t *testing.T) {
 func TestOpenAI_Send_AuthError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
-		w.Write([]byte(`{"error":{"message":"Invalid API key","type":"invalid_request_error","code":"invalid_api_key"}}`))
+		_, _ = w.Write([]byte(`{"error":{"message":"Invalid API key","type":"invalid_request_error","code":"invalid_api_key"}}`))
 	}))
 	defer server.Close()
 
@@ -403,7 +403,7 @@ func TestOpenAI_Send_Timeout(t *testing.T) {
 
 func TestOpenAI_Send_EmptyChoices(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
 			"choices": []interface{}{},
 			"usage":   map[string]int{"prompt_tokens": 1, "completion_tokens": 0},
@@ -429,7 +429,7 @@ func TestOpenAI_Send_EmptyChoices(t *testing.T) {
 func TestOpenAI_Send_ErrorResponseParsing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte(`{"error":{"message":"Invalid model specified","type":"invalid_request_error","code":null}}`))
+		_, _ = w.Write([]byte(`{"error":{"message":"Invalid model specified","type":"invalid_request_error","code":null}}`))
 	}))
 	defer server.Close()
 
@@ -448,7 +448,7 @@ func TestOpenAI_Send_ErrorResponseParsing(t *testing.T) {
 func TestOpenAI_Send_UnparseableErrorBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte("not json"))
+		_, _ = w.Write([]byte("not json"))
 	}))
 	defer server.Close()
 
@@ -472,9 +472,9 @@ func TestOpenAI_Send_WithTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"},
@@ -485,7 +485,7 @@ func TestOpenAI_Send_WithTools(t *testing.T) {
 	defer server.Close()
 
 	o, _ := NewOpenAI("key", WithOpenAIBaseURL(server.URL))
-	o.Send(context.Background(), &Request{
+	_, _ = o.Send(context.Background(), &Request{
 		Model:    "gpt-4o",
 		Messages: []Message{{Role: "user", Content: "Hi"}},
 		Tools: []Tool{
@@ -517,39 +517,39 @@ func TestOpenAI_Send_WithTools(t *testing.T) {
 
 	// Verify type: "function" wrapper
 	var toolType string
-	json.Unmarshal(tools[0]["type"], &toolType)
+	_ = json.Unmarshal(tools[0]["type"], &toolType)
 	if toolType != "function" {
 		t.Errorf("tools[0].type = %q, want %q", toolType, "function")
 	}
 
 	// Verify function object
 	var fn map[string]json.RawMessage
-	json.Unmarshal(tools[0]["function"], &fn)
+	_ = json.Unmarshal(tools[0]["function"], &fn)
 
 	var name string
-	json.Unmarshal(fn["name"], &name)
+	_ = json.Unmarshal(fn["name"], &name)
 	if name != "call_agent" {
 		t.Errorf("tools[0].function.name = %q, want %q", name, "call_agent")
 	}
 
 	var desc string
-	json.Unmarshal(fn["description"], &desc)
+	_ = json.Unmarshal(fn["description"], &desc)
 	if desc != "Delegate a task to a sub-agent." {
 		t.Errorf("tools[0].function.description = %q, want %q", desc, "Delegate a task to a sub-agent.")
 	}
 
 	// Verify parameters (JSON Schema)
 	var params map[string]json.RawMessage
-	json.Unmarshal(fn["parameters"], &params)
+	_ = json.Unmarshal(fn["parameters"], &params)
 
 	var paramsType string
-	json.Unmarshal(params["type"], &paramsType)
+	_ = json.Unmarshal(params["type"], &paramsType)
 	if paramsType != "object" {
 		t.Errorf("parameters.type = %q, want %q", paramsType, "object")
 	}
 
 	var props map[string]map[string]interface{}
-	json.Unmarshal(params["properties"], &props)
+	_ = json.Unmarshal(params["properties"], &props)
 	if _, ok := props["agent"]; !ok {
 		t.Error("parameters.properties missing 'agent'")
 	}
@@ -562,7 +562,7 @@ func TestOpenAI_Send_WithTools(t *testing.T) {
 
 	// Verify required array
 	var required []string
-	json.Unmarshal(params["required"], &required)
+	_ = json.Unmarshal(params["required"], &required)
 	requiredMap := make(map[string]bool)
 	for _, r := range required {
 		requiredMap[r] = true
@@ -583,9 +583,9 @@ func TestOpenAI_Send_WithoutTools(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"},
@@ -596,7 +596,7 @@ func TestOpenAI_Send_WithoutTools(t *testing.T) {
 	defer server.Close()
 
 	o, _ := NewOpenAI("key", WithOpenAIBaseURL(server.URL))
-	o.Send(context.Background(), &Request{
+	_, _ = o.Send(context.Background(), &Request{
 		Model:    "gpt-4o",
 		Messages: []Message{{Role: "user", Content: "Hi"}},
 		Tools:    nil,
@@ -632,7 +632,7 @@ func TestOpenAI_Send_ToolCallResponse(t *testing.T) {
 			}],
 			"usage": {"prompt_tokens": 10, "completion_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -691,7 +691,7 @@ func TestOpenAI_Send_ToolCallNullContent(t *testing.T) {
 			}],
 			"usage": {"prompt_tokens": 10, "completion_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -738,7 +738,7 @@ func TestOpenAI_Send_InvalidToolCallArguments(t *testing.T) {
 			}],
 			"usage": {"prompt_tokens": 10, "completion_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -788,7 +788,7 @@ func TestOpenAI_Send_ToolsStopReason(t *testing.T) {
 			}],
 			"usage": {"prompt_tokens": 10, "completion_tokens": 5}
 		}`
-		w.Write([]byte(resp))
+		_, _ = w.Write([]byte(resp))
 	}))
 	defer server.Close()
 
@@ -816,9 +816,9 @@ func TestOpenAI_Send_ToolResultMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"},
@@ -829,7 +829,7 @@ func TestOpenAI_Send_ToolResultMessage(t *testing.T) {
 	defer server.Close()
 
 	o, _ := NewOpenAI("key", WithOpenAIBaseURL(server.URL))
-	o.Send(context.Background(), &Request{
+	_, _ = o.Send(context.Background(), &Request{
 		Model: "gpt-4o",
 		Messages: []Message{
 			{Role: "user", Content: "Hi"},
@@ -843,7 +843,7 @@ func TestOpenAI_Send_ToolResultMessage(t *testing.T) {
 	})
 
 	var messages []json.RawMessage
-	json.Unmarshal(gotBody["messages"], &messages)
+	_ = json.Unmarshal(gotBody["messages"], &messages)
 
 	// Messages: system (if present) + user + assistant + tool result(s)
 	// Find the tool messages - they should be role "tool" with tool_call_id
@@ -851,7 +851,7 @@ func TestOpenAI_Send_ToolResultMessage(t *testing.T) {
 	found := false
 	for _, raw := range messages {
 		var msg map[string]interface{}
-		json.Unmarshal(raw, &msg)
+		_ = json.Unmarshal(raw, &msg)
 		if msg["role"] == "tool" {
 			found = true
 			if msg["tool_call_id"] != "call_1" {
@@ -872,9 +872,9 @@ func TestOpenAI_Send_AssistantToolCallMessage(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		json.Unmarshal(body, &gotBody)
+		_ = json.Unmarshal(body, &gotBody)
 
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model": "gpt-4o",
 			"choices": []map[string]interface{}{
 				{"message": map[string]string{"content": "ok"}, "finish_reason": "stop"},
@@ -885,7 +885,7 @@ func TestOpenAI_Send_AssistantToolCallMessage(t *testing.T) {
 	defer server.Close()
 
 	o, _ := NewOpenAI("key", WithOpenAIBaseURL(server.URL))
-	o.Send(context.Background(), &Request{
+	_, _ = o.Send(context.Background(), &Request{
 		Model: "gpt-4o",
 		Messages: []Message{
 			{Role: "user", Content: "Hi"},
@@ -899,16 +899,16 @@ func TestOpenAI_Send_AssistantToolCallMessage(t *testing.T) {
 	})
 
 	var messages []json.RawMessage
-	json.Unmarshal(gotBody["messages"], &messages)
+	_ = json.Unmarshal(gotBody["messages"], &messages)
 
 	// Find assistant message with tool_calls
 	found := false
 	for _, raw := range messages {
 		var msg map[string]json.RawMessage
-		json.Unmarshal(raw, &msg)
+		_ = json.Unmarshal(raw, &msg)
 
 		var role string
-		json.Unmarshal(msg["role"], &role)
+		_ = json.Unmarshal(msg["role"], &role)
 
 		if role == "assistant" {
 			if _, ok := msg["tool_calls"]; !ok {
@@ -918,35 +918,35 @@ func TestOpenAI_Send_AssistantToolCallMessage(t *testing.T) {
 			found = true
 
 			var toolCalls []map[string]json.RawMessage
-			json.Unmarshal(msg["tool_calls"], &toolCalls)
+			_ = json.Unmarshal(msg["tool_calls"], &toolCalls)
 			if len(toolCalls) != 1 {
 				t.Fatalf("len(tool_calls) = %d, want 1", len(toolCalls))
 			}
 
 			var id string
-			json.Unmarshal(toolCalls[0]["id"], &id)
+			_ = json.Unmarshal(toolCalls[0]["id"], &id)
 			if id != "call_1" {
 				t.Errorf("tool_calls[0].id = %q, want %q", id, "call_1")
 			}
 
 			var tcType string
-			json.Unmarshal(toolCalls[0]["type"], &tcType)
+			_ = json.Unmarshal(toolCalls[0]["type"], &tcType)
 			if tcType != "function" {
 				t.Errorf("tool_calls[0].type = %q, want %q", tcType, "function")
 			}
 
 			var fn map[string]json.RawMessage
-			json.Unmarshal(toolCalls[0]["function"], &fn)
+			_ = json.Unmarshal(toolCalls[0]["function"], &fn)
 
 			var fnName string
-			json.Unmarshal(fn["name"], &fnName)
+			_ = json.Unmarshal(fn["name"], &fnName)
 			if fnName != "call_agent" {
 				t.Errorf("tool_calls[0].function.name = %q, want %q", fnName, "call_agent")
 			}
 
 			// Arguments should be a JSON string
 			var argsStr string
-			json.Unmarshal(fn["arguments"], &argsStr)
+			_ = json.Unmarshal(fn["arguments"], &argsStr)
 			var args map[string]interface{}
 			if err := json.Unmarshal([]byte(argsStr), &args); err != nil {
 				t.Fatalf("failed to parse function.arguments: %v", err)

@@ -61,9 +61,9 @@ func TestFiles_EmptyPatterns(t *testing.T) {
 func TestFiles_SimpleGlob(t *testing.T) {
 	dir := t.TempDir()
 	// Create test files
-	os.WriteFile(filepath.Join(dir, "hello.txt"), []byte("hello content"), 0644)
-	os.WriteFile(filepath.Join(dir, "world.txt"), []byte("world content"), 0644)
-	os.WriteFile(filepath.Join(dir, "readme.md"), []byte("markdown"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "hello.txt"), []byte("hello content"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "world.txt"), []byte("world content"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "readme.md"), []byte("markdown"), 0644)
 
 	result, err := Files([]string{"*.txt"}, dir)
 	if err != nil {
@@ -88,11 +88,11 @@ func TestFiles_DoubleStarGlob(t *testing.T) {
 	dir := t.TempDir()
 	// Create nested directory structure
 	sub := filepath.Join(dir, "sub", "deep")
-	os.MkdirAll(sub, 0755)
-	os.WriteFile(filepath.Join(dir, "root.go"), []byte("package main"), 0644)
-	os.WriteFile(filepath.Join(dir, "sub", "mid.go"), []byte("package sub"), 0644)
-	os.WriteFile(filepath.Join(sub, "deep.go"), []byte("package deep"), 0644)
-	os.WriteFile(filepath.Join(sub, "deep.txt"), []byte("not go"), 0644)
+	_ = os.MkdirAll(sub, 0755)
+	_ = os.WriteFile(filepath.Join(dir, "root.go"), []byte("package main"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "sub", "mid.go"), []byte("package sub"), 0644)
+	_ = os.WriteFile(filepath.Join(sub, "deep.go"), []byte("package deep"), 0644)
+	_ = os.WriteFile(filepath.Join(sub, "deep.txt"), []byte("not go"), 0644)
 
 	result, err := Files([]string{"**/*.go"}, dir)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestFiles_InvalidPattern(t *testing.T) {
 func TestFiles_InvalidDoubleStarPattern(t *testing.T) {
 	dir := t.TempDir()
 	// Create a file so the directory isn't empty
-	os.WriteFile(filepath.Join(dir, "file.txt"), []byte("content"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "file.txt"), []byte("content"), 0644)
 
 	_, err := Files([]string{"**/["}, dir)
 	if err == nil {
@@ -150,7 +150,7 @@ func TestFiles_NoMatches(t *testing.T) {
 
 func TestFiles_Deduplication(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "file.txt"), []byte("content"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "file.txt"), []byte("content"), 0644)
 
 	result, err := Files([]string{"*.txt", "file.txt"}, dir)
 	if err != nil {
@@ -163,9 +163,9 @@ func TestFiles_Deduplication(t *testing.T) {
 
 func TestFiles_SortedOutput(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "charlie.txt"), []byte("c"), 0644)
-	os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("a"), 0644)
-	os.WriteFile(filepath.Join(dir, "bravo.txt"), []byte("b"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "charlie.txt"), []byte("c"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("a"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "bravo.txt"), []byte("b"), 0644)
 
 	result, err := Files([]string{"*.txt"}, dir)
 	if err != nil {
@@ -184,8 +184,8 @@ func TestFiles_SkipsBinaryFiles(t *testing.T) {
 	// Create a file with null bytes in the first 512 bytes
 	binaryContent := bytes.Repeat([]byte("A"), 100)
 	binaryContent[50] = 0x00
-	os.WriteFile(filepath.Join(dir, "binary.dat"), binaryContent, 0644)
-	os.WriteFile(filepath.Join(dir, "text.dat"), []byte("hello world"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "binary.dat"), binaryContent, 0644)
+	_ = os.WriteFile(filepath.Join(dir, "text.dat"), []byte("hello world"), 0644)
 
 	result, err := Files([]string{"*.dat"}, dir)
 	if err != nil {
@@ -206,11 +206,11 @@ func TestFiles_SymlinkOutsideWorkdir(t *testing.T) {
 	dir := t.TempDir()
 	outside := t.TempDir()
 	outsideFile := filepath.Join(outside, "secret.txt")
-	os.WriteFile(outsideFile, []byte("secret"), 0644)
+	_ = os.WriteFile(outsideFile, []byte("secret"), 0644)
 
 	// Create symlink inside workdir pointing outside
-	os.Symlink(outsideFile, filepath.Join(dir, "link.txt"))
-	os.WriteFile(filepath.Join(dir, "local.txt"), []byte("local"), 0644)
+	_ = os.Symlink(outsideFile, filepath.Join(dir, "link.txt"))
+	_ = os.WriteFile(filepath.Join(dir, "local.txt"), []byte("local"), 0644)
 
 	result, err := Files([]string{"*.txt"}, dir)
 	if err != nil {
@@ -228,12 +228,12 @@ func TestFiles_PathTraversalBlocked(t *testing.T) {
 	// A pattern like "../*" must not return files outside the workdir.
 	dir := t.TempDir()
 	subDir := filepath.Join(dir, "project")
-	os.MkdirAll(subDir, 0755)
+	_ = os.MkdirAll(subDir, 0755)
 
 	// Create a file in the parent directory (outside workdir)
-	os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("secret data"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("secret data"), 0644)
 	// Create a file inside the workdir
-	os.WriteFile(filepath.Join(subDir, "local.txt"), []byte("local data"), 0644)
+	_ = os.WriteFile(filepath.Join(subDir, "local.txt"), []byte("local data"), 0644)
 
 	result, err := Files([]string{"../*"}, subDir)
 	if err != nil {
@@ -260,8 +260,8 @@ func TestFiles_SymlinkInsideWorkdir(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create a real file and a symlink to it within workdir
-	os.WriteFile(filepath.Join(dir, "real.txt"), []byte("real content"), 0644)
-	os.Symlink(filepath.Join(dir, "real.txt"), filepath.Join(dir, "link.txt"))
+	_ = os.WriteFile(filepath.Join(dir, "real.txt"), []byte("real content"), 0644)
+	_ = os.Symlink(filepath.Join(dir, "real.txt"), filepath.Join(dir, "link.txt"))
 
 	result, err := Files([]string{"*.txt"}, dir)
 	if err != nil {
@@ -302,7 +302,7 @@ func TestSkill_EmptyPath(t *testing.T) {
 func TestSkill_AbsolutePath(t *testing.T) {
 	dir := t.TempDir()
 	skillFile := filepath.Join(dir, "SKILL.md")
-	os.WriteFile(skillFile, []byte("# My Skill\nDo stuff."), 0644)
+	_ = os.WriteFile(skillFile, []byte("# My Skill\nDo stuff."), 0644)
 
 	result, err := Skill(skillFile, "/irrelevant/config/dir")
 	if err != nil {
@@ -316,8 +316,8 @@ func TestSkill_AbsolutePath(t *testing.T) {
 func TestSkill_RelativePath(t *testing.T) {
 	configDir := t.TempDir()
 	skillFile := filepath.Join(configDir, "skills", "test.md")
-	os.MkdirAll(filepath.Join(configDir, "skills"), 0755)
-	os.WriteFile(skillFile, []byte("relative skill"), 0644)
+	_ = os.MkdirAll(filepath.Join(configDir, "skills"), 0755)
+	_ = os.WriteFile(skillFile, []byte("relative skill"), 0644)
 
 	result, err := Skill("skills/test.md", configDir)
 	if err != nil {

@@ -71,7 +71,7 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string) error {
 
 	// Step 2: Check if memory is enabled (Req 3.2)
 	if !cfg.Memory.Enabled {
-		fmt.Fprintf(cmd.ErrOrStderr(), "Warning: agent %q does not have memory enabled. Skipping.\n", agentName)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: agent %q does not have memory enabled. Skipping.\n", agentName)
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string) error {
 	}
 
 	if entries == "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "No memory entries for agent %q. Nothing to do.\n", agentName)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No memory entries for agent %q. Nothing to do.\n", agentName)
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string) error {
 	if err != nil {
 		return &ExitError{Code: 1, Err: err}
 	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Agent: %s\nEntries: %d\n", agentName, count)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Agent: %s\nEntries: %d\n", agentName, count)
 
 	// Step 6: Determine model (Req 3.3)
 	modelFlag, _ := cmd.Flags().GetString("model")
@@ -149,12 +149,12 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string) error {
 	}
 
 	// Step 10: Print analysis (Req 3.9)
-	fmt.Fprintf(cmd.OutOrStdout(), "--- Analysis ---\n%s\n", resp.Content)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "--- Analysis ---\n%s\n", resp.Content)
 
 	// Step 11: Dry-run check (Req 3.10)
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "Dry run: no entries trimmed.\n")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Dry run: no entries trimmed.\n")
 		return nil
 	}
 
@@ -165,21 +165,21 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string) error {
 	} else if cfg.Memory.MaxEntries > 0 {
 		trimTarget = cfg.Memory.MaxEntries
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "No trim target configured (last_n and max_entries are both 0). Skipping trim.\n")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No trim target configured (last_n and max_entries are both 0). Skipping trim.\n")
 		return nil
 	}
 
 	// Step 13: Trim entries (Req 3.12, 3.13)
 	removed, err := memory.TrimEntries(memPath, trimTarget)
 	if err != nil {
-		fmt.Fprintf(cmd.ErrOrStderr(), "Error: %v\n", err)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error: %v\n", err)
 		return &ExitError{Code: 1, Err: err}
 	}
 
 	if removed == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No trimming needed: %d entries within limit (%d).\n", count, trimTarget)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No trimming needed: %d entries within limit (%d).\n", count, trimTarget)
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "Trimmed: %d entries removed, %d entries kept.\n", removed, trimTarget)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Trimmed: %d entries removed, %d entries kept.\n", removed, trimTarget)
 	}
 
 	return nil
@@ -201,18 +201,18 @@ func runAllAgentsGC(cmd *cobra.Command) error {
 	}
 
 	if len(memoryAgents) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "No agents with memory enabled.\n")
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No agents with memory enabled.\n")
 		return nil
 	}
 
 	// Step 3: Process each agent sequentially (Req 5.3, 5.4)
 	failCount := 0
 	for _, cfg := range memoryAgents {
-		fmt.Fprintf(cmd.OutOrStdout(), "=== GC: %s ===\n", cfg.Name)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "=== GC: %s ===\n", cfg.Name)
 
 		if err := runSingleAgentGC(cmd, cfg.Name); err != nil {
 			// Per-agent failure: print error, continue (Req 5.5)
-			fmt.Fprintf(cmd.ErrOrStderr(), "Error: gc failed for agent %q: %v\n", cfg.Name, err)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error: gc failed for agent %q: %v\n", cfg.Name, err)
 			failCount++
 		}
 	}

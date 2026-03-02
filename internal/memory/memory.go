@@ -45,7 +45,7 @@ func AppendEntry(path, task, result string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open memory file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Format timestamp
 	ts := Now().UTC().Format(time.RFC3339)
@@ -197,24 +197,24 @@ func TrimEntries(path string, keepN int) (int, error) {
 	tmpPath := tmpFile.Name()
 
 	if err := tmpFile.Chmod(origInfo.Mode().Perm()); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
 		return 0, fmt.Errorf("failed to set temp file permissions: %w", err)
 	}
 
 	if _, err := tmpFile.WriteString(result.String()); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
 		return 0, fmt.Errorf("failed to write temp file: %w", err)
 	}
 
 	if err := tmpFile.Close(); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return 0, fmt.Errorf("failed to close temp file: %w", err)
 	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return 0, fmt.Errorf("failed to rename temp file: %w", err)
 	}
 

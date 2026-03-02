@@ -120,7 +120,7 @@ func TestGetDataDir_XDGDataHomeEmpty(t *testing.T) {
 func TestGetDataDir_XDGDataHomeUnset(t *testing.T) {
 	// Ensure XDG_DATA_HOME is not set
 	t.Setenv("XDG_DATA_HOME", "")
-	os.Unsetenv("XDG_DATA_HOME")
+	_ = os.Unsetenv("XDG_DATA_HOME")
 
 	got, err := GetDataDir()
 	if err != nil {

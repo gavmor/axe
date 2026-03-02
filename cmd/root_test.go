@@ -67,7 +67,7 @@ func TestRunE_ErrorDoesNotPrintUsage(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", tmpDir)
 	agentsDir := filepath.Join(tmpDir, "axe", "agents")
-	os.MkdirAll(agentsDir, 0755)
+	_ = os.MkdirAll(agentsDir, 0755)
 
 	tests := []struct {
 		name string
