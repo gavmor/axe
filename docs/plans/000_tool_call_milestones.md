@@ -46,14 +46,16 @@ Central registry that maps tool names to definitions and executors. Replaces the
 
 ## M3 — `list_directory` tool
 
-Safest tool to start with. Read-only, no side effects.
+Safest tool to start with. Read-only, no side effects. Also introduces `RegisterAll` (single registration point for all tools) and `validatePath` (shared path security for M4–M7).
 
-- [ ] Create `internal/tool/list_directory.go`
-- [ ] Parameters: `path` (required string, relative to workdir)
-- [ ] Reads directory entries, returns listing with `/` suffix for subdirectories
-- [ ] Path validation: resolve relative to workdir, reject absolute paths and `..` traversal outside workdir
-- [ ] Register in registry
-- [ ] Tests: list existing dir, nested path, empty dir, nonexistent path error, path traversal rejection
+- [x] Create `internal/tool/path_validation.go`: `validatePath(workdir, relPath)` with boundary-safe `isWithinDir` helper — rejects empty paths, absolute paths, `..` traversal, and symlink escapes via `filepath.EvalSymlinks`
+- [x] Create `internal/tool/list_directory.go`: `listDirectoryEntry()` returning `ToolEntry` with `Definition` (name from `toolname.ListDirectory`, `path` parameter) and `Execute` (validates path, reads dir via `os.ReadDir`, formats entries with `/` suffix for subdirectories, one per line)
+- [x] Create `RegisterAll(r *Registry)` in `registry.go` — single registration point; registers `list_directory` via `toolname.ListDirectory` constant. Future milestones add lines here, no call-site changes needed.
+- [x] Wire `cmd/run.go`: call `tool.RegisterAll(registry)` after `tool.NewRegistry()` so top-level agents resolve `tools = ["list_directory"]`
+- [x] Wire `internal/tool/tool.go` `ExecuteCallAgent`: create registry with `RegisterAll`, resolve `cfg.Tools` for sub-agents (error `ToolResult` on failure), pass populated registry to `runConversationLoop`. Injection order: `call_agent` first, then `cfg.Tools`.
+- [x] Tests — `path_validation_test.go` (11 tests): valid relative, dot path, nested, empty, absolute, parent traversal escape, traversal within workdir, symlink within, symlink escape, nonexistent, sibling directory prefix overlap regression
+- [x] Tests — `list_directory_test.go` (9 tests): existing dir with files+subdirs, nested path, empty dir, nonexistent, absolute path rejected, parent traversal rejected, symlink escape rejected, missing path argument, CallID passthrough
+- [x] Tests — `registry_test.go` (3 new): `RegisterAll` registers list_directory, resolves with correct name and `path` parameter, idempotent (double call safe)
 
 ---
 

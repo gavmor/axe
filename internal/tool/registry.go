@@ -91,4 +91,5 @@ func (r *Registry) Dispatch(ctx context.Context, call provider.ToolCall, ec Exec
 // Safe to call multiple times (Register silently replaces duplicates).
 func RegisterAll(r *Registry) {
 	r.Register(toolname.ListDirectory, listDirectoryEntry())
+	r.Register(toolname.ReadFile, readFileEntry())
 }
