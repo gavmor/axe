@@ -1,0 +1,969 @@
+We need to work out how to implement this issue from github: https://github.com/jrswab/axe/issues/7
+
+---
+
+{md}=
+
+Create a spec file for the next incomplete milestone in {md}
+    - if {md} is an empty or blank use current context
+
+## Objective
+- You're job is to create a comprehensive specification document from our research and discussion.
+- **Default flow:** Research → Plan → Verify → Create Document
+- **Orchestrator role:** Parse arguments, validate phase, research domain, present results.
+- **DO NOT do the work:** ONLY make the specification guide as defined below.
+
+## Spec Requirements:
+- Aways read `AGENTS.md` for repository specific information before spec generation.
+- This doc must take all the gathered context and produce a clear, unambiguous specification.
+- Use clear, unambiguous language.
+- No assumptions; be explicit.
+- All edge cases must be documented.
+- Ask questions to the user as needed to be as explicit as possible.
+- No implementation details.
+- **Test real code, not mocks.** When a service or function has actual logic (even stubs that raise exceptions), write unit tests that call the real code directly.
+    - Router tests with mocked services are useful for auth gating, input validation, and error propagation — but if the only thing being tested is "mock returns X, response is X", the test adds no value.
+    - Always ask: "if I delete the code under test, does this test fail?"
+- Run tests with `make test`.
+- Never commit secrets.
+- Place the generated markdown file in `docs/plans/`
+    - If `docs/plans/` does not exist, use `.opencode/plans/`
+- File name must have this formatting: `xxx_nnn_spec.md`
+    - where "xxx" is a number such as 001 and is the next highest number for a spec file.
+    - where "nnn" is the task to achieve.
+
+## For Python Projects
+- Use HTTPException with structured detail containing `message` and `code` keys. Re-raise HTTP exceptions in try-except blocks; log and wrap unexpected exceptions.
+- All functions MUST have type annotations (enforced by mypy). Use modern Python 3.10+ union syntax (`str | None` instead of `Optional[str]`).
+- Use loguru for all logging (`from loguru import logger`).
+- Use Pydantic BaseModel for all request/response schemas.
+- Use pytest fixtures for setup/teardown, tests run against SQLite in-memory database, and authentication is auto-mocked in conftest.py
+
+## Post Spec Generation
+1. Once the spec is complete, ask the user if there are any changes.
+2. If changes are needed update the specification to match.
+3. Repeat steps 1 and 2 until no more changes are needed.
+
+---
+
+## Objective
+- You're job is to create a comprehensive implementation document from our specification document.
+- **Default flow:** Read Spec → Plan Work → Verify Phases → Create Document
+- **Orchestrator role:** Parse arguments, validate phases, research domain, present results.
+- **DO NOT do the work:** ONLY make the specification guide as defined below.
+
+## Implementation Checklist Requirements:
+
+- Use @docs/plans/025_url_fetch_spec.md (or `./.opencode/plans/` if the former does not exist) for the specification of the changes that need to be made.
+    - If @docs/plans/025_url_fetch_spec.md is empty, blank, or omitted, pull the latest `*_spec.md` file and verify it's the correct one with the user.
+- This implementation document is for tracking work across sessions.
+- Use bullet points for each task, with a checkbox beside each bullet: `- [ ] {Task description}`
+- Each task should be something you can implement and test in isolation
+- Tasks ordered by dependency and priority
+- If anything is unclear from the spec file used for reference
+    - ask questions to clearify
+    - then update the spec to match.
+- Place the generated markdown file in `docs/plans/`
+- File name must have this formatting: `xxx_nnn_implement.md`
+    - where "xxx" is @docs/plans/025_url_fetch_spec.md or the number which matches the newest spec file.
+    - where "nnn" is the task to achieve.
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md</path>
+<type>file</type>
+<content>1: # Specification: `url_fetch` Built-in Tool
+2: 
+3: **Status:** Draft
+4: **Version:** 1.0
+5: **Created:** 2026-03-05
+6: **GitHub Issue:** https://github.com/jrswab/axe/issues/7
+7: **Scope:** HTTP GET tool with response truncation, scheme validation, and graceful error handling
+8: 
+9: ---
+10: 
+11: ## 1. Purpose
+12: 
+13: Implement the `url_fetch` tool — a built-in tool registered in the `Registry` that performs an HTTP GET request and returns the response body as text. This tool is needed for feature parity when axe replaces the custom container worker in Agent Engine.
+14: 
+15: This tool follows the same pattern as the M3-M7 tools (`list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`):
+16: 
+17: - **`RegisterAll`** — extended with one additional `r.Register(...)` call
+18: - **`toolname.URLFetch`** — new constant declared in `internal/toolname/toolname.go`
+19: - **`ExecContext`** — reused for `Stderr` and `Verbose` (verbose logging). `Workdir` is not used by this tool.
+20: 
+21: This tool does NOT use `validatePath` or `isWithinDir`. It operates on URLs, not file paths. There is no filesystem interaction.
+22: 
+23: ---
+24: 
+25: ## 2. Design Decisions
+26: 
+27: The following decisions were made during planning and are binding for implementation:
+28: 
+29: 1. **HTTP GET only.** The tool performs a single HTTP GET request. No POST, PUT, DELETE, or other methods. No request body. No custom headers.
+30: 
+31: 2. **Scheme validation.** Only `http://` and `https://` schemes are accepted. Any other scheme (e.g., `file://`, `ftp://`, `data:`) is rejected before any network request is made. This prevents the LLM from reading local files or using unexpected protocols.
+32: 
+33: 3. **URL parsing via `net/url.Parse`.** The `url` argument is parsed using Go's `net/url.Parse()`. If parsing fails, the tool returns an error. The parsed URL's `Scheme` field is checked against `"http"` and `"https"`.
+34: 
+35: 4. **Context-based timeout.** The tool creates an `http.Request` using `http.NewRequestWithContext(ctx, "GET", url, nil)`. The `ctx` parameter from the executor signature is passed directly. This means the tool inherits whatever timeout the caller provides (from the agent's `--timeout` flag). The tool does not impose its own timeout.
+36: 
+37: 5. **`http.DefaultClient` for execution.** The tool uses `http.DefaultClient.Do(req)` to execute the request. No custom transport, no TLS configuration, no cookie jar. `http.DefaultClient` follows redirects (up to 10 by default per Go stdlib).
+38: 
+39: 6. **Response body read limit via `io.LimitReader`.** The response body is read using `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes` is 10000. Reading one byte beyond the limit allows detecting whether truncation occurred. If exactly `maxReadBytes+1` bytes are read, the response is truncated to `maxReadBytes` bytes and a truncation notice is appended.
+40: 
+41: 7. **Truncation notice.** When the response exceeds 10000 bytes, the content is truncated to 10000 bytes and the string `"\n... [response truncated, exceeded 10000 characters]"` is appended. Truncation is byte-level, not rune-aware.
+42: 
+43: 8. **Non-2xx status codes return an error.** If the HTTP response status code is outside the 200-299 range, the tool returns `ToolResult{IsError: true}` with content in the format `"HTTP %d: %s"` where the first value is the status code and the second value is the response body (truncated if needed). The response body is still read and included because it often contains useful error information.
+44: 
+45: 9. **Success result.** For 2xx responses, the tool returns `ToolResult{CallID: call.ID, Content: string(body), IsError: false}` where `body` is the response body after truncation if applicable.
+46: 
+47: 10. **`resp.Body.Close()` via `defer`.** The response body is closed via `defer resp.Body.Close()` immediately after a successful `http.DefaultClient.Do()` call.
+48: 
+49: 11. **Network and DNS errors.** If `http.DefaultClient.Do()` returns an error (DNS failure, connection refused, TLS error, context cancellation), the tool returns `ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}`.
+50: 
+51: 12. **Single parameter: `url`.** The tool has one required parameter named `url` of type `string`. There are no optional parameters. An empty or missing `url` is rejected before any parsing or network request.
+52: 
+53: 13. **`call_agent` remains outside the registry.** Same as all prior tool milestones.
+54: 
+55: 14. **No new external dependencies.** Uses only Go stdlib (`net/http`, `net/url`, `io`, `fmt`, `context`).
+56: 
+57: ---
+58: 
+59: ## 3. Requirements
+60: 
+61: ### 3.1 Tool Name Constant
+62: 
+63: **Requirement 1.1:** Add a new constant `URLFetch = "url_fetch"` to the `const` block in `internal/toolname/toolname.go`.
+64: 
+65: **Requirement 1.2:** Add `URLFetch: true` to the map returned by `ValidNames()` in `internal/toolname/toolname.go`.
+66: 
+67: ### 3.2 `url_fetch` Tool Definition
+68: 
+69: **Requirement 2.1:** Create a file `internal/tool/url_fetch.go`.
+70: 
+71: **Requirement 2.2:** Define an unexported function `urlFetchEntry() ToolEntry` that returns a `ToolEntry` with both `Definition` and `Execute` set to non-nil functions.
+72: 
+73: **Requirement 2.3:** The tool definition returned by the `Definition` function must have:
+74: - `Name`: the value of `toolname.URLFetch` (i.e., `"url_fetch"`)
+75: - `Description`: a clear description for the LLM explaining the tool fetches content from a URL via HTTP GET and returns the response body as text
+76: - `Parameters`: one parameter:
+77:   - `url`:
+78:     - `Type`: `"string"`
+79:     - `Description`: a description stating it is the URL to fetch
+80:     - `Required`: `true`
+81: 
+82: **Requirement 2.4:** The tool name in the definition must use `toolname.URLFetch`, not a hardcoded string.
+83: 
+84: **Requirement 2.5:** `ToolCall.Arguments` is `map[string]string`. The `url` parameter is a string used directly — no type conversion is needed.
+85: 
+86: ### 3.3 `url_fetch` Tool Executor
+87: 
+88: **Requirement 3.1:** The `Execute` function must have the signature: `func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult`.
+89: 
+90: **Requirement 3.2:** Extract the `url` argument from `call.Arguments["url"]`.
+91: 
+92: **Requirement 3.3 (Empty URL Check):** If `url` is an empty string (including when the key is absent from the map), return a `ToolResult` with `CallID: call.ID`, `Content: "url is required"`, `IsError: true`.
+93: 
+94: **Requirement 3.4 (URL Parsing):** Parse the URL using `net/url.Parse(urlStr)`. If parsing fails, return a `ToolResult` with `CallID: call.ID`, `Content` containing the parse error message, `IsError: true`.
+95: 
+96: **Requirement 3.5 (Scheme Validation):** After successful parsing, check that the URL's `Scheme` field is either `"http"` or `"https"`. If not, return a `ToolResult` with `CallID: call.ID`, `Content: "unsupported scheme %q: only http and https are allowed"` (where `%q` is the actual scheme), `IsError: true`. If the scheme is empty (URL has no scheme), the error message must reflect this (the empty string formatted with `%q` produces `""`).
+97: 
+98: **Requirement 3.6 (Create HTTP Request):** Create an HTTP request using `http.NewRequestWithContext(ctx, "GET", urlStr, nil)`. If request creation fails, return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+99: 
+100: **Requirement 3.7 (Execute Request):** Execute the request using `http.DefaultClient.Do(req)`. If execution fails (network error, DNS failure, TLS error, context cancellation), return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+101: 
+102: **Requirement 3.8 (Close Response Body):** Immediately after a successful `Do()` call, defer `resp.Body.Close()`.
+103: 
+104: **Requirement 3.9 (Read Response Body):** Read the response body using `io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))` where `maxReadBytes` is 10000 (a package-level constant). If reading fails, return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+105: 
+106: **Requirement 3.10 (Truncation):** If the length of the read byte slice exceeds `maxReadBytes` (i.e., `len(body) > maxReadBytes`), truncate the slice to `maxReadBytes` bytes and convert to string. Append `"\n... [response truncated, exceeded 10000 characters]"` to the string.
+107: 
+108: **Requirement 3.11 (Non-2xx Status):** If `resp.StatusCode < 200 || resp.StatusCode >= 300`, return a `ToolResult` with `CallID: call.ID`, `Content` in the format `"HTTP %d: %s"` (where the first value is `resp.StatusCode` and the second value is the body string after truncation if applicable), `IsError: true`.
+109: 
+110: **Requirement 3.12 (Success Case):** If the status code is in the 200-299 range, return a `ToolResult` with `CallID: call.ID`, `Content: bodyStr` (after truncation if applicable), `IsError: false`.
+111: 
+112: **Requirement 3.13 (Verbose Logging):** Use `toolVerboseLog(ec, toolname.URLFetch, result, summary)` via a deferred function, consistent with all other tools. The summary should include the URL (or a truncated version for long URLs) and the HTTP status code when available.
+113: 
+114: ### 3.4 Registration in Registry
+115: 
+116: **Requirement 4.1:** Add `r.Register(toolname.URLFetch, urlFetchEntry())` to the `RegisterAll` function in `internal/tool/registry.go`.
+117: 
+118: **Requirement 4.2:** This is the only change to `registry.go`. No call-site changes are needed in `cmd/run.go` or `internal/tool/tool.go`.
+119: 
+120: ### 3.5 Toolname Updates
+121: 
+122: **Requirement 5.1:** The `toolname_test.go` test `TestValidNames_ReturnsExpectedCount` currently asserts `len(names) != 5`. After adding `URLFetch`, this test must be updated to assert `len(names) != 6`.
+123: 
+124: **Requirement 5.2:** The `toolname_test.go` test `TestValidNames_ContainsAllExpectedNames` currently lists 5 tools. After adding `URLFetch`, this test must be updated to include `URLFetch` in the expected list.
+125: 
+126: **Requirement 5.3:** The `toolname_test.go` test `TestConstants_Values` currently has 6 entries (including `CallAgent`). After adding `URLFetch`, this test must be updated to include a case for `{"URLFetch", URLFetch, "url_fetch"}`.
+127: 
+128: ### 3.6 Agent Scaffold Update
+129: 
+130: **Requirement 6.1:** Update the `Scaffold()` function in `internal/agent/agent.go` to include `url_fetch` in the commented tools list. The comment should read:
+131: ```
+132: # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch
+133: ```
+134: 
+135: ---
+136: 
+137: ## 4. Project Structure
+138: 
+139: After completion, the following files will be added or modified:
+140: 
+141: ```
+142: axe/
+143: ├── internal/
+144: │   ├── toolname/
+145: │   │   ├── toolname.go              # MODIFIED: add URLFetch constant + ValidNames entry
+146: │   │   └── toolname_test.go         # MODIFIED: update count (5→6), add URLFetch to expected lists
+147: │   └── tool/
+148: │       ├── url_fetch.go             # NEW: Definition, Execute, helper entry func
+149: │       ├── url_fetch_test.go        # NEW: tests
+150: │       ├── registry.go              # MODIFIED: add one line to RegisterAll
+151: │       ├── registry_test.go         # MODIFIED: add url_fetch registration tests
+152: │       ├── run_command.go           # UNCHANGED
+153: │       ├── edit_file.go             # UNCHANGED
+154: │       ├── write_file.go            # UNCHANGED
+155: │       ├── read_file.go             # UNCHANGED
+156: │       ├── list_directory.go        # UNCHANGED
+157: │       ├── path_validation.go       # UNCHANGED
+158: │       ├── verbose.go               # UNCHANGED
+159: │       ├── tool.go                  # UNCHANGED
+160: │       └── tool_test.go             # UNCHANGED
+161: ├── internal/agent/
+162: │   └── agent.go                     # MODIFIED: update Scaffold() tools comment
+163: ├── go.mod                           # UNCHANGED (no new dependencies)
+164: ├── go.sum                           # UNCHANGED
+165: └── ...                              # all other files UNCHANGED
+166: ```
+167: 
+168: ---
+169: 
+170: ## 5. Edge Cases
+171: 
+172: ### 5.1 URL Argument
+173: 
+174: | Scenario | Input `url` | Behavior |
+175: |----------|------------|----------|
+176: | Empty URL | `""` | Error: `"url is required"` |
+177: | Missing `url` key in Arguments map | Key absent | `call.Arguments["url"]` returns `""` -> Error: `"url is required"` |
+178: | Valid HTTPS URL | `"https://example.com"` | Normal HTTP GET. Returns response body. |
+179: | Valid HTTP URL | `"http://example.com"` | Normal HTTP GET. Returns response body. |
+180: | URL without scheme | `"example.com"` | `net/url.Parse` succeeds but `Scheme` is empty. Error: `unsupported scheme "": only http and https are allowed`. |
+181: | File scheme | `"file:///etc/passwd"` | Error: `unsupported scheme "file": only http and https are allowed`. |
+182: | FTP scheme | `"ftp://files.example.com/data"` | Error: `unsupported scheme "ftp": only http and https are allowed`. |
+183: | Data URI | `"data:text/plain;base64,SGVsbG8="` | Error: `unsupported scheme "data": only http and https are allowed`. |
+184: | Malformed URL | `"://bad"` | `net/url.Parse` returns an error. Error includes parse error message. |
+185: | URL with port | `"http://localhost:8080/path"` | Normal HTTP GET. Port is part of the URL. |
+186: | URL with query string | `"https://api.example.com/data?key=val"` | Normal HTTP GET. Query string is preserved. |
+187: | URL with fragment | `"https://example.com/page#section"` | Normal HTTP GET. Fragment is not sent to server (per HTTP spec). |
+188: | URL with auth | `"https://user:pass@example.com"` | Normal HTTP GET. Go's http client includes auth in the request. |
+189: | Very long URL | 10,000+ character URL | Passed to http client. Server may reject with 414. Tool reports the server's response. |
+190: 
+191: ### 5.2 HTTP Status Codes
+192: 
+193: | Scenario | Status Code | Behavior |
+194: |----------|------------|----------|
+195: | 200 OK | 200 | `IsError: false`. Content is response body. |
+196: | 201 Created | 201 | `IsError: false`. Content is response body. (Any 2xx is success.) |
+197: | 204 No Content | 204 | `IsError: false`. Content is empty string (no body). |
+198: | 301 Moved Permanently | 301 | `http.DefaultClient` follows the redirect (up to 10 hops). Final response determines success/error. |
+199: | 302 Found | 302 | Same as 301 — redirect is followed automatically. |
+200: | 400 Bad Request | 400 | `IsError: true`. Content: `"HTTP 400: <body>"`. |
+201: | 401 Unauthorized | 401 | `IsError: true`. Content: `"HTTP 401: <body>"`. |
+202: | 403 Forbidden | 403 | `IsError: true`. Content: `"HTTP 403: <body>"`. |
+203: | 404 Not Found | 404 | `IsError: true`. Content: `"HTTP 404: <body>"`. |
+204: | 429 Too Many Requests | 429 | `IsError: true`. Content: `"HTTP 429: <body>"`. |
+205: | 500 Internal Server Error | 500 | `IsError: true`. Content: `"HTTP 500: <body>"`. |
+206: | 502 Bad Gateway | 502 | `IsError: true`. Content: `"HTTP 502: <body>"`. |
+207: | 503 Service Unavailable | 503 | `IsError: true`. Content: `"HTTP 503: <body>"`. |
+208: 
+209: ### 5.3 Response Body Truncation
+210: 
+211: | Scenario | Response size | Behavior |
+212: |----------|--------------|----------|
+213: | Response < 10000 bytes | < 10000 bytes | No truncation. Content is full body. |
+214: | Response = 10000 bytes exactly | 10000 bytes | No truncation. The threshold is "exceeds", not "equals". (`io.LimitReader` reads 10001 max; if read returns exactly 10000 bytes, no truncation.) |
+215: | Response > 10000 bytes | > 10000 bytes | Truncated to 10000 bytes. `"\n... [response truncated, exceeded 10000 characters]"` appended. |
+216: | Large response on success (2xx) | > 10000 bytes, status 200 | Content: first 10000 bytes + truncation notice. `IsError: false`. |
+217: | Large response on error (non-2xx) | > 10000 bytes, status 500 | Content: `"HTTP 500: "` + first 10000 bytes + truncation notice. `IsError: true`. |
+218: | Truncation at multi-byte boundary | Truncated mid-UTF-8 sequence | Truncation occurs at the byte level. The resulting string may contain an incomplete UTF-8 sequence. No rune-aware truncation is performed. |
+219: | Empty response body | 0 bytes | Content is empty string (or `"HTTP <code>: "` for non-2xx). |
+220: | Binary response | Binary content | Content contains raw bytes as string. No encoding detection or conversion. |
+221: 
+222: ### 5.4 Network Errors
+223: 
+224: | Scenario | Behavior |
+225: |----------|----------|
+226: | DNS resolution failure | `Do()` returns an error. `IsError: true`. Content: error message (e.g., `"dial tcp: lookup nonexistent.invalid: no such host"`). |
+227: | Connection refused | `Do()` returns an error. `IsError: true`. Content: error message. |
+228: | Connection timeout | `Do()` returns an error (via context deadline). `IsError: true`. Content: error message. |
+229: | TLS certificate error | `Do()` returns an error. `IsError: true`. Content: error message (e.g., `"tls: certificate is not trusted"`). |
+230: | Context cancelled before request | `Do()` returns context error immediately. `IsError: true`. Content: `"context canceled"` or similar. |
+231: | Context cancelled during response read | `io.ReadAll` returns a context error. `IsError: true`. Content: error message. |
+232: | Server closes connection mid-response | `io.ReadAll` returns an error (e.g., `"unexpected EOF"`). `IsError: true`. Content: error message. |
+233: | Redirect loop (> 10 hops) | `Do()` returns an error. `IsError: true`. Content: error message about redirect loop. |
+234: 
+235: ### 5.5 Argument Handling
+236: 
+237: | Scenario | Behavior |
+238: |----------|----------|
+239: | `url` argument present | Normal operation. |
+240: | `url` argument missing from `call.Arguments` | `call.Arguments["url"]` returns `""` -> Error: `"url is required"`. |
+241: | `url` argument is empty string | Error: `"url is required"`. |
+242: | Whitespace-only URL | Passed to `net/url.Parse`. Parsing may succeed or fail depending on content. If scheme validation fails, appropriate error. Not special-cased — the tool does not trim whitespace. |
+243: 
+244: ---
+245: 
+246: ## 6. Constraints
+247: 
+248: **Constraint 1:** No new external dependencies. `go.mod` must remain unchanged.
+249: 
+250: **Constraint 2:** No changes to `internal/provider/` packages.
+251: 
+252: **Constraint 3:** No changes to `cmd/run.go` or `internal/tool/tool.go`. The only modifications outside the new files are: one line added to `RegisterAll` in `registry.go`, constant and `ValidNames` update in `toolname.go`, test updates in `toolname_test.go`, scaffold comment in `agent.go`, and new registration tests in `registry_test.go`.
+253: 
+254: **Constraint 4:** `call_agent` must NOT be registered in the registry. It remains special-cased.
+255: 
+256: **Constraint 5:** No path validation functions (`validatePath`, `isWithinDir`) are used by this tool. It operates on URLs, not file paths.
+257: 
+258: **Constraint 6:** `ToolCall.Arguments` is `map[string]string`. The `url` parameter is a string used directly.
+259: 
+260: **Constraint 7:** The read limit is 10000 bytes. This value is a package-level constant (`maxReadBytes`), not configurable.
+261: 
+262: **Constraint 8:** No response transformation. The response body is returned as-is (after truncation if applicable). No HTML-to-text conversion, no JSON pretty-printing, no encoding detection.
+263: 
+264: **Constraint 9:** No custom User-Agent header. The default Go `http.DefaultClient` User-Agent is used.
+265: 
+266: **Constraint 10:** No retry logic. A single request is made. If it fails, the error is returned.
+267: 
+268: ---
+269: 
+270: ## 7. Testing Requirements
+271: 
+272: ### 7.1 Test Conventions
+273: 
+274: Tests must follow the patterns established in the existing tool tests:
+275: 
+276: - **Package-level tests:** Tests live in the same package (`package tool`)
+277: - **Standard library only:** Use `testing` package. No test frameworks.
+278: - **`net/http/httptest`:** Use `httptest.NewServer` to create real HTTP test servers. Tests must make real HTTP requests against these servers.
+279: - **Descriptive names:** `TestURLFetch_Scenario` with underscores.
+280: - **Test real code, not mocks.** Tests must call actual functions with real HTTP servers. Each test must fail if the code under test is deleted.
+281: - **Red/green TDD:** Write failing tests first, then implement code to make them pass.
+282: - **Run tests with:** `make test`
+283: 
+284: ### 7.2 `internal/tool/url_fetch_test.go` Tests
+285: 
+286: **Test: `TestURLFetch_Success`** — Start an `httptest.NewServer` that returns `"hello world"` with status 200. Call `Execute` with `Arguments: {"url": server.URL}` and `ExecContext{}`. Verify `IsError` is false. Verify `Content` equals `"hello world"`. Verify `CallID` matches the input `call.ID`.
+287: 
+288: **Test: `TestURLFetch_EmptyURL`** — Call `Execute` with empty `Arguments` map `{}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `"url is required"`.
+289: 
+290: **Test: `TestURLFetch_MissingURLArgument`** — Call `Execute` with `Arguments: {"url": ""}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `"url is required"`.
+291: 
+292: **Test: `TestURLFetch_UnsupportedScheme_File`** — Call `Execute` with `Arguments: {"url": "file:///etc/passwd"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`. Verify `Content` contains `"file"`.
+293: 
+294: **Test: `TestURLFetch_UnsupportedScheme_FTP`** — Call `Execute` with `Arguments: {"url": "ftp://example.com/file"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`. Verify `Content` contains `"ftp"`.
+295: 
+296: **Test: `TestURLFetch_NoScheme`** — Call `Execute` with `Arguments: {"url": "example.com"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`.
+297: 
+298: **Test: `TestURLFetch_Non2xxStatus_404`** — Start an `httptest.NewServer` that returns `"not found"` with status 404. Call `Execute` with the server URL. Verify `IsError` is true. Verify `Content` contains `"HTTP 404"`. Verify `Content` contains `"not found"`.
+299: 
+300: **Test: `TestURLFetch_Non2xxStatus_500`** — Start an `httptest.NewServer` that returns `"internal error"` with status 500. Call `Execute` with the server URL. Verify `IsError` is true. Verify `Content` contains `"HTTP 500"`. Verify `Content` contains `"internal error"`.
+301: 
+302: **Test: `TestURLFetch_LargeResponseTruncation`** — Start an `httptest.NewServer` that returns a response body larger than 10000 bytes (e.g., 20000 bytes of `'A'`). Call `Execute` with the server URL. Verify `IsError` is false. Verify `Content` contains `"[response truncated, exceeded 10000 characters]"`. Verify `len(Content)` is greater than 10000 (includes truncation notice) but significantly less than 20000 (proving truncation).
+303: 
+304: **Test: `TestURLFetch_ExactLimitNotTruncated`** — Start an `httptest.NewServer` that returns a response body of exactly 10000 bytes. Call `Execute` with the server URL. Verify `IsError` is false. Verify `Content` does NOT contain `"truncated"`. Verify `len(Content)` equals 10000.
+305: 
+306: **Test: `TestURLFetch_ContextCancellation`** — Start an `httptest.NewServer` with a handler that blocks (e.g., `time.Sleep(10 * time.Second)`). Create a context with a short timeout (e.g., `context.WithTimeout(context.Background(), 50*time.Millisecond)`). Call `Execute` with the server URL. Verify `IsError` is true.
+307: 
+308: **Test: `TestURLFetch_ConnectionRefused`** — Create a URL pointing to `http://127.0.0.1:<closed-port>` (use a port from a recently-closed listener). Call `Execute`. Verify `IsError` is true. Verify `Content` is non-empty (contains an error message).
+309: 
+310: **Test: `TestURLFetch_CallIDPassthrough`** — Start an `httptest.NewServer` that returns 200. Call `Execute` with `call.ID` set to `"uf-unique-42"`. Verify the returned `ToolResult.CallID` equals `"uf-unique-42"`.
+311: 
+312: **Test: `TestURLFetch_EmptyResponseBody`** — Start an `httptest.NewServer` that returns status 200 with an empty body. Call `Execute`. Verify `IsError` is false. Verify `Content` equals `""`.
+313: 
+314: **Test: `TestURLFetch_Non2xxWithLargeBody`** — Start an `httptest.NewServer` that returns status 500 with a body larger than 10000 bytes. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `"HTTP 500"`. Verify `Content` contains `"[response truncated, exceeded 10000 characters]"`.
+315: 
+316: ### 7.3 `internal/toolname/toolname_test.go` Updates
+317: 
+318: **Update: `TestValidNames_ReturnsExpectedCount`** — Change the expected count from 5 to 6.
+319: 
+320: **Update: `TestValidNames_ContainsAllExpectedNames`** — Add `URLFetch` to the `expected` slice.
+321: 
+322: **Update: `TestConstants_Values`** — Add a table entry: `{"URLFetch", URLFetch, "url_fetch"}`.
+323: 
+324: ### 7.4 `RegisterAll` Tests (additions to `registry_test.go`)
+325: 
+326: **Test: `TestRegisterAll_RegistersURLFetch`** — Call `NewRegistry()`, then `RegisterAll(r)`. Verify `r.Has(toolname.URLFetch)` returns true.
+327: 
+328: **Test: `TestRegisterAll_ResolvesURLFetch`** — Call `RegisterAll(r)`, then `r.Resolve([]string{toolname.URLFetch})`. Verify the returned tool has `Name` equal to `toolname.URLFetch` and has a `url` parameter.
+329: 
+330: ### 7.5 Existing Tests
+331: 
+332: All existing tests must continue to pass without modification (except the `toolname_test.go` updates in section 7.3):
+333: 
+334: - `internal/tool/tool_test.go`
+335: - `internal/tool/registry_test.go` (existing tests)
+336: - `internal/tool/run_command_test.go`
+337: - `internal/tool/edit_file_test.go`
+338: - `internal/tool/write_file_test.go`
+339: - `internal/tool/read_file_test.go`
+340: - `internal/tool/list_directory_test.go`
+341: - `internal/tool/path_validation_test.go`
+342: - `internal/tool/verbose_test.go`
+343: - `internal/agent/agent_test.go`
+344: - `cmd/run_test.go`
+345: - `cmd/smoke_test.go`
+346: - `cmd/golden_test.go`
+347: - `cmd/fixture_test.go`
+348: - All other test files in the project.
+349: 
+350: ### 7.6 Running Tests
+351: 
+352: All tests must pass when run with:
+353: 
+354: ```bash
+355: make test
+356: ```
+357: 
+358: ---
+359: 
+360: ## 8. Acceptance Criteria
+361: 
+362: | Criterion | Verification |
+363: |-----------|-------------|
+364: | `internal/tool/url_fetch.go` exists and compiles | `go build ./internal/tool/` succeeds |
+365: | `toolname.URLFetch` constant exists with value `"url_fetch"` | `TestConstants_Values` passes |
+366: | `ValidNames()` includes `url_fetch` | `TestValidNames_ReturnsExpectedCount` (6) and `TestValidNames_ContainsAllExpectedNames` pass |
+367: | `RegisterAll` registers `url_fetch` | `TestRegisterAll_RegistersURLFetch` passes |
+368: | Tool definition has correct name | `toolname.URLFetch` constant used, not hardcoded string |
+369: | Tool definition has 1 parameter | `url` (required) |
+370: | Successful GET returns body | `TestURLFetch_Success` passes |
+371: | Empty URL rejected | `TestURLFetch_EmptyURL` passes |
+372: | Missing URL rejected | `TestURLFetch_MissingURLArgument` passes |
+373: | File scheme rejected | `TestURLFetch_UnsupportedScheme_File` passes |
+374: | FTP scheme rejected | `TestURLFetch_UnsupportedScheme_FTP` passes |
+375: | URL without scheme rejected | `TestURLFetch_NoScheme` passes |
+376: | 404 returns error with status | `TestURLFetch_Non2xxStatus_404` passes |
+377: | 500 returns error with status | `TestURLFetch_Non2xxStatus_500` passes |
+378: | Large response truncated | `TestURLFetch_LargeResponseTruncation` passes |
+379: | Exact limit not truncated | `TestURLFetch_ExactLimitNotTruncated` passes |
+380: | Context timeout handled | `TestURLFetch_ContextCancellation` passes |
+381: | Connection failure handled | `TestURLFetch_ConnectionRefused` passes |
+382: | CallID propagated | `TestURLFetch_CallIDPassthrough` passes |
+383: | Empty body returns empty string | `TestURLFetch_EmptyResponseBody` passes |
+384: | Non-2xx with large body truncated | `TestURLFetch_Non2xxWithLargeBody` passes |
+385: | Registry registers url_fetch | `TestRegisterAll_RegistersURLFetch` passes |
+386: | Registry resolves url_fetch with correct params | `TestRegisterAll_ResolvesURLFetch` passes |
+387: | Scaffold comment lists url_fetch | Manual verification of `Scaffold()` output |
+388: | All existing tests pass | `make test` exits 0 |
+389: 
+390: ---
+391: 
+392: ## 9. Out of Scope
+393: 
+394: The following items are explicitly **not** included in this milestone:
+395: 
+396: 1. HTTP methods other than GET (POST, PUT, DELETE, etc.)
+397: 2. Custom request headers (User-Agent, Authorization, Accept, etc.)
+398: 3. Request body / payload
+399: 4. Response format conversion (HTML-to-text, JSON formatting, Markdown conversion)
+400: 5. Response encoding detection or conversion (charset handling)
+401: 6. Custom TLS configuration or certificate pinning
+402: 7. Retry logic or exponential backoff
+403: 8. Rate limiting or request throttling
+404: 9. Caching of responses
+405: 10. Cookie handling beyond `http.DefaultClient` defaults
+406: 11. Proxy configuration beyond `http.DefaultClient` defaults (which respects `HTTP_PROXY` env)
+407: 12. Custom timeout per tool invocation (inherits caller's context)
+408: 13. Configurable truncation limit (hardcoded at 10000 bytes)
+409: 14. Streaming response output
+410: 15. Following `meta` refresh redirects (only HTTP 3xx redirects are followed)
+411: 16. Robot.txt compliance
+412: 17. Changes to `--dry-run`, `--json`, or `--verbose` output formatting (existing patterns already handle new tools)
+413: 18. Changes to `cmd/run.go` or `internal/tool/tool.go`
+414: 
+415: ---
+416: 
+417: ## 10. References
+418: 
+419: - GitHub Issue: https://github.com/jrswab/axe/issues/7
+420: - M7 Tool Spec (pattern reference): `docs/plans/018_run_command_spec.md`
+421: - `RegisterAll` function: `internal/tool/registry.go:92`
+422: - `ValidNames` function: `internal/toolname/toolname.go:18`
+423: - `provider.Tool` type: `internal/provider/provider.go:34`
+424: - `provider.ToolCall` type: `internal/provider/provider.go:41`
+425: - `provider.ToolResult` type: `internal/provider/provider.go:48`
+426: - `ToolEntry` type: `internal/tool/registry.go:20`
+427: - `ExecContext` type: `internal/tool/registry.go:13`
+428: - `toolVerboseLog` helper: `internal/tool/verbose.go:11`
+429: - `Scaffold` function: `internal/agent/agent.go:157`
+430: - Agent config `tools` field: `internal/agent/agent.go:45`
+431: - Tool call milestones: `docs/plans/000_tool_call_milestones.md`
+432: 
+433: ---
+434: 
+435: ## 11. Notes
+436: 
+437: - **No path validation needed.** Unlike file tools, `url_fetch` operates on URLs, not file paths. The scheme validation (`http`/`https` only) is the security boundary, preventing `file://` access to the local filesystem.
+438: - **`io.LimitReader` for memory safety.** Without a read limit, the LLM could instruct the tool to fetch a multi-gigabyte resource, causing OOM. `io.LimitReader` caps memory usage at `maxReadBytes+1` bytes regardless of response size. The extra byte is used to detect truncation without requiring a second read or `Content-Length` header inspection.
+439: - **`http.DefaultClient` follows redirects.** Go's default client follows up to 10 redirects. This is desirable behavior — the LLM doesn't need to handle redirects manually. If a redirect loop occurs, `Do()` returns an error which the tool reports.
+440: - **Byte-level truncation, not rune-aware.** Consistent with `run_command` (100KB byte truncation). For web content (predominantly ASCII/UTF-8), byte-level truncation rarely breaks in practice. The truncation notice clearly indicates truncation occurred.
+441: - **Non-2xx body is included in error.** Many APIs return useful error information in the response body (JSON error objects, HTML error pages). Including the body (truncated) in the error result gives the LLM actionable information.
+442: - **No `Workdir` usage.** Unlike file tools, `url_fetch` does not use `ExecContext.Workdir`. The tool operates on network URLs, not filesystem paths. `Workdir` is irrelevant.
+443: - **The `RegisterAll` pattern continues.** This adds the sixth tool: `list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`, `url_fetch`.
+444: - **Security model.** The `url_fetch` tool allows the LLM to make arbitrary HTTP GET requests to any `http://` or `https://` URL. This is by design — if an agent has `tools = ["url_fetch"]` in its TOML config, the user has explicitly opted in. Scheme validation prevents `file://` abuse. Network-level restrictions (firewalls, egress policies) are outside axe's scope.
+
+(End of file - total 444 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md</path>
+<type>file</type>
+<content>1: # Specification: `url_fetch` Built-in Tool
+2: 
+3: **Status:** Draft
+4: **Version:** 1.0
+5: **Created:** 2026-03-05
+6: **GitHub Issue:** https://github.com/jrswab/axe/issues/7
+7: **Scope:** HTTP GET tool with response truncation, scheme validation, and graceful error handling
+8: 
+9: ---
+10: 
+11: ## 1. Purpose
+12: 
+13: Implement the `url_fetch` tool — a built-in tool registered in the `Registry` that performs an HTTP GET request and returns the response body as text. This tool is needed for feature parity when axe replaces the custom container worker in Agent Engine.
+14: 
+15: This tool follows the same pattern as the M3-M7 tools (`list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`):
+16: 
+17: - **`RegisterAll`** — extended with one additional `r.Register(...)` call
+18: - **`toolname.URLFetch`** — new constant declared in `internal/toolname/toolname.go`
+19: - **`ExecContext`** — reused for `Stderr` and `Verbose` (verbose logging). `Workdir` is not used by this tool.
+20: 
+21: This tool does NOT use `validatePath` or `isWithinDir`. It operates on URLs, not file paths. There is no filesystem interaction.
+22: 
+23: ---
+24: 
+25: ## 2. Design Decisions
+26: 
+27: The following decisions were made during planning and are binding for implementation:
+28: 
+29: 1. **HTTP GET only.** The tool performs a single HTTP GET request. No POST, PUT, DELETE, or other methods. No request body. No custom headers.
+30: 
+31: 2. **Scheme validation.** Only `http://` and `https://` schemes are accepted. Any other scheme (e.g., `file://`, `ftp://`, `data:`) is rejected before any network request is made. This prevents the LLM from reading local files or using unexpected protocols.
+32: 
+33: 3. **URL parsing via `net/url.Parse`.** The `url` argument is parsed using Go's `net/url.Parse()`. If parsing fails, the tool returns an error. The parsed URL's `Scheme` field is checked against `"http"` and `"https"`.
+34: 
+35: 4. **Context-based timeout.** The tool creates an `http.Request` using `http.NewRequestWithContext(ctx, "GET", url, nil)`. The `ctx` parameter from the executor signature is passed directly. This means the tool inherits whatever timeout the caller provides (from the agent's `--timeout` flag). The tool does not impose its own timeout.
+36: 
+37: 5. **`http.DefaultClient` for execution.** The tool uses `http.DefaultClient.Do(req)` to execute the request. No custom transport, no TLS configuration, no cookie jar. `http.DefaultClient` follows redirects (up to 10 by default per Go stdlib).
+38: 
+39: 6. **Response body read limit via `io.LimitReader`.** The response body is read using `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes` is 10000. Reading one byte beyond the limit allows detecting whether truncation occurred. If exactly `maxReadBytes+1` bytes are read, the response is truncated to `maxReadBytes` bytes and a truncation notice is appended.
+40: 
+41: 7. **Truncation notice.** When the response exceeds 10000 bytes, the content is truncated to 10000 bytes and the string `"\n... [response truncated, exceeded 10000 characters]"` is appended. Truncation is byte-level, not rune-aware.
+42: 
+43: 8. **Non-2xx status codes return an error.** If the HTTP response status code is outside the 200-299 range, the tool returns `ToolResult{IsError: true}` with content in the format `"HTTP %d: %s"` where the first value is the status code and the second value is the response body (truncated if needed). The response body is still read and included because it often contains useful error information.
+44: 
+45: 9. **Success result.** For 2xx responses, the tool returns `ToolResult{CallID: call.ID, Content: string(body), IsError: false}` where `body` is the response body after truncation if applicable.
+46: 
+47: 10. **`resp.Body.Close()` via `defer`.** The response body is closed via `defer resp.Body.Close()` immediately after a successful `http.DefaultClient.Do()` call.
+48: 
+49: 11. **Network and DNS errors.** If `http.DefaultClient.Do()` returns an error (DNS failure, connection refused, TLS error, context cancellation), the tool returns `ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}`.
+50: 
+51: 12. **Single parameter: `url`.** The tool has one required parameter named `url` of type `string`. There are no optional parameters. An empty or missing `url` is rejected before any parsing or network request.
+52: 
+53: 13. **`call_agent` remains outside the registry.** Same as all prior tool milestones.
+54: 
+55: 14. **No new external dependencies.** Uses only Go stdlib (`net/http`, `net/url`, `io`, `fmt`, `context`).
+56: 
+57: ---
+58: 
+59: ## 3. Requirements
+60: 
+61: ### 3.1 Tool Name Constant
+62: 
+63: **Requirement 1.1:** Add a new constant `URLFetch = "url_fetch"` to the `const` block in `internal/toolname/toolname.go`.
+64: 
+65: **Requirement 1.2:** Add `URLFetch: true` to the map returned by `ValidNames()` in `internal/toolname/toolname.go`.
+66: 
+67: ### 3.2 `url_fetch` Tool Definition
+68: 
+69: **Requirement 2.1:** Create a file `internal/tool/url_fetch.go`.
+70: 
+71: **Requirement 2.2:** Define an unexported function `urlFetchEntry() ToolEntry` that returns a `ToolEntry` with both `Definition` and `Execute` set to non-nil functions.
+72: 
+73: **Requirement 2.3:** The tool definition returned by the `Definition` function must have:
+74: - `Name`: the value of `toolname.URLFetch` (i.e., `"url_fetch"`)
+75: - `Description`: a clear description for the LLM explaining the tool fetches content from a URL via HTTP GET and returns the response body as text
+76: - `Parameters`: one parameter:
+77:   - `url`:
+78:     - `Type`: `"string"`
+79:     - `Description`: a description stating it is the URL to fetch
+80:     - `Required`: `true`
+81: 
+82: **Requirement 2.4:** The tool name in the definition must use `toolname.URLFetch`, not a hardcoded string.
+83: 
+84: **Requirement 2.5:** `ToolCall.Arguments` is `map[string]string`. The `url` parameter is a string used directly — no type conversion is needed.
+85: 
+86: ### 3.3 `url_fetch` Tool Executor
+87: 
+88: **Requirement 3.1:** The `Execute` function must have the signature: `func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult`.
+89: 
+90: **Requirement 3.2:** Extract the `url` argument from `call.Arguments["url"]`.
+91: 
+92: **Requirement 3.3 (Empty URL Check):** If `url` is an empty string (including when the key is absent from the map), return a `ToolResult` with `CallID: call.ID`, `Content: "url is required"`, `IsError: true`.
+93: 
+94: **Requirement 3.4 (URL Parsing):** Parse the URL using `net/url.Parse(urlStr)`. If parsing fails, return a `ToolResult` with `CallID: call.ID`, `Content` containing the parse error message, `IsError: true`.
+95: 
+96: **Requirement 3.5 (Scheme Validation):** After successful parsing, check that the URL's `Scheme` field is either `"http"` or `"https"`. If not, return a `ToolResult` with `CallID: call.ID`, `Content: "unsupported scheme %q: only http and https are allowed"` (where `%q` is the actual scheme), `IsError: true`. If the scheme is empty (URL has no scheme), the error message must reflect this (the empty string formatted with `%q` produces `""`).
+97: 
+98: **Requirement 3.6 (Create HTTP Request):** Create an HTTP request using `http.NewRequestWithContext(ctx, "GET", urlStr, nil)`. If request creation fails, return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+99: 
+100: **Requirement 3.7 (Execute Request):** Execute the request using `http.DefaultClient.Do(req)`. If execution fails (network error, DNS failure, TLS error, context cancellation), return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+101: 
+102: **Requirement 3.8 (Close Response Body):** Immediately after a successful `Do()` call, defer `resp.Body.Close()`.
+103: 
+104: **Requirement 3.9 (Read Response Body):** Read the response body using `io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))` where `maxReadBytes` is 10000 (a package-level constant). If reading fails, return a `ToolResult` with `CallID: call.ID`, `Content: err.Error()`, `IsError: true`.
+105: 
+106: **Requirement 3.10 (Truncation):** If the length of the read byte slice exceeds `maxReadBytes` (i.e., `len(body) > maxReadBytes`), truncate the slice to `maxReadBytes` bytes and convert to string. Append `"\n... [response truncated, exceeded 10000 characters]"` to the string.
+107: 
+108: **Requirement 3.11 (Non-2xx Status):** If `resp.StatusCode < 200 || resp.StatusCode >= 300`, return a `ToolResult` with `CallID: call.ID`, `Content` in the format `"HTTP %d: %s"` (where the first value is `resp.StatusCode` and the second value is the body string after truncation if applicable), `IsError: true`.
+109: 
+110: **Requirement 3.12 (Success Case):** If the status code is in the 200-299 range, return a `ToolResult` with `CallID: call.ID`, `Content: bodyStr` (after truncation if applicable), `IsError: false`.
+111: 
+112: **Requirement 3.13 (Verbose Logging):** Use `toolVerboseLog(ec, toolname.URLFetch, result, summary)` via a deferred function, consistent with all other tools. The summary should include the URL (or a truncated version for long URLs) and the HTTP status code when available.
+113: 
+114: ### 3.4 Registration in Registry
+115: 
+116: **Requirement 4.1:** Add `r.Register(toolname.URLFetch, urlFetchEntry())` to the `RegisterAll` function in `internal/tool/registry.go`.
+117: 
+118: **Requirement 4.2:** This is the only change to `registry.go`. No call-site changes are needed in `cmd/run.go` or `internal/tool/tool.go`.
+119: 
+120: ### 3.5 Toolname Updates
+121: 
+122: **Requirement 5.1:** The `toolname_test.go` test `TestValidNames_ReturnsExpectedCount` currently asserts `len(names) != 5`. After adding `URLFetch`, this test must be updated to assert `len(names) != 6`.
+123: 
+124: **Requirement 5.2:** The `toolname_test.go` test `TestValidNames_ContainsAllExpectedNames` currently lists 5 tools. After adding `URLFetch`, this test must be updated to include `URLFetch` in the expected list.
+125: 
+126: **Requirement 5.3:** The `toolname_test.go` test `TestConstants_Values` currently has 6 entries (including `CallAgent`). After adding `URLFetch`, this test must be updated to include a case for `{"URLFetch", URLFetch, "url_fetch"}`.
+127: 
+128: ### 3.6 Agent Scaffold Update
+129: 
+130: **Requirement 6.1:** Update the `Scaffold()` function in `internal/agent/agent.go` to include `url_fetch` in the commented tools list. The comment should read:
+131: ```
+132: # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch
+133: ```
+134: 
+135: ---
+136: 
+137: ## 4. Project Structure
+138: 
+139: After completion, the following files will be added or modified:
+140: 
+141: ```
+142: axe/
+143: ├── internal/
+144: │   ├── toolname/
+145: │   │   ├── toolname.go              # MODIFIED: add URLFetch constant + ValidNames entry
+146: │   │   └── toolname_test.go         # MODIFIED: update count (5→6), add URLFetch to expected lists
+147: │   └── tool/
+148: │       ├── url_fetch.go             # NEW: Definition, Execute, helper entry func
+149: │       ├── url_fetch_test.go        # NEW: tests
+150: │       ├── registry.go              # MODIFIED: add one line to RegisterAll
+151: │       ├── registry_test.go         # MODIFIED: add url_fetch registration tests
+152: │       ├── run_command.go           # UNCHANGED
+153: │       ├── edit_file.go             # UNCHANGED
+154: │       ├── write_file.go            # UNCHANGED
+155: │       ├── read_file.go             # UNCHANGED
+156: │       ├── list_directory.go        # UNCHANGED
+157: │       ├── path_validation.go       # UNCHANGED
+158: │       ├── verbose.go               # UNCHANGED
+159: │       ├── tool.go                  # UNCHANGED
+160: │       └── tool_test.go             # UNCHANGED
+161: ├── internal/agent/
+162: │   └── agent.go                     # MODIFIED: update Scaffold() tools comment
+163: ├── go.mod                           # UNCHANGED (no new dependencies)
+164: ├── go.sum                           # UNCHANGED
+165: └── ...                              # all other files UNCHANGED
+166: ```
+167: 
+168: ---
+169: 
+170: ## 5. Edge Cases
+171: 
+172: ### 5.1 URL Argument
+173: 
+174: | Scenario | Input `url` | Behavior |
+175: |----------|------------|----------|
+176: | Empty URL | `""` | Error: `"url is required"` |
+177: | Missing `url` key in Arguments map | Key absent | `call.Arguments["url"]` returns `""` -> Error: `"url is required"` |
+178: | Valid HTTPS URL | `"https://example.com"` | Normal HTTP GET. Returns response body. |
+179: | Valid HTTP URL | `"http://example.com"` | Normal HTTP GET. Returns response body. |
+180: | URL without scheme | `"example.com"` | `net/url.Parse` succeeds but `Scheme` is empty. Error: `unsupported scheme "": only http and https are allowed`. |
+181: | File scheme | `"file:///etc/passwd"` | Error: `unsupported scheme "file": only http and https are allowed`. |
+182: | FTP scheme | `"ftp://files.example.com/data"` | Error: `unsupported scheme "ftp": only http and https are allowed`. |
+183: | Data URI | `"data:text/plain;base64,SGVsbG8="` | Error: `unsupported scheme "data": only http and https are allowed`. |
+184: | Malformed URL | `"://bad"` | `net/url.Parse` returns an error. Error includes parse error message. |
+185: | URL with port | `"http://localhost:8080/path"` | Normal HTTP GET. Port is part of the URL. |
+186: | URL with query string | `"https://api.example.com/data?key=val"` | Normal HTTP GET. Query string is preserved. |
+187: | URL with fragment | `"https://example.com/page#section"` | Normal HTTP GET. Fragment is not sent to server (per HTTP spec). |
+188: | URL with auth | `"https://user:pass@example.com"` | Normal HTTP GET. Go's http client includes auth in the request. |
+189: | Very long URL | 10,000+ character URL | Passed to http client. Server may reject with 414. Tool reports the server's response. |
+190: 
+191: ### 5.2 HTTP Status Codes
+192: 
+193: | Scenario | Status Code | Behavior |
+194: |----------|------------|----------|
+195: | 200 OK | 200 | `IsError: false`. Content is response body. |
+196: | 201 Created | 201 | `IsError: false`. Content is response body. (Any 2xx is success.) |
+197: | 204 No Content | 204 | `IsError: false`. Content is empty string (no body). |
+198: | 301 Moved Permanently | 301 | `http.DefaultClient` follows the redirect (up to 10 hops). Final response determines success/error. |
+199: | 302 Found | 302 | Same as 301 — redirect is followed automatically. |
+200: | 400 Bad Request | 400 | `IsError: true`. Content: `"HTTP 400: <body>"`. |
+201: | 401 Unauthorized | 401 | `IsError: true`. Content: `"HTTP 401: <body>"`. |
+202: | 403 Forbidden | 403 | `IsError: true`. Content: `"HTTP 403: <body>"`. |
+203: | 404 Not Found | 404 | `IsError: true`. Content: `"HTTP 404: <body>"`. |
+204: | 429 Too Many Requests | 429 | `IsError: true`. Content: `"HTTP 429: <body>"`. |
+205: | 500 Internal Server Error | 500 | `IsError: true`. Content: `"HTTP 500: <body>"`. |
+206: | 502 Bad Gateway | 502 | `IsError: true`. Content: `"HTTP 502: <body>"`. |
+207: | 503 Service Unavailable | 503 | `IsError: true`. Content: `"HTTP 503: <body>"`. |
+208: 
+209: ### 5.3 Response Body Truncation
+210: 
+211: | Scenario | Response size | Behavior |
+212: |----------|--------------|----------|
+213: | Response < 10000 bytes | < 10000 bytes | No truncation. Content is full body. |
+214: | Response = 10000 bytes exactly | 10000 bytes | No truncation. The threshold is "exceeds", not "equals". (`io.LimitReader` reads 10001 max; if read returns exactly 10000 bytes, no truncation.) |
+215: | Response > 10000 bytes | > 10000 bytes | Truncated to 10000 bytes. `"\n... [response truncated, exceeded 10000 characters]"` appended. |
+216: | Large response on success (2xx) | > 10000 bytes, status 200 | Content: first 10000 bytes + truncation notice. `IsError: false`. |
+217: | Large response on error (non-2xx) | > 10000 bytes, status 500 | Content: `"HTTP 500: "` + first 10000 bytes + truncation notice. `IsError: true`. |
+218: | Truncation at multi-byte boundary | Truncated mid-UTF-8 sequence | Truncation occurs at the byte level. The resulting string may contain an incomplete UTF-8 sequence. No rune-aware truncation is performed. |
+219: | Empty response body | 0 bytes | Content is empty string (or `"HTTP <code>: "` for non-2xx). |
+220: | Binary response | Binary content | Content contains raw bytes as string. No encoding detection or conversion. |
+221: 
+222: ### 5.4 Network Errors
+223: 
+224: | Scenario | Behavior |
+225: |----------|----------|
+226: | DNS resolution failure | `Do()` returns an error. `IsError: true`. Content: error message (e.g., `"dial tcp: lookup nonexistent.invalid: no such host"`). |
+227: | Connection refused | `Do()` returns an error. `IsError: true`. Content: error message. |
+228: | Connection timeout | `Do()` returns an error (via context deadline). `IsError: true`. Content: error message. |
+229: | TLS certificate error | `Do()` returns an error. `IsError: true`. Content: error message (e.g., `"tls: certificate is not trusted"`). |
+230: | Context cancelled before request | `Do()` returns context error immediately. `IsError: true`. Content: `"context canceled"` or similar. |
+231: | Context cancelled during response read | `io.ReadAll` returns a context error. `IsError: true`. Content: error message. |
+232: | Server closes connection mid-response | `io.ReadAll` returns an error (e.g., `"unexpected EOF"`). `IsError: true`. Content: error message. |
+233: | Redirect loop (> 10 hops) | `Do()` returns an error. `IsError: true`. Content: error message about redirect loop. |
+234: 
+235: ### 5.5 Argument Handling
+236: 
+237: | Scenario | Behavior |
+238: |----------|----------|
+239: | `url` argument present | Normal operation. |
+240: | `url` argument missing from `call.Arguments` | `call.Arguments["url"]` returns `""` -> Error: `"url is required"`. |
+241: | `url` argument is empty string | Error: `"url is required"`. |
+242: | Whitespace-only URL | Passed to `net/url.Parse`. Parsing may succeed or fail depending on content. If scheme validation fails, appropriate error. Not special-cased — the tool does not trim whitespace. |
+243: 
+244: ---
+245: 
+246: ## 6. Constraints
+247: 
+248: **Constraint 1:** No new external dependencies. `go.mod` must remain unchanged.
+249: 
+250: **Constraint 2:** No changes to `internal/provider/` packages.
+251: 
+252: **Constraint 3:** No changes to `cmd/run.go` or `internal/tool/tool.go`. The only modifications outside the new files are: one line added to `RegisterAll` in `registry.go`, constant and `ValidNames` update in `toolname.go`, test updates in `toolname_test.go`, scaffold comment in `agent.go`, and new registration tests in `registry_test.go`.
+253: 
+254: **Constraint 4:** `call_agent` must NOT be registered in the registry. It remains special-cased.
+255: 
+256: **Constraint 5:** No path validation functions (`validatePath`, `isWithinDir`) are used by this tool. It operates on URLs, not file paths.
+257: 
+258: **Constraint 6:** `ToolCall.Arguments` is `map[string]string`. The `url` parameter is a string used directly.
+259: 
+260: **Constraint 7:** The read limit is 10000 bytes. This value is a package-level constant (`maxReadBytes`), not configurable.
+261: 
+262: **Constraint 8:** No response transformation. The response body is returned as-is (after truncation if applicable). No HTML-to-text conversion, no JSON pretty-printing, no encoding detection.
+263: 
+264: **Constraint 9:** No custom User-Agent header. The default Go `http.DefaultClient` User-Agent is used.
+265: 
+266: **Constraint 10:** No retry logic. A single request is made. If it fails, the error is returned.
+267: 
+268: ---
+269: 
+270: ## 7. Testing Requirements
+271: 
+272: ### 7.1 Test Conventions
+273: 
+274: Tests must follow the patterns established in the existing tool tests:
+275: 
+276: - **Package-level tests:** Tests live in the same package (`package tool`)
+277: - **Standard library only:** Use `testing` package. No test frameworks.
+278: - **`net/http/httptest`:** Use `httptest.NewServer` to create real HTTP test servers. Tests must make real HTTP requests against these servers.
+279: - **Descriptive names:** `TestURLFetch_Scenario` with underscores.
+280: - **Test real code, not mocks.** Tests must call actual functions with real HTTP servers. Each test must fail if the code under test is deleted.
+281: - **Red/green TDD:** Write failing tests first, then implement code to make them pass.
+282: - **Run tests with:** `make test`
+283: 
+284: ### 7.2 `internal/tool/url_fetch_test.go` Tests
+285: 
+286: **Test: `TestURLFetch_Success`** — Start an `httptest.NewServer` that returns `"hello world"` with status 200. Call `Execute` with `Arguments: {"url": server.URL}` and `ExecContext{}`. Verify `IsError` is false. Verify `Content` equals `"hello world"`. Verify `CallID` matches the input `call.ID`.
+287: 
+288: **Test: `TestURLFetch_EmptyURL`** — Call `Execute` with empty `Arguments` map `{}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `"url is required"`.
+289: 
+290: **Test: `TestURLFetch_MissingURLArgument`** — Call `Execute` with `Arguments: {"url": ""}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `"url is required"`.
+291: 
+292: **Test: `TestURLFetch_UnsupportedScheme_File`** — Call `Execute` with `Arguments: {"url": "file:///etc/passwd"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`. Verify `Content` contains `"file"`.
+293: 
+294: **Test: `TestURLFetch_UnsupportedScheme_FTP`** — Call `Execute` with `Arguments: {"url": "ftp://example.com/file"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`. Verify `Content` contains `"ftp"`.
+295: 
+296: **Test: `TestURLFetch_NoScheme`** — Call `Execute` with `Arguments: {"url": "example.com"}`. Verify `IsError` is true. Verify `Content` contains `"unsupported scheme"`.
+297: 
+298: **Test: `TestURLFetch_Non2xxStatus_404`** — Start an `httptest.NewServer` that returns `"not found"` with status 404. Call `Execute` with the server URL. Verify `IsError` is true. Verify `Content` contains `"HTTP 404"`. Verify `Content` contains `"not found"`.
+299: 
+300: **Test: `TestURLFetch_Non2xxStatus_500`** — Start an `httptest.NewServer` that returns `"internal error"` with status 500. Call `Execute` with the server URL. Verify `IsError` is true. Verify `Content` contains `"HTTP 500"`. Verify `Content` contains `"internal error"`.
+301: 
+302: **Test: `TestURLFetch_LargeResponseTruncation`** — Start an `httptest.NewServer` that returns a response body larger than 10000 bytes (e.g., 20000 bytes of `'A'`). Call `Execute` with the server URL. Verify `IsError` is false. Verify `Content` contains `"[response truncated, exceeded 10000 characters]"`. Verify `len(Content)` is greater than 10000 (includes truncation notice) but significantly less than 20000 (proving truncation).
+303: 
+304: **Test: `TestURLFetch_ExactLimitNotTruncated`** — Start an `httptest.NewServer` that returns a response body of exactly 10000 bytes. Call `Execute` with the server URL. Verify `IsError` is false. Verify `Content` does NOT contain `"truncated"`. Verify `len(Content)` equals 10000.
+305: 
+306: **Test: `TestURLFetch_ContextCancellation`** — Start an `httptest.NewServer` with a handler that blocks (e.g., `time.Sleep(10 * time.Second)`). Create a context with a short timeout (e.g., `context.WithTimeout(context.Background(), 50*time.Millisecond)`). Call `Execute` with the server URL. Verify `IsError` is true.
+307: 
+308: **Test: `TestURLFetch_ConnectionRefused`** — Create a URL pointing to `http://127.0.0.1:<closed-port>` (use a port from a recently-closed listener). Call `Execute`. Verify `IsError` is true. Verify `Content` is non-empty (contains an error message).
+309: 
+310: **Test: `TestURLFetch_CallIDPassthrough`** — Start an `httptest.NewServer` that returns 200. Call `Execute` with `call.ID` set to `"uf-unique-42"`. Verify the returned `ToolResult.CallID` equals `"uf-unique-42"`.
+311: 
+312: **Test: `TestURLFetch_EmptyResponseBody`** — Start an `httptest.NewServer` that returns status 200 with an empty body. Call `Execute`. Verify `IsError` is false. Verify `Content` equals `""`.
+313: 
+314: **Test: `TestURLFetch_Non2xxWithLargeBody`** — Start an `httptest.NewServer` that returns status 500 with a body larger than 10000 bytes. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `"HTTP 500"`. Verify `Content` contains `"[response truncated, exceeded 10000 characters]"`.
+315: 
+316: ### 7.3 `internal/toolname/toolname_test.go` Updates
+317: 
+318: **Update: `TestValidNames_ReturnsExpectedCount`** — Change the expected count from 5 to 6.
+319: 
+320: **Update: `TestValidNames_ContainsAllExpectedNames`** — Add `URLFetch` to the `expected` slice.
+321: 
+322: **Update: `TestConstants_Values`** — Add a table entry: `{"URLFetch", URLFetch, "url_fetch"}`.
+323: 
+324: ### 7.4 `RegisterAll` Tests (additions to `registry_test.go`)
+325: 
+326: **Test: `TestRegisterAll_RegistersURLFetch`** — Call `NewRegistry()`, then `RegisterAll(r)`. Verify `r.Has(toolname.URLFetch)` returns true.
+327: 
+328: **Test: `TestRegisterAll_ResolvesURLFetch`** — Call `RegisterAll(r)`, then `r.Resolve([]string{toolname.URLFetch})`. Verify the returned tool has `Name` equal to `toolname.URLFetch` and has a `url` parameter.
+329: 
+330: ### 7.5 Existing Tests
+331: 
+332: All existing tests must continue to pass without modification (except the `toolname_test.go` updates in section 7.3):
+333: 
+334: - `internal/tool/tool_test.go`
+335: - `internal/tool/registry_test.go` (existing tests)
+336: - `internal/tool/run_command_test.go`
+337: - `internal/tool/edit_file_test.go`
+338: - `internal/tool/write_file_test.go`
+339: - `internal/tool/read_file_test.go`
+340: - `internal/tool/list_directory_test.go`
+341: - `internal/tool/path_validation_test.go`
+342: - `internal/tool/verbose_test.go`
+343: - `internal/agent/agent_test.go`
+344: - `cmd/run_test.go`
+345: - `cmd/smoke_test.go`
+346: - `cmd/golden_test.go`
+347: - `cmd/fixture_test.go`
+348: - All other test files in the project.
+349: 
+350: ### 7.6 Running Tests
+351: 
+352: All tests must pass when run with:
+353: 
+354: ```bash
+355: make test
+356: ```
+357: 
+358: ---
+359: 
+360: ## 8. Acceptance Criteria
+361: 
+362: | Criterion | Verification |
+363: |-----------|-------------|
+364: | `internal/tool/url_fetch.go` exists and compiles | `go build ./internal/tool/` succeeds |
+365: | `toolname.URLFetch` constant exists with value `"url_fetch"` | `TestConstants_Values` passes |
+366: | `ValidNames()` includes `url_fetch` | `TestValidNames_ReturnsExpectedCount` (6) and `TestValidNames_ContainsAllExpectedNames` pass |
+367: | `RegisterAll` registers `url_fetch` | `TestRegisterAll_RegistersURLFetch` passes |
+368: | Tool definition has correct name | `toolname.URLFetch` constant used, not hardcoded string |
+369: | Tool definition has 1 parameter | `url` (required) |
+370: | Successful GET returns body | `TestURLFetch_Success` passes |
+371: | Empty URL rejected | `TestURLFetch_EmptyURL` passes |
+372: | Missing URL rejected | `TestURLFetch_MissingURLArgument` passes |
+373: | File scheme rejected | `TestURLFetch_UnsupportedScheme_File` passes |
+374: | FTP scheme rejected | `TestURLFetch_UnsupportedScheme_FTP` passes |
+375: | URL without scheme rejected | `TestURLFetch_NoScheme` passes |
+376: | 404 returns error with status | `TestURLFetch_Non2xxStatus_404` passes |
+377: | 500 returns error with status | `TestURLFetch_Non2xxStatus_500` passes |
+378: | Large response truncated | `TestURLFetch_LargeResponseTruncation` passes |
+379: | Exact limit not truncated | `TestURLFetch_ExactLimitNotTruncated` passes |
+380: | Context timeout handled | `TestURLFetch_ContextCancellation` passes |
+381: | Connection failure handled | `TestURLFetch_ConnectionRefused` passes |
+382: | CallID propagated | `TestURLFetch_CallIDPassthrough` passes |
+383: | Empty body returns empty string | `TestURLFetch_EmptyResponseBody` passes |
+384: | Non-2xx with large body truncated | `TestURLFetch_Non2xxWithLargeBody` passes |
+385: | Registry registers url_fetch | `TestRegisterAll_RegistersURLFetch` passes |
+386: | Registry resolves url_fetch with correct params | `TestRegisterAll_ResolvesURLFetch` passes |
+387: | Scaffold comment lists url_fetch | Manual verification of `Scaffold()` output |
+388: | All existing tests pass | `make test` exits 0 |
+389: 
+390: ---
+391: 
+392: ## 9. Out of Scope
+393: 
+394: The following items are explicitly **not** included in this milestone:
+395: 
+396: 1. HTTP methods other than GET (POST, PUT, DELETE, etc.)
+397: 2. Custom request headers (User-Agent, Authorization, Accept, etc.)
+398: 3. Request body / payload
+399: 4. Response format conversion (HTML-to-text, JSON formatting, Markdown conversion)
+400: 5. Response encoding detection or conversion (charset handling)
+401: 6. Custom TLS configuration or certificate pinning
+402: 7. Retry logic or exponential backoff
+403: 8. Rate limiting or request throttling
+404: 9. Caching of responses
+405: 10. Cookie handling beyond `http.DefaultClient` defaults
+406: 11. Proxy configuration beyond `http.DefaultClient` defaults (which respects `HTTP_PROXY` env)
+407: 12. Custom timeout per tool invocation (inherits caller's context)
+408: 13. Configurable truncation limit (hardcoded at 10000 bytes)
+409: 14. Streaming response output
+410: 15. Following `meta` refresh redirects (only HTTP 3xx redirects are followed)
+411: 16. Robot.txt compliance
+412: 17. Changes to `--dry-run`, `--json`, or `--verbose` output formatting (existing patterns already handle new tools)
+413: 18. Changes to `cmd/run.go` or `internal/tool/tool.go`
+414: 
+415: ---
+416: 
+417: ## 10. References
+418: 
+419: - GitHub Issue: https://github.com/jrswab/axe/issues/7
+420: - M7 Tool Spec (pattern reference): `docs/plans/018_run_command_spec.md`
+421: - `RegisterAll` function: `internal/tool/registry.go:92`
+422: - `ValidNames` function: `internal/toolname/toolname.go:18`
+423: - `provider.Tool` type: `internal/provider/provider.go:34`
+424: - `provider.ToolCall` type: `internal/provider/provider.go:41`
+425: - `provider.ToolResult` type: `internal/provider/provider.go:48`
+426: - `ToolEntry` type: `internal/tool/registry.go:20`
+427: - `ExecContext` type: `internal/tool/registry.go:13`
+428: - `toolVerboseLog` helper: `internal/tool/verbose.go:11`
+429: - `Scaffold` function: `internal/agent/agent.go:157`
+430: - Agent config `tools` field: `internal/agent/agent.go:45`
+431: - Tool call milestones: `docs/plans/000_tool_call_milestones.md`
+432: 
+433: ---
+434: 
+435: ## 11. Notes
+436: 
+437: - **No path validation needed.** Unlike file tools, `url_fetch` operates on URLs, not file paths. The scheme validation (`http`/`https` only) is the security boundary, preventing `file://` access to the local filesystem.
+438: - **`io.LimitReader` for memory safety.** Without a read limit, the LLM could instruct the tool to fetch a multi-gigabyte resource, causing OOM. `io.LimitReader` caps memory usage at `maxReadBytes+1` bytes regardless of response size. The extra byte is used to detect truncation without requiring a second read or `Content-Length` header inspection.
+439: - **`http.DefaultClient` follows redirects.** Go's default client follows up to 10 redirects. This is desirable behavior — the LLM doesn't need to handle redirects manually. If a redirect loop occurs, `Do()` returns an error which the tool reports.
+440: - **Byte-level truncation, not rune-aware.** Consistent with `run_command` (100KB byte truncation). For web content (predominantly ASCII/UTF-8), byte-level truncation rarely breaks in practice. The truncation notice clearly indicates truncation occurred.
+441: - **Non-2xx body is included in error.** Many APIs return useful error information in the response body (JSON error objects, HTML error pages). Including the body (truncated) in the error result gives the LLM actionable information.
+442: - **No `Workdir` usage.** Unlike file tools, `url_fetch` does not use `ExecContext.Workdir`. The tool operates on network URLs, not filesystem paths. `Workdir` is irrelevant.
+443: - **The `RegisterAll` pattern continues.** This adds the sixth tool: `list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`, `url_fetch`.
+444: - **Security model.** The `url_fetch` tool allows the LLM to make arbitrary HTTP GET requests to any `http://` or `https://` URL. This is by design — if an agent has `tools = ["url_fetch"]` in its TOML config, the user has explicitly opted in. Scheme validation prevents `file://` abuse. Network-level restrictions (firewalls, egress policies) are outside axe's scope.
+
+(End of file - total 444 lines)
+</content>
