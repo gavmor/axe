@@ -1,0 +1,1 @@
+Run `make test` after formatting and return only failures/errors, or `ALL_TESTS_PASSED`.
