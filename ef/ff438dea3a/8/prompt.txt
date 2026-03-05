@@ -1,0 +1,1 @@
+Run `go test ./internal/tool -run RegisterAll_.*URLFetch` and return only failed output lines.
