@@ -1,0 +1,1 @@
+Perform a code review of `git diff HEAD` for current working changes. Return a markdown list of only actionable bug findings (critical/high). For each finding include a specific fix prompt with file and line range (format `@path:line`). If no critical findings, return `- No critical issues found.`
