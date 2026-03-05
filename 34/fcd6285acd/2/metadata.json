@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "34fcd6285acd",
+  "session_id": "ses_340961316ffexZeH9K9fgyLUSz",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-05T19:28:08.320283Z",
+  "branch": "iss-008/refusal-detection",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/run.go",
+    "cmd/run_integration_test.go",
+    "cmd/run_test.go",
+    "cmd/testdata/golden/json/basic.json",
+    "cmd/testdata/golden/json/with_files.json",
+    "cmd/testdata/golden/json/with_memory.json",
+    "cmd/testdata/golden/json/with_skill.json",
+    "cmd/testdata/golden/json/with_subagents.json",
+    "cmd/testdata/golden/json/with_tools.json"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "e9e0481155a3",
+  "token_usage": {
+    "input_tokens": 7378,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7168,
+    "output_tokens": 94,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-05T19:28:08.314656Z",
+    "agent_lines": 181,
+    "human_added": 345,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 526,
+    "agent_percentage": 34.4106463878327
+  }
+}

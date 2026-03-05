@@ -1,0 +1,337 @@
+{
+  "info": {
+    "id": "ses_340961316ffexZeH9K9fgyLUSz",
+    "slug": "jolly-falcon",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+    "title": "Regenerate golden JSON (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 6,
+      "deletions": 0,
+      "files": 6
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772737916138,
+      "updated": 1772737919325
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772737916142
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "cmd/testdata/golden/json/basic.json",
+              "before": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "after": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"refused\": false,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/testdata/golden/json/with_files.json",
+              "before": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "after": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"refused\": false,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/testdata/golden/json/with_memory.json",
+              "before": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "after": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"refused\": false,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/testdata/golden/json/with_skill.json",
+              "before": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "after": "{\n  \"content\": \"Hello from mock.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 10,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 5,\n  \"refused\": false,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [],\n  \"tool_calls\": 0\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/testdata/golden/json/with_subagents.json",
+              "before": "{\n  \"content\": \"Final answer from sub-agents.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 20,\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"output_tokens\": 25,\n  \"stop_reason\": \"end_turn\",\n  \"tool_call_details\": [\n    {\n      \"input\": {\n        \"agent\": \"basic\",\n        \"task\": \"hello\"\n      },\n      \"is_error\": false,\n      \"name\": \"call_agent\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    },\n    {\n      \"input\": {\n        \"agent\": \"with_skill\",\n        \"task\": \"hello\"\n      },\n      \"is_error\": false,\n      \"name\": \"call_agent\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    }\n  ],\n  \"tool_calls\": 2\n}\n",
+              "after": "{\n  \"content\": \"Final answer from sub-agents.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 20,\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"output_tokens\": 25,\n  \"refused\": false,\n  \"stop_reason\": \"end_turn\",\n  \"tool_call_details\": [\n    {\n      \"input\": {\n        \"agent\": \"basic\",\n        \"task\": \"hello\"\n      },\n      \"is_error\": false,\n      \"name\": \"call_agent\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    },\n    {\n      \"input\": {\n        \"agent\": \"with_skill\",\n        \"task\": \"hello\"\n      },\n      \"is_error\": false,\n      \"name\": \"call_agent\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    }\n  ],\n  \"tool_calls\": 2\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/testdata/golden/json/with_tools.json",
+              "before": "{\n  \"content\": \"Directory listed successfully.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 20,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 25,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [\n    {\n      \"input\": {\n        \"path\": \".\"\n      },\n      \"is_error\": false,\n      \"name\": \"list_directory\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    }\n  ],\n  \"tool_calls\": 1\n}\n",
+              "after": "{\n  \"content\": \"Directory listed successfully.\",\n  \"duration_ms\": \"{{DURATION_MS}}\",\n  \"input_tokens\": 20,\n  \"model\": \"gpt-4o\",\n  \"output_tokens\": 25,\n  \"refused\": false,\n  \"stop_reason\": \"stop\",\n  \"tool_call_details\": [\n    {\n      \"input\": {\n        \"path\": \".\"\n      },\n      \"is_error\": false,\n      \"name\": \"list_directory\",\n      \"output\": \"{{TOOL_OUTPUT}}\"\n    }\n  ],\n  \"tool_calls\": 1\n}\n",
+              "additions": 1,
+              "deletions": 0,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "REDACTED",
+        "sessionID": "ses_340961316ffexZeH9K9fgyLUSz"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: run `go test ./cmd/ -run TestGolden -update-golden` from repo root to regenerate golden files. Return only failed results/errors; if no failures, reply exactly 'no failures'.",
+          "id": "prt_cbf69ecee0012WPZV68V9LS1CZ",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772737916154,
+          "completed": 1772737919118
+        },
+        "parentID": "REDACTED",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0141085,
+        "tokens": {
+          "total": 7295,
+          "input": 7222,
+          "output": 73,
+          "reasoning": 32,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_340961316ffexZeH9K9fgyLUSz"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "6e814b675ac6a98083cb2c144347756ee20be748",
+          "id": "REDACTED",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Executing bash command with failure-only output**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_022a7a412d9b4c3f0169a9d57c9ef481908a3ce788cb90c4ac",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772737916641,
+            "end": 1772737917576
+          },
+          "id": "prt_cbf69eee1001WPDjHyhk4TSYHD",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "call_rpEzuA9mZ2xpeBljFr5b1x1s",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./cmd/ -run TestGolden -update-golden",
+              "description": "Run golden tests with update flag"
+            },
+            "output": "ok  \tgithub.com/jrswab/axe/cmd\t1.096s\n",
+            "title": "Run golden tests with update flag",
+            "metadata": {
+              "output": "ok  \tgithub.com/jrswab/axe/cmd\t1.096s\n",
+              "exit": 0,
+              "description": "Run golden tests with update flag",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772737917646,
+              "end": 1772737919048
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_022a7a412d9b4c3f0169a9d57d8d248190ac0c84bb2bf64826"
+            }
+          },
+          "id": "prt_cbf69f289001B1Kzq14oitfYkp",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "5f02e3d8250de253be97b908bb924827296fab85",
+          "cost": 0.0141085,
+          "tokens": {
+            "total": 7295,
+            "input": 7222,
+            "output": 73,
+            "reasoning": 32,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cbf69f849001o01PHsqiLla9wC",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "6e814b675ac6a98083cb2c144347756ee20be748",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/basic.json",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/with_files.json",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/with_memory.json",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/with_skill.json",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/with_subagents.json",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/testdata/golden/json/with_tools.json"
+          ],
+          "id": "prt_cbf69f88c001qTgZnoLM07JIlf",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772737919118,
+          "completed": 1772737920180
+        },
+        "parentID": "REDACTED",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0020034,
+        "tokens": {
+          "total": 7345,
+          "input": 156,
+          "output": 21,
+          "reasoning": 13,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cbf69f88e001JoFXCPwz8vwFlM",
+        "sessionID": "ses_340961316ffexZeH9K9fgyLUSz"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "5f02e3d8250de253be97b908bb924827296fab85",
+          "id": "prt_cbf69f98f001hvhedtIDbtXLZB",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "msg_cbf69f88e001JoFXCPwz8vwFlM"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Confirming no-failure response**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0d969e7f89362fea0169a9d57f810481958d5d7dc089d119f8",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772737919527,
+            "end": 1772737920003
+          },
+          "id": "prt_cbf69fa27001FFFUrgToFkO9ck",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "msg_cbf69f88e001JoFXCPwz8vwFlM"
+        },
+        {
+          "type": "text",
+          "text": "no failures",
+          "time": {
+            "start": 1772737920062,
+            "end": 1772737920062
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_0d969e7f89362fea0169a9d57ff9e48195ad0a455a03b3f00c"
+            }
+          },
+          "id": "prt_cbf69fc05001N8lVaSWS615KGL",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "msg_cbf69f88e001JoFXCPwz8vwFlM"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "5f02e3d8250de253be97b908bb924827296fab85",
+          "cost": 0.0020034,
+          "tokens": {
+            "total": 7345,
+            "input": 156,
+            "output": 21,
+            "reasoning": 13,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cbf69fc4d0013nyocX2Zsd3F9y",
+          "sessionID": "ses_340961316ffexZeH9K9fgyLUSz",
+          "messageID": "msg_cbf69f88e001JoFXCPwz8vwFlM"
+        }
+      ]
+    }
+  ]
+}
