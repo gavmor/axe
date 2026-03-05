@@ -1,0 +1,1 @@
+Run `go test ./internal/tool` and return only failed test output. If all pass, return `ALL_TESTS_PASSED`.

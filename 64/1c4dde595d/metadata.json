@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "641c4dde595d",
+  "strategy": "manual-commit",
+  "branch": "iss-007/url-fetch-tool",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "internal/tool/url_fetch.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/64/1c4dde595d/0/metadata.json",
+      "transcript": "/64/1c4dde595d/0/full.jsonl",
+      "context": "/64/1c4dde595d/0/context.md",
+      "content_hash": "/64/1c4dde595d/0/content_hash.txt",
+      "prompt": "/64/1c4dde595d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7347,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7168,
+    "output_tokens": 82,
+    "api_call_count": 2
+  }
+}
