@@ -1,0 +1,143 @@
+# Implementation Instructions
+
+1. Study the spec markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 024
+    - If 024 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_spec.md`
+2. Study implementation plan markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 024
+    - If 024 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_implement.md`
+3. Pick the highest leverage unchecked task
+4. Complete the task
+5. Verify the changes against `## Rules and Checks` listed below.
+5. Update the implementation plan to check off the task you just completed
+6. After completeing a single phase, run the `auto-review` skill.
+7, After the review changes are finished, run `git diff --shortstat` to check the total line changes.
+    - If the changes are greater than 500 stop implementing and let the human know.
+    - If the changes are less than 500 continue to the next phase of the implementation plan
+8. Repeat steps 3-7 until all phases are complete.
+
+## Rules
+
+- Use agents for exploring the codebase
+    - Each agent must only have one explicit task.
+    - Each agent must only return the information that fulfills that task.
+    - Spin off multiple agents in parallel for tasks that do not depend on another task.
+- Use red/greed TDD
+- If there are any SQL/ORM changes, please compare them against working queries in the codebase for syntax correctness.
+- Verify that the unit tests for functions with updates have a test case to that will verify the change.
+- Verify that all new code has an unbiased unit test.
+- Verify that no import paths were changed for files in the `/lambdas` directory.
+    - If tests require different import resolution than production, fix the test infrastructure (conftest.py, pytest.ini) without modifying the Lambda source imports.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+
+---
+
+is there any work left do to in @docs/plans/024_refusal_detection_implement.md ?
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_implement.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_implement.md</path>
+<type>file</type>
+<content>1: # Implementation: Refusal Detection with `refused` Flag in `--json` Output
+2: 
+3: **Spec:** [024_refusal_detection_spec.md](./024_refusal_detection_spec.md)
+4: **GitHub Issue:** [#8](https://github.com/jrswab/axe/issues/8)
+5: **Created:** 2026-03-05
+6: 
+7: ---
+8: 
+9: ## Phase 1: Refusal Detection Package (TDD)
+10: 
+11: Create `internal/refusal/` package with `Detect(content string) bool`.
+12: 
+13: ### 1.1 Write Tests (Red)
+14: 
+15: - [x] Create `internal/refusal/refusal_test.go` with `package refusal`
+16: - [x] Implement `TestDetect_EmptyString` — verify `Detect("")` returns `false`
+17: - [x] Implement `TestDetect_NormalContent` — table-driven, verify `false` for all 7 normal strings from spec section 7.2
+18: - [x] Implement `TestDetect_SimpleRefusals` — table-driven, verify `true` for all 9 refusal patterns from Requirement 1.2
+19: - [x] Implement `TestDetect_CaseInsensitive` — table-driven, verify `true` for 4 varied-casing refusals
+20: - [x] Implement `TestDetect_RefusalAfterPreamble` — table-driven, verify `true` for 4 preamble+refusal strings
+21: - [x] Implement `TestDetect_AsAnAI_Compound` — table-driven, verify `true` for 4 compound patterns
+22: - [x] Implement `TestDetect_AsAnAI_NoRefusalIndicator` — table-driven, verify `false` for 2 `"as an ai"` strings without refusal indicators
+23: - [x] Implement `TestDetect_WhitespaceOnly` — verify `Detect("   \n\t  ")` returns `false`
+24: - [x] Implement `TestDetect_LongContent_RefusalAtEnd` — 10,000 chars of normal text + refusal at end, verify `true`
+25: - [x] Implement `TestDetect_LongContent_NoRefusal` — 10,000 chars of normal text, no refusal, verify `false`
+26: - [x] Run tests, confirm all fail (red phase)
+27: 
+28: ### 1.2 Implement Detection (Green)
+29: 
+30: - [x] Create `internal/refusal/refusal.go` with `package refusal`
+31: - [x] Define `Detect(content string) bool` function
+32: - [x] Add the 9 simple refusal patterns as a `[]string` slice (lowercase): `"i cannot"`, `"i can't"`, `"i'm unable to"`, `"i am unable to"`, `"i'm not able to"`, `"i am not able to"`, `"i must decline"`, `"i don't have the ability"`, `"i do not have the ability"`
+33: - [x] Add the 7 compound refusal indicators as a `[]string` slice (lowercase): `"i cannot"`, `"i can't"`, `"i'm unable"`, `"i am unable"`, `"i'm not able"`, `"i am not able"`, `"i must decline"`
+34: - [x] Implement: `strings.ToLower` the content once, then iterate simple patterns with `strings.Contains`; if none match, check compound logic (`"as an ai"` present AND any compound indicator present)
+35: - [x] Ensure function is pure/read-only — no modification of input, no side effects
+36: - [x] No regex — only `strings.ToLower` + `strings.Contains`
+37: - [x] Run tests, confirm all pass (green phase)
+38: 
+39: ---
+40: 
+41: ## Phase 2: JSON Envelope Integration (TDD)
+42: 
+43: Wire `refusal.Detect` into the `--json` output in `cmd/run.go`.
+44: 
+45: ### 2.1 Write/Update Tests (Red)
+46: 
+47: - [x] In `cmd/run_test.go`: modify `TestRun_JSONOutput` (~line 467) to assert `"refused"` field is present and equals `false` for the mock response `"Hello from mock"`
+48: - [x] In `cmd/run_integration_test.go`: modify `TestIntegration_JSONOutput_Structure` (~line 663) to add `"refused"` to the `requiredFields` slice and verify value is `false`
+49: - [x] In `cmd/run_integration_test.go`: add `TestIntegration_JSONOutput_RefusalDetected` — mock server returns `"I'm sorry, but I cannot assist with that request."`, run with `--json`, verify `"refused": true`, all other fields present, exit code 0
+50: - [x] In `cmd/run_integration_test.go`: add `TestIntegration_JSONOutput_RefusalDetected_WithToolCalls` — mock server: turn 1 returns tool call, turn 2 returns refusal, verify `"refused": true`, `"tool_calls": 1`, exit code 0
+51: - [x] In `cmd/run_integration_test.go`: add `TestIntegration_JSONOutput_NoRefusal_WithToolCalls` — mock server: turn 1 returns tool call, turn 2 returns normal response, verify `"refused": false`, `"tool_calls": 1`, exit code 0
+52: - [x] Run tests, confirm new/modified tests fail (red phase)
+53: 
+54: ### 2.2 Implement Envelope Change (Green)
+55: 
+56: - [x] In `cmd/run.go`: add import for `"github.com/jrswab/axe/internal/refusal"`
+57: - [x] In `cmd/run.go` (~line 420): add `"refused": refusal.Detect(resp.Content)` to the envelope `map[string]interface{}`
+58: - [x] Run tests, confirm all pass (green phase)
+59: 
+60: ---
+61: 
+62: ## Phase 3: Golden File Updates
+63: 
+64: Update all golden JSON files to include the new `"refused"` field.
+65: 
+66: - [x] Run golden tests with `-update-golden` flag to regenerate all golden JSON files: `go test ./cmd/ -run TestGolden -update-golden`
+67: - [x] Verify `basic.json` includes `"refused": false`
+68: - [x] Verify `with_skill.json` includes `"refused": false`
+69: - [x] Verify `with_files.json` includes `"refused": false`
+70: - [x] Verify `with_memory.json` includes `"refused": false`
+71: - [x] Verify `with_subagents.json` includes `"refused": false`
+72: - [x] Verify `with_tools.json` includes `"refused": false`
+73: - [x] Verify `maskJSONOutput` in `cmd/golden_test.go` does NOT need changes (`"refused"` is deterministic, no masking needed)
+74: 
+75: ---
+76: 
+77: ## Phase 4: Full Test Suite Validation
+78: 
+79: - [x] Run `make test` — confirm zero failures
+80: - [x] Verify no new dependencies in `go.mod` (only `spf13/cobra` and `BurntSushi/toml`)
+81: - [x] Verify plain text output (without `--json`) is unchanged — no refusal information leaks to stdout/stderr
+82: - [x] Verify exit code is 0 for refusal responses
+83: 
+84: ---
+85: 
+86: ## Constraints Checklist
+87: 
+88: - [x] No new external dependencies (`go.mod` unchanged)
+89: - [x] No regex in `internal/refusal/` — only `strings.ToLower` + `strings.Contains`
+90: - [x] `Detect` is pure/read-only (no side effects, no input modification)
+91: - [x] `"refused"` field only in `--json` output, never in plain text, stderr, verbose, or dry-run
+92: - [x] `"refused"` always present in `--json` (never conditionally omitted)
+93: - [x] Exit codes unchanged (refusals still exit 0)
+94: - [x] Memory unchanged (refusals still appended)
+95: - [x] Pattern list is hard-coded (not configurable)
+96: - [x] Cross-platform: Linux, macOS, Windows (stdlib string ops only)
+
+(End of file - total 96 lines)
+</content>
+
+---
+
+commit the changes

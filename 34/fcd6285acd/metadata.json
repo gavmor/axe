@@ -3,7 +3,7 @@
   "checkpoint_id": "34fcd6285acd",
   "strategy": "manual-commit",
   "branch": "iss-008/refusal-detection",
-  "checkpoints_count": 5,
+  "checkpoints_count": 7,
   "files_touched": [
     "cmd/run.go",
     "cmd/run_integration_test.go",
@@ -13,7 +13,10 @@
     "cmd/testdata/golden/json/with_memory.json",
     "cmd/testdata/golden/json/with_skill.json",
     "cmd/testdata/golden/json/with_subagents.json",
-    "cmd/testdata/golden/json/with_tools.json"
+    "cmd/testdata/golden/json/with_tools.json",
+    "docs/plans/024_refusal_detection_implement.md",
+    "internal/refusal/refusal.go",
+    "internal/refusal/refusal_test.go"
   ],
   "sessions": [
     {
@@ -50,13 +53,20 @@
       "context": "/34/fcd6285acd/4/context.md",
       "content_hash": "/34/fcd6285acd/4/content_hash.txt",
       "prompt": "/34/fcd6285acd/4/prompt.txt"
+    },
+    {
+      "metadata": "/34/fcd6285acd/5/metadata.json",
+      "transcript": "/34/fcd6285acd/5/full.jsonl",
+      "context": "/34/fcd6285acd/5/context.md",
+      "content_hash": "/34/fcd6285acd/5/content_hash.txt",
+      "prompt": "/34/fcd6285acd/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 53535,
+    "input_tokens": 154241,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 84864,
-    "output_tokens": 2420,
-    "api_call_count": 15
+    "cache_read_tokens": 1254912,
+    "output_tokens": 17275,
+    "api_call_count": 51
   }
 }
