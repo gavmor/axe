@@ -1,0 +1,709 @@
+## Objective
+- You're job is to create a comprehensive implementation document from our specification document.
+- **Default flow:** Read Spec → Plan Work → Verify Phases → Create Document
+- **Orchestrator role:** Parse arguments, validate phases, research domain, present results.
+- **DO NOT do the work:** ONLY make the specification guide as defined below.
+
+## Implementation Checklist Requirements:
+
+- Use @docs/plans/024_refusal_detection_spec.md (or `./.opencode/plans/` if the former does not exist) for the specification of the changes that need to be made.
+    - If @docs/plans/024_refusal_detection_spec.md is empty, blank, or omitted, pull the latest `*_spec.md` file and verify it's the correct one with the user.
+- This implementation document is for tracking work across sessions.
+- Use bullet points for each task, with a checkbox beside each bullet: `- [ ] {Task description}`
+- Each task should be something you can implement and test in isolation
+- Tasks ordered by dependency and priority
+- If anything is unclear from the spec file used for reference
+    - ask questions to clearify
+    - then update the spec to match.
+- Place the generated markdown file in `docs/plans/`
+- File name must have this formatting: `xxx_nnn_implement.md`
+    - where "xxx" is @docs/plans/024_refusal_detection_spec.md or the number which matches the newest spec file.
+    - where "nnn" is the task to achieve.
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_spec.md</path>
+<type>file</type>
+<content>1: # Specification: Refusal Detection with `refused` Flag in `--json` Output
+2: 
+3: **Status:** Draft
+4: **Version:** 1.0
+5: **Created:** 2026-03-05
+6: **GitHub Issue:** [#8](https://github.com/jrswab/axe/issues/8)
+7: **Scope:** Detect LLM refusals and surface a `"refused"` boolean field in `--json` output
+8: 
+9: ---
+10: 
+11: ## 1. Purpose
+12: 
+13: When an LLM refuses a request (e.g., "I cannot help with that"), axe currently treats it as a normal successful completion. The `content` field contains the refusal text, `stop_reason` is `"stop"` or `"end_turn"`, and exit code is 0. There is no way to programmatically distinguish a refusal from a real answer without inspecting the content.
+14: 
+15: Orchestration systems (like Agent Engine) need to detect refusals to mark runs appropriately, alert users, and potentially retry with different prompts. Centralizing this detection inside axe keeps the logic in one place rather than duplicated across every integration.
+16: 
+17: This milestone adds a `"refused"` boolean field to the `--json` output envelope. The field is always present when `--json` is used. It is `true` when the LLM response content matches common refusal patterns, `false` otherwise.
+18: 
+19: This milestone does **not** change exit codes, modify `stop_reason`, add a CLI flag to control refusal detection, or surface refusal status outside of `--json` output.
+20: 
+21: ---
+22: 
+23: ## 2. Design Decisions
+24: 
+25: The following decisions were made during planning and are binding for implementation:
+26: 
+27: 1. **Detection scope:** Refusal patterns are matched against the full response content, not just the beginning. Refusals sometimes come after a preamble (e.g., "I appreciate your question, however I cannot...").
+28: 2. **Field presence:** The `"refused"` field is always present in `--json` output — both `true` and `false` values are emitted. It is never conditionally omitted. This provides a consistent schema for consumers.
+29: 3. **Exit code unchanged:** A refusal is still a successful LLM call. The exit code remains 0. Orchestration systems use the `"refused"` field, not the exit code, to distinguish refusals.
+30: 4. **`stop_reason` unchanged:** The original `stop_reason` from the LLM is preserved. No synthetic `"refusal"` stop reason is introduced.
+31: 5. **No effect on non-JSON output:** When `--json` is not used, stdout contains only the raw LLM content. Refusal detection does not affect plain text output in any way. Axe output must remain safe to pipe.
+32: 6. **Pattern-based, not exhaustive:** The detection uses a fixed set of common refusal patterns. False positives are less harmful than false negatives for this use case.
+33: 7. **Case-insensitive matching:** All pattern matching is case-insensitive.
+34: 8. **New package:** Refusal detection logic lives in a new `internal/refusal` package to keep it isolated and testable, separate from the CLI layer.
+35: 9. **No new external dependencies.** Continue using stdlib only plus existing `spf13/cobra` and `BurntSushi/toml`.
+36: 
+37: ---
+38: 
+39: ## 3. Requirements
+40: 
+41: ### 3.1 Refusal Detection Package (`internal/refusal/`)
+42: 
+43: **Requirement 1.1:** Create a new package `internal/refusal` with a single exported function:
+44: 
+45: ```go
+46: func Detect(content string) bool
+47: ```
+48: 
+49: - Returns `true` if the content matches any common LLM refusal pattern.
+50: - Returns `false` if the content does not match any refusal pattern.
+51: - Returns `false` for empty string input.
+52: - Matching is case-insensitive.
+53: - Matching is performed against the full content string (not just the beginning).
+54: 
+55: **Requirement 1.2:** The function must check for the following refusal patterns (case-insensitive substring matching):
+56: 
+57: | Pattern | Rationale |
+58: |---------|-----------|
+59: | `"i cannot"` | Direct refusal |
+60: | `"i can't"` | Contraction form of "I cannot" |
+61: | `"i'm unable to"` | Polite refusal |
+62: | `"i am unable to"` | Expanded form |
+63: | `"i'm not able to"` | Alternative phrasing |
+64: | `"i am not able to"` | Expanded form |
+65: | `"i must decline"` | Formal refusal |
+66: | `"i don't have the ability"` | Capability-based refusal |
+67: | `"i do not have the ability"` | Expanded form |
+68: 
+69: **Requirement 1.3:** In addition to the simple substring patterns above, the function must detect the compound pattern where the content contains `"as an ai"` AND also contains at least one of these refusal indicators (case-insensitive):
+70: 
+71: - `"i cannot"`
+72: - `"i can't"`
+73: - `"i'm unable"`
+74: - `"i am unable"`
+75: - `"i'm not able"`
+76: - `"i am not able"`
+77: - `"i must decline"`
+78: 
+79: The compound `"as an ai"` pattern only triggers a refusal when **both** the `"as an ai"` marker and a refusal indicator are present. `"as an ai"` alone is not a refusal.
+80: 
+81: **Requirement 1.4:** The detection function must use `strings.ToLower` for case normalization and `strings.Contains` for substring matching. No regular expressions.
+82: 
+83: **Requirement 1.5:** The detection function must not modify the input content. It is a pure read-only check.
+84: 
+85: ### 3.2 JSON Output Envelope (`cmd/run.go`)
+86: 
+87: **Requirement 2.1:** When the `--json` flag is set, the JSON output envelope must include a `"refused"` field of type boolean. The field must always be present (never omitted).
+88: 
+89: **Requirement 2.2:** The `"refused"` field value is the return value of `refusal.Detect(resp.Content)` where `resp.Content` is the final LLM response content.
+90: 
+91: **Requirement 2.3:** The field must appear in the envelope alongside existing fields. The complete `--json` envelope schema after this change:
+92: 
+93: ```json
+94: {
+95:   "model": "<string>",
+96:   "content": "<string>",
+97:   "input_tokens": "<int>",
+98:   "output_tokens": "<int>",
+99:   "stop_reason": "<string>",
+100:   "duration_ms": "<int>",
+101:   "tool_calls": "<int>",
+102:   "tool_call_details": "<array>",
+103:   "refused": "<bool>"
+104: }
+105: ```
+106: 
+107: **Requirement 2.4:** The `"refused"` field must work correctly for both single-shot responses (no tools) and conversation loop responses (with tools). In both cases, the detection runs against the final `resp.Content`.
+108: 
+109: ### 3.3 Golden File Updates
+110: 
+111: **Requirement 3.1:** All golden JSON files in `cmd/testdata/golden/json/` must be updated to include the `"refused": false` field. This ensures golden file tests pass after the schema change.
+112: 
+113: **Requirement 3.2:** The golden file masking function `maskJSONOutput` in `cmd/golden_test.go` does not require changes — the `"refused"` field is deterministic (always `false` for normal mock responses) and does not need masking.
+114: 
+115: ---
+116: 
+117: ## 4. Project Structure
+118: 
+119: After completion, the following files will be added or modified:
+120: 
+121: ```
+122: axe/
+123: ├── cmd/
+124: │   ├── run.go               # MODIFIED: add "refused" field to JSON envelope
+125: │   ├── run_test.go           # MODIFIED: update TestRun_JSONOutput to verify "refused" field
+126: │   ├── run_integration_test.go # MODIFIED: update JSON tests, add refusal detection test
+127: │   ├── golden_test.go        # UNCHANGED
+128: │   └── ...                   # all other cmd files UNCHANGED
+129: ├── internal/
+130: │   ├── refusal/
+131: │   │   ├── refusal.go        # NEW: Detect function with refusal patterns
+132: │   │   └── refusal_test.go   # NEW: table-driven tests for Detect
+133: │   ├── agent/                # UNCHANGED
+134: │   ├── config/               # UNCHANGED
+135: │   ├── memory/               # UNCHANGED
+136: │   ├── provider/             # UNCHANGED
+137: │   ├── resolve/              # UNCHANGED
+138: │   ├── tool/                 # UNCHANGED
+139: │   ├── toolname/             # UNCHANGED
+140: │   └── xdg/                  # UNCHANGED
+141: ├── cmd/testdata/
+142: │   └── golden/json/
+143: │       ├── basic.json        # MODIFIED: add "refused": false
+144: │       ├── with_skill.json   # MODIFIED: add "refused": false
+145: │       ├── with_files.json   # MODIFIED: add "refused": false
+146: │       ├── with_memory.json  # MODIFIED: add "refused": false
+147: │       ├── with_subagents.json # MODIFIED: add "refused": false
+148: │       └── with_tools.json   # MODIFIED: add "refused": false
+149: ├── go.mod                    # UNCHANGED (no new dependencies)
+150: └── ...
+151: ```
+152: 
+153: ---
+154: 
+155: ## 5. Edge Cases
+156: 
+157: ### 5.1 Content Patterns
+158: 
+159: | Scenario | `Detect()` returns | Rationale |
+160: |----------|--------------------|-----------|
+161: | `""` (empty string) | `false` | Nothing to match. |
+162: | `"Hello, how can I help?"` | `false` | Normal response. |
+163: | `"I cannot assist with that request."` | `true` | Direct refusal match: `"i cannot"`. |
+164: | `"I can't help with that."` | `true` | Contraction match: `"i can't"`. |
+165: | `"I'm unable to process this request."` | `true` | Match: `"i'm unable to"`. |
+166: | `"I am unable to fulfill this."` | `true` | Match: `"i am unable to"`. |
+167: | `"I'm not able to do that."` | `true` | Match: `"i'm not able to"`. |
+168: | `"I am not able to do that."` | `true` | Match: `"i am not able to"`. |
+169: | `"I must decline this request."` | `true` | Match: `"i must decline"`. |
+170: | `"I don't have the ability to do that."` | `true` | Match: `"i don't have the ability"`. |
+171: | `"I do not have the ability to help."` | `true` | Match: `"i do not have the ability"`. |
+172: | `"I CANNOT do that."` | `true` | Case-insensitive match. |
+173: | `"i cannot do that."` | `true` | Case-insensitive match. |
+174: | `"I'm sorry, but I cannot assist with that."` | `true` | Contains `"i cannot"` after preamble. |
+175: | `"I appreciate your question. However, I'm unable to help."` | `true` | Contains `"i'm unable to"` after preamble. |
+176: | `"As an AI, I cannot provide medical advice."` | `true` | Compound match: `"as an ai"` + `"i cannot"`. |
+177: | `"As an AI, I'm happy to help with that!"` | `false` | Contains `"as an ai"` but no refusal indicator. |
+178: | `"As an AI language model, I must decline."` | `true` | Compound match: `"as an ai"` + `"i must decline"`. |
+179: | `"The user said 'I cannot do this' in their message."` | `true` | False positive — acceptable per design decision 6. The content contains `"i cannot"` as a substring. |
+180: | `"Here's how you can't go wrong with this approach."` | `true` | False positive — acceptable per design decision 6. The content contains `"i can't"` as a substring. This is a known tradeoff: false positives are less harmful than false negatives. |
+181: | `"I can notify you when it's ready."` | `false` | `"i can"` does not match `"i cannot"` or `"i can't"`. |
+182: | `"Unable to connect to database."` | `false` | Does not contain `"i'm unable to"` or `"i am unable to"`. The `"i"` prefix is required. |
+183: | `"The AI cannot process this."` | `false` | Contains `"cannot"` but not `"i cannot"`. Not a first-person refusal. |
+184: | Content with only whitespace: `"   \n\t  "` | `false` | No pattern matches. |
+185: | Very long content (10KB) with refusal phrase at the end | `true` | Full content scan detects it. |
+186: | Very long content (10KB) with no refusal phrases | `false` | Full content scan finds nothing. |
+187: 
+188: ### 5.2 JSON Output
+189: 
+190: | Scenario | `"refused"` value | Notes |
+191: |----------|-------------------|-------|
+192: | Normal LLM response | `false` | Standard case. |
+193: | LLM returns refusal text | `true` | Detection triggered. |
+194: | LLM response with tools, final text is refusal | `true` | Detection runs on the final `resp.Content`. |
+195: | LLM response with tools, final text is normal | `false` | Detection runs on the final `resp.Content`. |
+196: | Single-shot (no tools), normal response | `false` | Same codepath as conversation loop final. |
+197: | Single-shot (no tools), refusal response | `true` | Same codepath. |
+198: | `--json` not set | N/A | Field not emitted. No `refusal.Detect` call needed. |
+199: 
+200: ### 5.3 Integration with Existing Features
+201: 
+202: | Feature | Impact |
+203: |---------|--------|
+204: | `--verbose` | No change. Refusal detection is not logged to stderr. |
+205: | `--dry-run` | No change. Dry-run does not call the LLM, so no refusal detection occurs. |
+206: | Memory append | No change. Memory is appended regardless of refusal status. The refusal is a valid LLM response. |
+207: | Exit code | No change. Exit code remains 0 for refusals. |
+208: | `stop_reason` | No change. Original LLM stop_reason is preserved. |
+209: | Sub-agent responses | No change. Sub-agent results are opaque to the parent. Refusal detection only runs on the top-level final response. |
+210: 
+211: ---
+212: 
+213: ## 6. Constraints
+214: 
+215: **Constraint 1:** No new external dependencies. `go.mod` must still contain only `spf13/cobra` and `BurntSushi/toml` as direct dependencies.
+216: 
+217: **Constraint 2:** No regular expressions in the detection function. Use `strings.ToLower` + `strings.Contains` only.
+218: 
+219: **Constraint 3:** Detection is read-only. The `Detect` function must not modify the input string or have any side effects.
+220: 
+221: **Constraint 4:** The `"refused"` field is only present in `--json` output. It must not appear in plain text stdout, stderr, verbose output, or dry-run output.
+222: 
+223: **Constraint 5:** The `"refused"` field must always be present in `--json` output (never conditionally omitted). The value is always a JSON boolean (`true` or `false`).
+224: 
+225: **Constraint 6:** Refusal detection does not affect exit codes. A detected refusal still exits 0.
+226: 
+227: **Constraint 7:** Refusal detection does not affect memory. If memory is enabled, the refusal response is still appended as a normal entry.
+228: 
+229: **Constraint 8:** The refusal pattern list is hard-coded. It is not user-configurable, not loaded from TOML, and not loaded from a skill file.
+230: 
+231: **Constraint 9:** Cross-platform compatibility: must build and run on Linux, macOS, and Windows. Only stdlib string operations are used.
+232: 
+233: ---
+234: 
+235: ## 7. Testing Requirements
+236: 
+237: ### 7.1 Test Conventions
+238: 
+239: Tests must follow the patterns established in previous milestones:
+240: 
+241: - **Package-level tests:** Tests live in the same package (e.g., `package refusal`, `package cmd`).
+242: - **Standard library only:** Use `testing` package. No test frameworks.
+243: - **Table-driven:** All `refusal.Detect` tests must be table-driven.
+244: - **Descriptive names:** `TestFunctionName_Scenario` with underscores.
+245: - **Test real code, not mocks.** Tests must call `refusal.Detect` directly.
+246: - **Run tests with:** `make test`
+247: - **Red/green TDD:** Write failing tests first, then implement code to make them pass.
+248: - **Deletion test:** For every test, the assertion: "if I delete the code under test, does this test fail?" must be true.
+249: 
+250: ### 7.2 `internal/refusal/refusal_test.go` Tests (New)
+251: 
+252: **Test: `TestDetect_EmptyString`** — Call `Detect("")`. Verify returns `false`.
+253: 
+254: **Test: `TestDetect_NormalContent`** — Table of normal (non-refusal) strings. Verify each returns `false`. Include at minimum:
+255: - `"Hello, how can I help you today?"`
+256: - `"Here is the solution to your problem."`
+257: - `"The function returns true when the input is valid."`
+258: - `"Unable to connect to the database."` (no first-person `"I"` prefix)
+259: - `"The AI cannot process this."` (third-person, not `"I cannot"`)
+260: - `"I can notify you when it's ready."` (does not match `"I cannot"` or `"I can't"`)
+261: - `"As an AI, I'm happy to help with that!"` (`"as an ai"` without refusal indicator)
+262: 
+263: **Test: `TestDetect_SimpleRefusals`** — Table of simple refusal strings. Verify each returns `true`. Include at minimum one example for each of the 9 patterns from Requirement 1.2:
+264: - `"I cannot assist with that request."`
+265: - `"I can't help with that."`
+266: - `"I'm unable to process this request."`
+267: - `"I am unable to fulfill this."`
+268: - `"I'm not able to do that."`
+269: - `"I am not able to do that."`
+270: - `"I must decline this request."`
+271: - `"I don't have the ability to do that."`
+272: - `"I do not have the ability to help."`
+273: 
+274: **Test: `TestDetect_CaseInsensitive`** — Table of refusals with varied casing. Verify each returns `true`. Include at minimum:
+275: - `"I CANNOT do that."`
+276: - `"i cannot do that."`
+277: - `"I Can't Help With That."`
+278: - `"I'M UNABLE TO ASSIST."`
+279: 
+280: **Test: `TestDetect_RefusalAfterPreamble`** — Table of refusals that appear after non-refusal preamble text. Verify each returns `true`. Include at minimum:
+281: - `"I appreciate your question. However, I cannot help with that."`
+282: - `"Thank you for asking. Unfortunately, I'm unable to process this request."`
+283: - `"I understand your concern, but I must decline."`
+284: - `"I'm sorry, but I can't assist with that request."`
+285: 
+286: **Test: `TestDetect_AsAnAI_Compound`** — Table of `"as an AI"` compound patterns. Verify each returns `true`. Include at minimum:
+287: - `"As an AI, I cannot provide medical advice."`
+288: - `"As an AI language model, I'm unable to help with that."`
+289: - `"As an AI assistant, I must decline this request."`
+290: - `"As an AI, I am not able to do this."`
+291: 
+292: **Test: `TestDetect_AsAnAI_NoRefusalIndicator`** — Verify that `"as an ai"` without a refusal indicator returns `false`. Include:
+293: - `"As an AI, I'm happy to help you with this task."`
+294: - `"As an AI language model, I have access to a wide range of information."`
+295: 
+296: **Test: `TestDetect_WhitespaceOnly`** — Call `Detect` with whitespace-only input (e.g., `"   \n\t  "`). Verify returns `false`.
+297: 
+298: **Test: `TestDetect_LongContent_RefusalAtEnd`** — Create a string of 10,000 characters of normal text, followed by `"I cannot help with that."`. Verify returns `true`.
+299: 
+300: **Test: `TestDetect_LongContent_NoRefusal`** — Create a string of 10,000 characters of normal text with no refusal patterns. Verify returns `false`.
+301: 
+302: ### 7.3 `cmd/run_test.go` Test Modifications
+303: 
+304: **Test: `TestRun_JSONOutput` (Modified)** — Add verification that the `"refused"` field is present in the JSON output and that its value is `false` for the standard mock response `"Hello from mock"`.
+305: 
+306: ### 7.4 `cmd/run_integration_test.go` Test Additions and Modifications
+307: 
+308: **Test: `TestIntegration_JSONOutput_Structure` (Modified)** — Add `"refused"` to the `requiredFields` slice. Verify the field is present and its value is `false` for the normal mock response `"json test output"`.
+309: 
+310: **Test: `TestIntegration_JSONOutput_RefusalDetected` (New)** — Set up a mock LLM server that returns a refusal response (e.g., `"I'm sorry, but I cannot assist with that request."`). Run the agent with `--json`. Parse the JSON output. Verify `"refused"` is `true`. Verify all other fields (`model`, `content`, `input_tokens`, `output_tokens`, `stop_reason`, `duration_ms`, `tool_calls`, `tool_call_details`) are still present and correct. Verify exit code is 0.
+311: 
+312: **Test: `TestIntegration_JSONOutput_RefusalDetected_WithToolCalls` (New)** — Set up a mock LLM server where: turn 1 returns a tool call, sub-agent responds, turn 2 returns a refusal response as the final content. Run with `--json`. Verify `"refused"` is `true`. Verify `"tool_calls"` is 1. Verify exit code is 0.
+313: 
+314: **Test: `TestIntegration_JSONOutput_NoRefusal_WithToolCalls` (New)** — Set up a mock LLM server where: turn 1 returns a tool call, sub-agent responds, turn 2 returns a normal (non-refusal) final response. Run with `--json`. Verify `"refused"` is `false`. Verify `"tool_calls"` is 1. Verify exit code is 0.
+315: 
+316: ### 7.5 Golden File Updates
+317: 
+318: **Requirement:** After implementation, run tests with the `-update-golden` flag to regenerate all golden JSON files. Verify the regenerated files include `"refused": false`. The golden file test runner (`TestGolden`) will validate the schema automatically.
+319: 
+320: ---
+321: 
+322: ## 8. Acceptance Criteria
+323: 
+324: The milestone is complete when all of the following are true:
+325: 
+326: 1. `make test` passes with zero failures.
+327: 2. `internal/refusal/` package exists with a `Detect(content string) bool` function.
+328: 3. `Detect` correctly identifies all 9 simple refusal patterns (Requirement 1.2) and the compound `"as an ai"` pattern (Requirement 1.3), case-insensitively.
+329: 4. `Detect` returns `false` for normal content, empty strings, and whitespace-only input.
+330: 5. The `--json` output envelope includes a `"refused"` boolean field that is always present.
+331: 6. `"refused"` is `true` when refusal patterns are detected in the final response content.
+332: 7. `"refused"` is `false` when no refusal patterns are detected.
+333: 8. Plain text output (without `--json`) is unchanged — no mention of refusal anywhere.
+334: 9. Exit codes are unchanged — refusals still exit 0.
+335: 10. `stop_reason` is unchanged — the original LLM value is preserved.
+336: 11. No new external dependencies are introduced.
+337: 12. All golden JSON files are updated to include the `"refused": false` field.
+338: 13. Memory behavior is unchanged — refusals are still appended to memory.
+
+(End of file - total 338 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_spec.md</path>
+<type>file</type>
+<content>1: # Specification: Refusal Detection with `refused` Flag in `--json` Output
+2: 
+3: **Status:** Draft
+4: **Version:** 1.0
+5: **Created:** 2026-03-05
+6: **GitHub Issue:** [#8](https://github.com/jrswab/axe/issues/8)
+7: **Scope:** Detect LLM refusals and surface a `"refused"` boolean field in `--json` output
+8: 
+9: ---
+10: 
+11: ## 1. Purpose
+12: 
+13: When an LLM refuses a request (e.g., "I cannot help with that"), axe currently treats it as a normal successful completion. The `content` field contains the refusal text, `stop_reason` is `"stop"` or `"end_turn"`, and exit code is 0. There is no way to programmatically distinguish a refusal from a real answer without inspecting the content.
+14: 
+15: Orchestration systems (like Agent Engine) need to detect refusals to mark runs appropriately, alert users, and potentially retry with different prompts. Centralizing this detection inside axe keeps the logic in one place rather than duplicated across every integration.
+16: 
+17: This milestone adds a `"refused"` boolean field to the `--json` output envelope. The field is always present when `--json` is used. It is `true` when the LLM response content matches common refusal patterns, `false` otherwise.
+18: 
+19: This milestone does **not** change exit codes, modify `stop_reason`, add a CLI flag to control refusal detection, or surface refusal status outside of `--json` output.
+20: 
+21: ---
+22: 
+23: ## 2. Design Decisions
+24: 
+25: The following decisions were made during planning and are binding for implementation:
+26: 
+27: 1. **Detection scope:** Refusal patterns are matched against the full response content, not just the beginning. Refusals sometimes come after a preamble (e.g., "I appreciate your question, however I cannot...").
+28: 2. **Field presence:** The `"refused"` field is always present in `--json` output — both `true` and `false` values are emitted. It is never conditionally omitted. This provides a consistent schema for consumers.
+29: 3. **Exit code unchanged:** A refusal is still a successful LLM call. The exit code remains 0. Orchestration systems use the `"refused"` field, not the exit code, to distinguish refusals.
+30: 4. **`stop_reason` unchanged:** The original `stop_reason` from the LLM is preserved. No synthetic `"refusal"` stop reason is introduced.
+31: 5. **No effect on non-JSON output:** When `--json` is not used, stdout contains only the raw LLM content. Refusal detection does not affect plain text output in any way. Axe output must remain safe to pipe.
+32: 6. **Pattern-based, not exhaustive:** The detection uses a fixed set of common refusal patterns. False positives are less harmful than false negatives for this use case.
+33: 7. **Case-insensitive matching:** All pattern matching is case-insensitive.
+34: 8. **New package:** Refusal detection logic lives in a new `internal/refusal` package to keep it isolated and testable, separate from the CLI layer.
+35: 9. **No new external dependencies.** Continue using stdlib only plus existing `spf13/cobra` and `BurntSushi/toml`.
+36: 
+37: ---
+38: 
+39: ## 3. Requirements
+40: 
+41: ### 3.1 Refusal Detection Package (`internal/refusal/`)
+42: 
+43: **Requirement 1.1:** Create a new package `internal/refusal` with a single exported function:
+44: 
+45: ```go
+46: func Detect(content string) bool
+47: ```
+48: 
+49: - Returns `true` if the content matches any common LLM refusal pattern.
+50: - Returns `false` if the content does not match any refusal pattern.
+51: - Returns `false` for empty string input.
+52: - Matching is case-insensitive.
+53: - Matching is performed against the full content string (not just the beginning).
+54: 
+55: **Requirement 1.2:** The function must check for the following refusal patterns (case-insensitive substring matching):
+56: 
+57: | Pattern | Rationale |
+58: |---------|-----------|
+59: | `"i cannot"` | Direct refusal |
+60: | `"i can't"` | Contraction form of "I cannot" |
+61: | `"i'm unable to"` | Polite refusal |
+62: | `"i am unable to"` | Expanded form |
+63: | `"i'm not able to"` | Alternative phrasing |
+64: | `"i am not able to"` | Expanded form |
+65: | `"i must decline"` | Formal refusal |
+66: | `"i don't have the ability"` | Capability-based refusal |
+67: | `"i do not have the ability"` | Expanded form |
+68: 
+69: **Requirement 1.3:** In addition to the simple substring patterns above, the function must detect the compound pattern where the content contains `"as an ai"` AND also contains at least one of these refusal indicators (case-insensitive):
+70: 
+71: - `"i cannot"`
+72: - `"i can't"`
+73: - `"i'm unable"`
+74: - `"i am unable"`
+75: - `"i'm not able"`
+76: - `"i am not able"`
+77: - `"i must decline"`
+78: 
+79: The compound `"as an ai"` pattern only triggers a refusal when **both** the `"as an ai"` marker and a refusal indicator are present. `"as an ai"` alone is not a refusal.
+80: 
+81: **Requirement 1.4:** The detection function must use `strings.ToLower` for case normalization and `strings.Contains` for substring matching. No regular expressions.
+82: 
+83: **Requirement 1.5:** The detection function must not modify the input content. It is a pure read-only check.
+84: 
+85: ### 3.2 JSON Output Envelope (`cmd/run.go`)
+86: 
+87: **Requirement 2.1:** When the `--json` flag is set, the JSON output envelope must include a `"refused"` field of type boolean. The field must always be present (never omitted).
+88: 
+89: **Requirement 2.2:** The `"refused"` field value is the return value of `refusal.Detect(resp.Content)` where `resp.Content` is the final LLM response content.
+90: 
+91: **Requirement 2.3:** The field must appear in the envelope alongside existing fields. The complete `--json` envelope schema after this change:
+92: 
+93: ```json
+94: {
+95:   "model": "<string>",
+96:   "content": "<string>",
+97:   "input_tokens": "<int>",
+98:   "output_tokens": "<int>",
+99:   "stop_reason": "<string>",
+100:   "duration_ms": "<int>",
+101:   "tool_calls": "<int>",
+102:   "tool_call_details": "<array>",
+103:   "refused": "<bool>"
+104: }
+105: ```
+106: 
+107: **Requirement 2.4:** The `"refused"` field must work correctly for both single-shot responses (no tools) and conversation loop responses (with tools). In both cases, the detection runs against the final `resp.Content`.
+108: 
+109: ### 3.3 Golden File Updates
+110: 
+111: **Requirement 3.1:** All golden JSON files in `cmd/testdata/golden/json/` must be updated to include the `"refused": false` field. This ensures golden file tests pass after the schema change.
+112: 
+113: **Requirement 3.2:** The golden file masking function `maskJSONOutput` in `cmd/golden_test.go` does not require changes — the `"refused"` field is deterministic (always `false` for normal mock responses) and does not need masking.
+114: 
+115: ---
+116: 
+117: ## 4. Project Structure
+118: 
+119: After completion, the following files will be added or modified:
+120: 
+121: ```
+122: axe/
+123: ├── cmd/
+124: │   ├── run.go               # MODIFIED: add "refused" field to JSON envelope
+125: │   ├── run_test.go           # MODIFIED: update TestRun_JSONOutput to verify "refused" field
+126: │   ├── run_integration_test.go # MODIFIED: update JSON tests, add refusal detection test
+127: │   ├── golden_test.go        # UNCHANGED
+128: │   └── ...                   # all other cmd files UNCHANGED
+129: ├── internal/
+130: │   ├── refusal/
+131: │   │   ├── refusal.go        # NEW: Detect function with refusal patterns
+132: │   │   └── refusal_test.go   # NEW: table-driven tests for Detect
+133: │   ├── agent/                # UNCHANGED
+134: │   ├── config/               # UNCHANGED
+135: │   ├── memory/               # UNCHANGED
+136: │   ├── provider/             # UNCHANGED
+137: │   ├── resolve/              # UNCHANGED
+138: │   ├── tool/                 # UNCHANGED
+139: │   ├── toolname/             # UNCHANGED
+140: │   └── xdg/                  # UNCHANGED
+141: ├── cmd/testdata/
+142: │   └── golden/json/
+143: │       ├── basic.json        # MODIFIED: add "refused": false
+144: │       ├── with_skill.json   # MODIFIED: add "refused": false
+145: │       ├── with_files.json   # MODIFIED: add "refused": false
+146: │       ├── with_memory.json  # MODIFIED: add "refused": false
+147: │       ├── with_subagents.json # MODIFIED: add "refused": false
+148: │       └── with_tools.json   # MODIFIED: add "refused": false
+149: ├── go.mod                    # UNCHANGED (no new dependencies)
+150: └── ...
+151: ```
+152: 
+153: ---
+154: 
+155: ## 5. Edge Cases
+156: 
+157: ### 5.1 Content Patterns
+158: 
+159: | Scenario | `Detect()` returns | Rationale |
+160: |----------|--------------------|-----------|
+161: | `""` (empty string) | `false` | Nothing to match. |
+162: | `"Hello, how can I help?"` | `false` | Normal response. |
+163: | `"I cannot assist with that request."` | `true` | Direct refusal match: `"i cannot"`. |
+164: | `"I can't help with that."` | `true` | Contraction match: `"i can't"`. |
+165: | `"I'm unable to process this request."` | `true` | Match: `"i'm unable to"`. |
+166: | `"I am unable to fulfill this."` | `true` | Match: `"i am unable to"`. |
+167: | `"I'm not able to do that."` | `true` | Match: `"i'm not able to"`. |
+168: | `"I am not able to do that."` | `true` | Match: `"i am not able to"`. |
+169: | `"I must decline this request."` | `true` | Match: `"i must decline"`. |
+170: | `"I don't have the ability to do that."` | `true` | Match: `"i don't have the ability"`. |
+171: | `"I do not have the ability to help."` | `true` | Match: `"i do not have the ability"`. |
+172: | `"I CANNOT do that."` | `true` | Case-insensitive match. |
+173: | `"i cannot do that."` | `true` | Case-insensitive match. |
+174: | `"I'm sorry, but I cannot assist with that."` | `true` | Contains `"i cannot"` after preamble. |
+175: | `"I appreciate your question. However, I'm unable to help."` | `true` | Contains `"i'm unable to"` after preamble. |
+176: | `"As an AI, I cannot provide medical advice."` | `true` | Compound match: `"as an ai"` + `"i cannot"`. |
+177: | `"As an AI, I'm happy to help with that!"` | `false` | Contains `"as an ai"` but no refusal indicator. |
+178: | `"As an AI language model, I must decline."` | `true` | Compound match: `"as an ai"` + `"i must decline"`. |
+179: | `"The user said 'I cannot do this' in their message."` | `true` | False positive — acceptable per design decision 6. The content contains `"i cannot"` as a substring. |
+180: | `"Here's how you can't go wrong with this approach."` | `true` | False positive — acceptable per design decision 6. The content contains `"i can't"` as a substring. This is a known tradeoff: false positives are less harmful than false negatives. |
+181: | `"I can notify you when it's ready."` | `false` | `"i can"` does not match `"i cannot"` or `"i can't"`. |
+182: | `"Unable to connect to database."` | `false` | Does not contain `"i'm unable to"` or `"i am unable to"`. The `"i"` prefix is required. |
+183: | `"The AI cannot process this."` | `false` | Contains `"cannot"` but not `"i cannot"`. Not a first-person refusal. |
+184: | Content with only whitespace: `"   \n\t  "` | `false` | No pattern matches. |
+185: | Very long content (10KB) with refusal phrase at the end | `true` | Full content scan detects it. |
+186: | Very long content (10KB) with no refusal phrases | `false` | Full content scan finds nothing. |
+187: 
+188: ### 5.2 JSON Output
+189: 
+190: | Scenario | `"refused"` value | Notes |
+191: |----------|-------------------|-------|
+192: | Normal LLM response | `false` | Standard case. |
+193: | LLM returns refusal text | `true` | Detection triggered. |
+194: | LLM response with tools, final text is refusal | `true` | Detection runs on the final `resp.Content`. |
+195: | LLM response with tools, final text is normal | `false` | Detection runs on the final `resp.Content`. |
+196: | Single-shot (no tools), normal response | `false` | Same codepath as conversation loop final. |
+197: | Single-shot (no tools), refusal response | `true` | Same codepath. |
+198: | `--json` not set | N/A | Field not emitted. No `refusal.Detect` call needed. |
+199: 
+200: ### 5.3 Integration with Existing Features
+201: 
+202: | Feature | Impact |
+203: |---------|--------|
+204: | `--verbose` | No change. Refusal detection is not logged to stderr. |
+205: | `--dry-run` | No change. Dry-run does not call the LLM, so no refusal detection occurs. |
+206: | Memory append | No change. Memory is appended regardless of refusal status. The refusal is a valid LLM response. |
+207: | Exit code | No change. Exit code remains 0 for refusals. |
+208: | `stop_reason` | No change. Original LLM stop_reason is preserved. |
+209: | Sub-agent responses | No change. Sub-agent results are opaque to the parent. Refusal detection only runs on the top-level final response. |
+210: 
+211: ---
+212: 
+213: ## 6. Constraints
+214: 
+215: **Constraint 1:** No new external dependencies. `go.mod` must still contain only `spf13/cobra` and `BurntSushi/toml` as direct dependencies.
+216: 
+217: **Constraint 2:** No regular expressions in the detection function. Use `strings.ToLower` + `strings.Contains` only.
+218: 
+219: **Constraint 3:** Detection is read-only. The `Detect` function must not modify the input string or have any side effects.
+220: 
+221: **Constraint 4:** The `"refused"` field is only present in `--json` output. It must not appear in plain text stdout, stderr, verbose output, or dry-run output.
+222: 
+223: **Constraint 5:** The `"refused"` field must always be present in `--json` output (never conditionally omitted). The value is always a JSON boolean (`true` or `false`).
+224: 
+225: **Constraint 6:** Refusal detection does not affect exit codes. A detected refusal still exits 0.
+226: 
+227: **Constraint 7:** Refusal detection does not affect memory. If memory is enabled, the refusal response is still appended as a normal entry.
+228: 
+229: **Constraint 8:** The refusal pattern list is hard-coded. It is not user-configurable, not loaded from TOML, and not loaded from a skill file.
+230: 
+231: **Constraint 9:** Cross-platform compatibility: must build and run on Linux, macOS, and Windows. Only stdlib string operations are used.
+232: 
+233: ---
+234: 
+235: ## 7. Testing Requirements
+236: 
+237: ### 7.1 Test Conventions
+238: 
+239: Tests must follow the patterns established in previous milestones:
+240: 
+241: - **Package-level tests:** Tests live in the same package (e.g., `package refusal`, `package cmd`).
+242: - **Standard library only:** Use `testing` package. No test frameworks.
+243: - **Table-driven:** All `refusal.Detect` tests must be table-driven.
+244: - **Descriptive names:** `TestFunctionName_Scenario` with underscores.
+245: - **Test real code, not mocks.** Tests must call `refusal.Detect` directly.
+246: - **Run tests with:** `make test`
+247: - **Red/green TDD:** Write failing tests first, then implement code to make them pass.
+248: - **Deletion test:** For every test, the assertion: "if I delete the code under test, does this test fail?" must be true.
+249: 
+250: ### 7.2 `internal/refusal/refusal_test.go` Tests (New)
+251: 
+252: **Test: `TestDetect_EmptyString`** — Call `Detect("")`. Verify returns `false`.
+253: 
+254: **Test: `TestDetect_NormalContent`** — Table of normal (non-refusal) strings. Verify each returns `false`. Include at minimum:
+255: - `"Hello, how can I help you today?"`
+256: - `"Here is the solution to your problem."`
+257: - `"The function returns true when the input is valid."`
+258: - `"Unable to connect to the database."` (no first-person `"I"` prefix)
+259: - `"The AI cannot process this."` (third-person, not `"I cannot"`)
+260: - `"I can notify you when it's ready."` (does not match `"I cannot"` or `"I can't"`)
+261: - `"As an AI, I'm happy to help with that!"` (`"as an ai"` without refusal indicator)
+262: 
+263: **Test: `TestDetect_SimpleRefusals`** — Table of simple refusal strings. Verify each returns `true`. Include at minimum one example for each of the 9 patterns from Requirement 1.2:
+264: - `"I cannot assist with that request."`
+265: - `"I can't help with that."`
+266: - `"I'm unable to process this request."`
+267: - `"I am unable to fulfill this."`
+268: - `"I'm not able to do that."`
+269: - `"I am not able to do that."`
+270: - `"I must decline this request."`
+271: - `"I don't have the ability to do that."`
+272: - `"I do not have the ability to help."`
+273: 
+274: **Test: `TestDetect_CaseInsensitive`** — Table of refusals with varied casing. Verify each returns `true`. Include at minimum:
+275: - `"I CANNOT do that."`
+276: - `"i cannot do that."`
+277: - `"I Can't Help With That."`
+278: - `"I'M UNABLE TO ASSIST."`
+279: 
+280: **Test: `TestDetect_RefusalAfterPreamble`** — Table of refusals that appear after non-refusal preamble text. Verify each returns `true`. Include at minimum:
+281: - `"I appreciate your question. However, I cannot help with that."`
+282: - `"Thank you for asking. Unfortunately, I'm unable to process this request."`
+283: - `"I understand your concern, but I must decline."`
+284: - `"I'm sorry, but I can't assist with that request."`
+285: 
+286: **Test: `TestDetect_AsAnAI_Compound`** — Table of `"as an AI"` compound patterns. Verify each returns `true`. Include at minimum:
+287: - `"As an AI, I cannot provide medical advice."`
+288: - `"As an AI language model, I'm unable to help with that."`
+289: - `"As an AI assistant, I must decline this request."`
+290: - `"As an AI, I am not able to do this."`
+291: 
+292: **Test: `TestDetect_AsAnAI_NoRefusalIndicator`** — Verify that `"as an ai"` without a refusal indicator returns `false`. Include:
+293: - `"As an AI, I'm happy to help you with this task."`
+294: - `"As an AI language model, I have access to a wide range of information."`
+295: 
+296: **Test: `TestDetect_WhitespaceOnly`** — Call `Detect` with whitespace-only input (e.g., `"   \n\t  "`). Verify returns `false`.
+297: 
+298: **Test: `TestDetect_LongContent_RefusalAtEnd`** — Create a string of 10,000 characters of normal text, followed by `"I cannot help with that."`. Verify returns `true`.
+299: 
+300: **Test: `TestDetect_LongContent_NoRefusal`** — Create a string of 10,000 characters of normal text with no refusal patterns. Verify returns `false`.
+301: 
+302: ### 7.3 `cmd/run_test.go` Test Modifications
+303: 
+304: **Test: `TestRun_JSONOutput` (Modified)** — Add verification that the `"refused"` field is present in the JSON output and that its value is `false` for the standard mock response `"Hello from mock"`.
+305: 
+306: ### 7.4 `cmd/run_integration_test.go` Test Additions and Modifications
+307: 
+308: **Test: `TestIntegration_JSONOutput_Structure` (Modified)** — Add `"refused"` to the `requiredFields` slice. Verify the field is present and its value is `false` for the normal mock response `"json test output"`.
+309: 
+310: **Test: `TestIntegration_JSONOutput_RefusalDetected` (New)** — Set up a mock LLM server that returns a refusal response (e.g., `"I'm sorry, but I cannot assist with that request."`). Run the agent with `--json`. Parse the JSON output. Verify `"refused"` is `true`. Verify all other fields (`model`, `content`, `input_tokens`, `output_tokens`, `stop_reason`, `duration_ms`, `tool_calls`, `tool_call_details`) are still present and correct. Verify exit code is 0.
+311: 
+312: **Test: `TestIntegration_JSONOutput_RefusalDetected_WithToolCalls` (New)** — Set up a mock LLM server where: turn 1 returns a tool call, sub-agent responds, turn 2 returns a refusal response as the final content. Run with `--json`. Verify `"refused"` is `true`. Verify `"tool_calls"` is 1. Verify exit code is 0.
+313: 
+314: **Test: `TestIntegration_JSONOutput_NoRefusal_WithToolCalls` (New)** — Set up a mock LLM server where: turn 1 returns a tool call, sub-agent responds, turn 2 returns a normal (non-refusal) final response. Run with `--json`. Verify `"refused"` is `false`. Verify `"tool_calls"` is 1. Verify exit code is 0.
+315: 
+316: ### 7.5 Golden File Updates
+317: 
+318: **Requirement:** After implementation, run tests with the `-update-golden` flag to regenerate all golden JSON files. Verify the regenerated files include `"refused": false`. The golden file test runner (`TestGolden`) will validate the schema automatically.
+319: 
+320: ---
+321: 
+322: ## 8. Acceptance Criteria
+323: 
+324: The milestone is complete when all of the following are true:
+325: 
+326: 1. `make test` passes with zero failures.
+327: 2. `internal/refusal/` package exists with a `Detect(content string) bool` function.
+328: 3. `Detect` correctly identifies all 9 simple refusal patterns (Requirement 1.2) and the compound `"as an ai"` pattern (Requirement 1.3), case-insensitively.
+329: 4. `Detect` returns `false` for normal content, empty strings, and whitespace-only input.
+330: 5. The `--json` output envelope includes a `"refused"` boolean field that is always present.
+331: 6. `"refused"` is `true` when refusal patterns are detected in the final response content.
+332: 7. `"refused"` is `false` when no refusal patterns are detected.
+333: 8. Plain text output (without `--json`) is unchanged — no mention of refusal anywhere.
+334: 9. Exit codes are unchanged — refusals still exit 0.
+335: 10. `stop_reason` is unchanged — the original LLM value is preserved.
+336: 11. No new external dependencies are introduced.
+337: 12. All golden JSON files are updated to include the `"refused": false` field.
+338: 13. Memory behavior is unchanged — refusals are still appended to memory.
+
+(End of file - total 338 lines)
+</content>
