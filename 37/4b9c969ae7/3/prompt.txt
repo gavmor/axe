@@ -1,0 +1,205 @@
+# Implementation Instructions
+
+1. Study the spec markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 025
+    - If 025 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_spec.md`
+2. Study implementation plan markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 025
+    - If 025 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_implement.md`
+3. Pick the highest leverage unchecked task
+4. Complete the task
+5. Verify the changes against `## Rules and Checks` listed below.
+5. Update the implementation plan to check off the task you just completed
+6. After completeing a single phase, run the `auto-review` skill.
+7, After the review changes are finished, run `git diff --shortstat` to check the total line changes.
+    - If the changes are greater than 500 stop implementing and let the human know.
+    - If the changes are less than 500 continue to the next phase of the implementation plan
+8. Repeat steps 3-7 until all phases are complete.
+
+## Rules
+
+- Use agents for exploring the codebase
+    - Each agent must only have one explicit task.
+    - Each agent must only return the information that fulfills that task.
+    - Spin off multiple agents in parallel for tasks that do not depend on another task.
+- Use red/greed TDD
+- If there are any SQL/ORM changes, please compare them against working queries in the codebase for syntax correctness.
+- Verify that the unit tests for functions with updates have a test case to that will verify the change.
+- Verify that all new code has an unbiased unit test.
+- Verify that no import paths were changed for files in the `/lambdas` directory.
+    - If tests require different import resolution than production, fix the test infrastructure (conftest.py, pytest.ini) without modifying the Lambda source imports.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+
+---
+
+are there any steps left?
+
+---
+
+commit the changes
+
+---
+
+1. Verify that we are not on the develop branch.
+    - If we are on the develop branch ask what branch name to switch to.
+    - Once given the name create a new git branch off of develop using `git checkout -b`
+2. Review all changes made against develop.
+3. Create a Git message which lists out the changes made in a short paragraph
+4. The title should summarize the changes at a high level. Keep it UNDER 50 characters.
+5. Commit the changes locally.
+6. Push the branch to remote using `git push --set-upstream origin "$(git branch --show-current)"`
+7. Use the script at `/Users/jaronswab/ai/scripts/stacked_diff_parent.sh` to get the correct parent branch.
+8. Open a PR on GitHub if it does not already exist.
+    - Use `gh pr create --base <parent branch>` when sending the PR request to GitHub. (we use stacked diffs)
+    - Always verify before opening the PR on GitHub
+    - Make sure the the title starts with the Linear issue ID (GAI-XXXX - this should be part of the branch name already).
+    - Make sure the title is in title case.
+    - Do not add any details to the description.
+    - If a PR for the current branch is already in GitHub just push the new commit(s) to remote.
+
+---
+
+rebase this on master
+
+---
+
+commit docs/plans/025_url_fetch_spec.md
+
+---
+
+change the branch name to iss-007/url-fetch-tool
+
+---
+
+1. Verify that we are not on the develop branch.
+    - If we are on the develop branch ask what branch name to switch to.
+    - Once given the name create a new git branch off of develop using `git checkout -b`
+2. Review all changes made against develop.
+3. Create a Git message which lists out the changes made in a short paragraph
+4. The title should summarize the changes at a high level. Keep it UNDER 50 characters.
+5. Commit the changes locally.
+6. Push the branch to remote using `git push --set-upstream origin "$(git branch --show-current)"`
+7. Use the script at `/Users/jaronswab/ai/scripts/stacked_diff_parent.sh` to get the correct parent branch.
+8. Open a PR on GitHub if it does not already exist.
+    - Use `gh pr create --base <parent branch>` when sending the PR request to GitHub. (we use stacked diffs)
+    - Always verify before opening the PR on GitHub
+    - Make sure the the title starts with the Linear issue ID (GAI-XXXX - this should be part of the branch name already).
+    - Make sure the title is in title case.
+    - Do not add any details to the description.
+    - If a PR for the current branch is already in GitHub just push the new commit(s) to remote.
+
+---
+
+run golangci-lint
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config path] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config verify] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint run] in [/home/runner/work/axe/axe] ...
+  Error: internal/tool/url_fetch.go:85:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+  	defer resp.Body.Close()
+  	                     ^
+  1 issues:
+  * errcheck: 1
+  
+  Error: issues found
+  Ran golangci-lint in 5202ms
+
+---
+
+install it with `go`
+
+---
+
+run golangci-lint
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config path] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config verify] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint run] in [/home/runner/work/axe/axe] ...
+  Error: internal/tool/url_fetch.go:85:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+  	defer resp.Body.Close()
+  	                     ^
+  1 issues:
+  * errcheck: 1
+  
+  Error: issues found
+  Ran golangci-lint in 5202ms
+
+---
+
+commit the changes
+
+---
+
+add `.entire/` to gitignore
+
+---
+
+comit the changes
+
+---
+
+push to remote
+
+---
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@internal/tool/url_fetch_test.go` around lines 189 - 205, The test
+TestURLFetch_ContextCancellation stalls because the httptest handler uses
+time.Sleep(10 * time.Second) and Close() waits for handlers to finish; update
+the handler in the TestURLFetch_ContextCancellation test to return early when
+the request context is canceled (use r.Context().Done() in a select instead of
+time.Sleep) so the handler stops sleeping once the client cancels; adjust the
+handler in the httptest.NewServer closure referenced in
+TestURLFetch_ContextCancellation to select on either a timer or
+<-r.Context().Done() and return immediately on cancellation.
+
+---
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@internal/tool/url_fetch.go` around lines 49 - 56, The verbose log currently
+includes the raw truncated URL (truncURL) which can leak query strings or
+credentials; before building summary and calling toolVerboseLog, replace
+truncURL with a sanitized form that keeps only scheme://host/path (drop
+userinfo, query, and fragment). Implement or call a sanitizer (e.g., a new
+sanitizeURL function) and use its output when creating summary (where
+truncateURL is used) and in the error branch that logs result.Content; ensure
+truncateURL is applied to the sanitized URL string, not the raw urlStr, and
+leave toolVerboseLog(result, summary) usage unchanged. Verify each finding against the current code and only fix it if needed.
+
+In `@internal/tool/url_fetch.go` around lines 63 - 90, Replace raw err.Error()
+returns in url_fetch.go with contextualized error messages: when url.Parse
+fails, return a message that includes the original URL string and a hint to
+validate/encode it; when http.NewRequestWithContext or http.DefaultClient.Do
+fail, include the URL, the operation ("creating request" or "performing
+request"), and a remediation hint (e.g., check network connectivity, proxy
+settings, or URL validity); when io.ReadAll fails or the body exceeds
+maxReadBytes, include the response statusCode, the attempted byte limit
+(maxReadBytes), and a hint to reduce resource size or increase the limit. Update
+the provider.ToolResult Content for the error returns to include these
+contextual messages while preserving CallID and IsError flags. Verify each finding against the current code and only fix it if needed.
+
+In `@internal/tool/url_fetch.go` around lines 68 - 83, The fetch tool currently
+only checks URL scheme but must also block SSRF by resolving and validating the
+target host IPs; in url_fetch.go (within the function using parsedURL and
+returning provider.ToolResult with call.ID) call
+net.LookupIP(parsedURL.Hostname()), iterate all returned IPs and reject any that
+are loopback, private, link-local, multicast, or RFC1918/RFC4193 ranges (e.g.,
+127.0.0.0/8, ::1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16,
+fc00::/7, fe80::/10) or otherwise non-global; if any IP is forbidden return a
+provider.ToolResult{CallID: call.ID, Content: "disallowed target host", IsError:
+true}; ensure you check all addresses (hosts may resolve to multiple IPs) before
+creating the http.Request and that you use parsedURL.Hostname() (not Host which
+may include port). Verify each finding against the current code and only fix it if needed.
+
+In `@internal/tool/url_fetch.go` around lines 81 - 83, The code currently calls
+http.DefaultClient.Do(req) which relies on global state and has no timeout;
+replace this with an explicit http.Client that enforces a timeout and avoid
+using the global default by either (a) creating a local client with a sensible
+Timeout (e.g., &http.Client{Timeout: ...}) and calling client.Do(req) or (b)
+better, change the function signature to accept an *http.Client (or an
+interface) and use that client to call Do(req) so callers can inject clients
+with their own deadlines; ensure the change keeps the same error handling and
+returns provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError:
+true} on errors.
