@@ -13,7 +13,7 @@
     },
     "time": {
       "created": 1772737600673,
-      "updated": 1772738878782
+      "updated": 1772738890143
     }
   },
   "messages": [
@@ -9688,7 +9688,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1772738878411
+          "created": 1772738878411,
+          "completed": 1772738889783
         },
         "parentID": "msg_cbf7889c5001yLoXkVPyT0gW4t",
         "modelID": "gpt-5.3-codex",
@@ -9699,16 +9700,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0298158,
         "tokens": {
-          "input": 0,
-          "output": 0,
-          "reasoning": 0,
+          "total": 57293,
+          "input": 3996,
+          "output": 561,
+          "reasoning": 410,
           "cache": {
-            "read": 0,
+            "read": 52736,
             "write": 0
           }
         },
+        "finish": "tool-calls",
         "id": "msg_cbf789bcb0017LrVuYk22iGbRR",
         "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v"
       },
@@ -9742,13 +9745,22 @@
           "callID": "call_lQJSLcTH0yxnVIWB0amR1WzJ",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add cmd/run.go cmd/run_test.go cmd/run_integration_test.go cmd/testdata/golden/json/basic.json cmd/testdata/golden/json/with_files.json cmd/testdata/golden/json/with_memory.json cmd/testdata/golden/json/with_skill.json cmd/testdata/golden/json/with_subagents.json cmd/testdata/golden/json/with_tools.json internal/refusal/refusal.go internal/refusal/refusal_test.go docs/plans/024_refusal_detection_implement.md && git commit -m \"Add refusal detection flag to JSON output (#8)\" && git status --short",
               "description": "Stage feature files, commit, and verify status"
             },
+            "output": "[iss-008/refusal-detection d440e20] Add refusal detection flag to JSON output (#8)\n 12 files changed, 526 insertions(+), 2 deletions(-)\n create mode 100644 docs/plans/024_refusal_detection_implement.md\n create mode 100644 internal/refusal/refusal.go\n create mode 100644 internal/refusal/refusal_test.go\n?? .entire/\n?? docs/plans/024_refusal_detection_spec.md\n",
+            "title": "Stage feature files, commit, and verify status",
+            "metadata": {
+              "output": "[iss-008/refusal-detection d440e20] Add refusal detection flag to JSON output (#8)\n 12 files changed, 526 insertions(+), 2 deletions(-)\n create mode 100644 docs/plans/024_refusal_detection_implement.md\n create mode 100644 internal/refusal/refusal.go\n create mode 100644 internal/refusal/refusal_test.go\n?? .entire/\n?? docs/plans/024_refusal_detection_spec.md\n",
+              "exit": 0,
+              "description": "Stage feature files, commit, and verify status",
+              "truncated": false
+            },
             "time": {
-              "start": 1772738887559
+              "start": 1772738887559,
+              "end": 1772738889714
             }
           },
           "metadata": {
@@ -9759,6 +9771,118 @@
           "id": "REDACTED",
           "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
           "messageID": "msg_cbf789bcb0017LrVuYk22iGbRR"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48e7d7b3a789f5fc6809da0aca6e6a0de1c7ddb1",
+          "cost": 0.0298158,
+          "tokens": {
+            "total": 57293,
+            "input": 3996,
+            "output": 561,
+            "reasoning": 410,
+            "cache": {
+              "read": 52736,
+              "write": 0
+            }
+          },
+          "id": "prt_cbf78c7f2001IqUC1Ojhh66dAW",
+          "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+          "messageID": "msg_cbf789bcb0017LrVuYk22iGbRR"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772738889788,
+          "completed": 1772738892573
+        },
+        "parentID": "msg_cbf7889c5001yLoXkVPyT0gW4t",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01179605,
+        "tokens": {
+          "total": 57489,
+          "input": 187,
+          "output": 86,
+          "reasoning": 18,
+          "cache": {
+            "read": 57216,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cbf78c83c0016y6MCz7XxcmThC",
+        "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48e7d7b3a789f5fc6809da0aca6e6a0de1c7ddb1",
+          "id": "REDACTED",
+          "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+          "messageID": "msg_cbf78c83c0016y6MCz7XxcmThC"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Reporting commit and untracked files**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_06a74264eef260b00169a9d94b28e0819096ed14ae087ec8eb",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772738891182,
+            "end": 1772738891800
+          },
+          "id": "prt_cbf78cdae001W1f35pq0EijTGI",
+          "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+          "messageID": "msg_cbf78c83c0016y6MCz7XxcmThC"
+        },
+        {
+          "type": "text",
+          "text": "Committed.\n\n- Commit: `d440e20`\n- Message: `Add refusal detection flag to JSON output (#8)`\n\nI only staged the implementation-related files and left unrelated/unrequested untracked files untouched:\n- `.entire/`\n- `docs/plans/024_refusal_detection_spec.md`",
+          "time": {
+            "start": 1772738892457,
+            "end": 1772738892457
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_06a74264eef260b00169a9d94bc4c481909952239e46757cce"
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+          "messageID": "msg_cbf78c83c0016y6MCz7XxcmThC"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "48e7d7b3a789f5fc6809da0aca6e6a0de1c7ddb1",
+          "cost": 0.01179605,
+          "tokens": {
+            "total": 57489,
+            "input": 187,
+            "output": 86,
+            "reasoning": 18,
+            "cache": {
+              "read": 57216,
+              "write": 0
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3409ae35effeXsnBmrzxKv7P4v",
+          "messageID": "msg_cbf78c83c0016y6MCz7XxcmThC"
         }
       ]
     }
