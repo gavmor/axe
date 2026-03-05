@@ -1,0 +1,380 @@
+{
+  "info": {
+    "id": "ses_34019effdffeAjaAjW9oKwsJ2E",
+    "slug": "tidy-island",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "REDACTED",
+    "title": "Auto-review phase6 (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772746051586,
+      "updated": 1772746056413
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772746051591
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cbfe61006001mettSEKKoR0zAM",
+        "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Review current `git diff HEAD` for critical issues only. Return markdown list with fix prompts using @file:line if issues; otherwise `- No critical issues found.`",
+          "id": "prt_cbfe61007001rGbl2P92Cf4fiQ",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe61006001mettSEKKoR0zAM"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772746051599,
+          "completed": 1772746054193
+        },
+        "parentID": "msg_cbfe61006001mettSEKKoR0zAM",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00366275,
+        "tokens": {
+          "total": 7304,
+          "input": 173,
+          "output": 91,
+          "reasoning": 61,
+          "cache": {
+            "read": 7040,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cbfe6100f001Pb753LgF2fx1KN",
+        "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "id": "prt_cbfe61131001sQYf1LtthOdI0g",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe6100f001Pb753LgF2fx1KN"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Preparing git diff review**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_026ae2cf9c80ebe70169a9f544b59481908433abb0badfca4e",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772746052734,
+            "end": 1772746053986
+          },
+          "id": "prt_cbfe6147e001NIogk31bMrAS7s",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe6100f001Pb753LgF2fx1KN"
+        },
+        {
+          "type": "tool",
+          "callID": "call_UbZfGakLXJgFtZQRRf58HZjR",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Shows changes against HEAD commit"
+            },
+            "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex f9820a5..3cd2358 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex dbd262c..992e43f 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -921,7 +921,7 @@ func TestScaffold_ContainsValidToolNames(t *testing.T) {\n \tif err != nil {\n \t\tt.Fatalf(\"unexpected error: %v\", err)\n \t}\n-\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command\") {\n+\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\") {\n \t\tt.Errorf(\"scaffold output missing valid tool names comment\\nfull output:\\n%s\", out)\n \t}\n }\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex b12fc80..622e822 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -95,4 +95,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.WriteFile, writeFileEntry())\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n+\tr.Register(toolname.URLFetch, urlFetchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex fa8f79c..579c98f 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -406,6 +406,34 @@ func TestRegisterAll_ResolvesRunCommand(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersURLFetch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.URLFetch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.URLFetch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.URLFetch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.URLFetch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.URLFetch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"url\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'url' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex 542db78..df8f0b7 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -10,6 +10,7 @@ const (\n \tWriteFile     = \"write_file\"\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n+\tURLFetch      = \"url_fetch\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -22,5 +23,6 @@ func ValidNames() map[string]bool {\n \t\tWriteFile:     true,\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n+\t\tURLFetch:      true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex f1cbeda..1452cbc 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 5 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 5\", len(names))\n+\tif len(names) != 6 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -48,6 +48,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"WriteFile\", WriteFile, \"write_file\"},\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n+\t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+            "title": "Shows changes against HEAD commit",
+            "metadata": {
+              "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex f9820a5..3cd2358 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex dbd262c..992e43f 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -921,7 +921,7 @@ func TestScaffold_ContainsValidToolNames(t *testing.T) {\n \tif err != nil {\n \t\tt.Fatalf(\"unexpected error: %v\", err)\n \t}\n-\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command\") {\n+\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\") {\n \t\tt.Errorf(\"scaffold output missing valid tool names comment\\nfull output:\\n%s\", out)\n \t}\n }\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex b12fc80..622e822 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -95,4 +95,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.WriteFile, writeFileEntry())\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n+\tr.Register(toolname.URLFetch, urlFetchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex fa8f79c..579c98f 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -406,6 +406,34 @@ func TestRegisterAll_ResolvesRunCommand(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersURLFetch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.URLFetch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.URLFetch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.URLFetch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.URLFetch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.URLFetch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"url\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'url' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex 542db78..df8f0b7 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -10,6 +10,7 @@ const (\n \tWriteFile     = \"write_file\"\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n+\tURLFetch      = \"url_fetch\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -22,5 +23,6 @@ func ValidNames() map[string]bool {\n \t\tWriteFile:     true,\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n+\t\tURLFetch:      true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex f1cbeda..1452cbc 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 5 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 5\", len(names))\n+\tif len(names) != 6 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -48,6 +48,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"WriteFile\", WriteFile, \"write_file\"},\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n+\t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+              "exit": 0,
+              "description": "Shows changes against HEAD commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772746054089,
+              "end": 1772746054125
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_026ae2cf9c80ebe70169a9f545f6048190b111cbf9f58376f3"
+            }
+          },
+          "id": "prt_cbfe61963001lLM5kaammSir62",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe6100f001Pb753LgF2fx1KN"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "cost": 0.00366275,
+          "tokens": {
+            "total": 7304,
+            "input": 173,
+            "output": 91,
+            "reasoning": 61,
+            "cache": {
+              "read": 7040,
+              "write": 0
+            }
+          },
+          "id": "prt_cbfe619ee001InlCHWnIZ3ottH",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe6100f001Pb753LgF2fx1KN"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772746054193,
+          "completed": 1772746056383
+        },
+        "parentID": "msg_cbfe61006001mettSEKKoR0zAM",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00633115,
+        "tokens": {
+          "total": 8714,
+          "input": 1429,
+          "output": 117,
+          "reasoning": 67,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cbfe61a31001p7aFtMATq5gH90",
+        "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "id": "prt_cbfe61b4d001oo4tNpkvXv1GvN",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe61a31001p7aFtMATq5gH90"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Checking function existence**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_04ac644e580e5fb90169a9f546c0b081908f625f73072df7e4",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772746054774,
+            "end": 1772746056116
+          },
+          "id": "prt_cbfe61c760019IU9f2OukebTOE",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe61a31001p7aFtMATq5gH90"
+        },
+        {
+          "type": "tool",
+          "callID": "call_IJv3P6Hum2LlhjZ5jBlA2jDT",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "func\\s+urlFetchEntry|url_fetch|URLFetch",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "Found 210 matches (showing first 100)\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_34019effdffeAjaAjW9oKwsJ2E.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 28:       \"docs/plans/025_url_fetch_implement.md\": 6\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_implement.md:\n  Line 1: # Implementation Checklist: `url_fetch` Built-in Tool\n  Line 3: **Spec:** `docs/plans/025_url_fetch_spec.md`\n  Line 11: - [x] Add `URLFetch = \"url_fetch\"` constant to `internal/toolname/toolname.go` const block (Req 1.1)\n  Line 12: - [x] Add `URLFetch: true` entry to the `ValidNames()` map in `internal/toolname/toolname.go` (Req 1.2)\n  Line 14: - [x] Update `TestValidNames_ContainsAllExpectedNames` in `internal/toolname/toolname_test.go`: add `URLFetch` to the `expected` slice (Req 5.2)\n  Line 15: - [x] Update `TestConstants_Values` in `internal/toolname/toolname_test.go`: add table entry `{\"URLFetch\", URLFetch, \"url_fetch\"}` (Req 5.3)\n  Line 20: - [x] Create `internal/tool/url_fetch_test.go` with `package tool` declaration\n  Line 21: - [x] Write `TestURLFetch_Success` — httptest server returns `\"hello world\"` status 200; verify `IsError` false, `Content` equals `\"hello world\"`, `CallID` matches (Req 3.12, Spec 7.2)\n  Line 22: - [x] Write `TestURLFetch_EmptyURL` — empty `Arguments` map `{}`; verify `IsError` true, `Content` contains `\"url is required\"` (Req 3.3, Spec 7.2)\n  Line 23: - [x] Write `TestURLFetch_MissingURLArgument` — `Arguments: {\"url\": \"\"}`; verify `IsError` true, `Content` contains `\"url is required\"` (Req 3.3, Spec 7.2)\n  Line 24: - [x] Write `TestURLFetch_UnsupportedScheme_File` — `\"file:///etc/passwd\"`; verify `IsError` true, `Content` contains `\"unsupported scheme\"` and `\"file\"` (Req 3.5, Spec 7.2)\n  Line 25: - [x] Write `TestURLFetch_UnsupportedScheme_FTP` — `\"ftp://example.com/file\"`; verify `IsError` true, `Content` contains `\"unsupported scheme\"` and `\"ftp\"` (Req 3.5, Spec 7.2)\n  Line 26: - [x] Write `TestURLFetch_NoScheme` — `\"example.com\"`; verify `IsError` true, `Content` contains `\"unsupported scheme\"` (Req 3.5, Spec 7.2)\n  Line 27: - [x] Write `TestURLFetch_Non2xxStatus_404` — httptest server returns `\"not found\"` status 404; verify `IsError` true, `Content` contains `\"HTTP 404\"` and `\"not found\"` (Req 3.11, Spec 7.2)\n  Line 28: - [x] Write `TestURLFetch_Non2xxStatus_500` — httptest server returns `\"internal error\"` status 500; verify `IsError` true, `Content` contains `\"HTTP 500\"` and `\"internal error\"` (Req 3.11, Spec 7.2)\n  Line 29: - [x] Write `TestURLFetch_LargeResponseTruncation` — httptest server returns 20000 bytes of `'A'`; verify `IsError` false, `Content` contains `\"[response truncated, exceeded 10000 characters]\"`, `len(Content)` > 10000 but < 20000 (Req 3.10, Spec 7.2)\n  Line 30: - [x] Write `TestURLFetch_ExactLimitNotTruncated` — httptest server returns exactly 10000 bytes; verify `IsError` false, `Content` does NOT contain `\"truncated\"`, `len(Content)` equals 10000 (Req 3.10, Spec 7.2)\n  Line 31: - [x] Write `TestURLFetch_ContextCancellation` — httptest server blocks with `time.Sleep(10s)`, context timeout 50ms; verify `IsError` true (Req 3.7, Spec 7.2)\n  Line 32: - [x] Write `TestURLFetch_ConnectionRefused` — URL to closed port on 127.0.0.1; verify `IsError` true, `Content` non-empty (Req 3.7, Spec 7.2)\n  Line 33: - [x] Write `TestURLFetch_CallIDPassthrough` — httptest server returns 200, call.ID `\"uf-unique-42\"`; verify `CallID` equals `\"uf-unique-42\"` (Spec 7.2)\n  Line 34: - [x] Write `TestURLFetch_EmptyResponseBody` — httptest server returns 200 with empty body; verify `IsError` false, `Content` equals `\"\"` (Req 3.12, Spec 7.2)\n  Line 35: - [x] Write `TestURLFetch_Non2xxWithLargeBody` — httptest server returns 500 with > 10000 bytes; verify `IsError` true, `Content` contains `\"HTTP 500\"` and `\"[response truncated, exceeded 10000 characters]\"` (Req 3.10, 3.11, Spec 7.2)\n  Line 40: - [x] Create `internal/tool/url_fetch.go` with `package tool` declaration (Req 2.1)\n  Line 43: - [x] Implement `urlFetchDefinition() provider.Tool` with `Name: toolname.URLFetch`, description, and single `url` parameter (Type `\"string\"`, Required `true`) (Req 2.3, 2.4)\n  Line 55: - [x] Run `make test` — verify all 15 `url_fetch_test.go` tests pass (GREEN state)\n  Line 59: - [x] Add `r.Register(toolname.URLFetch, urlFetchEntry())` to `RegisterAll()` in `internal/tool/registry.go` (Req 4.1)\n  Line 60: - [x] Add `TestRegisterAll_RegistersURLFetch` to `internal/tool/registry_test.go`: verify `r.Has(toolname.URLFetch)` after `RegisterAll` (Spec 7.4)\n  Line 61: - [x] Add `TestRegisterAll_ResolvesURLFetch` to `internal/tool/registry_test.go`: verify resolved tool has `Name == toolname.URLFetch` and `url` parameter (Spec 7.4)\n  Line 66: - [x] Update `Scaffold()` in `internal/agent/agent.go`: change tools comment from `# Valid: list_directory, read_file, write_file, edit_file, run_command` to `# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch` (Req 6.1)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401a2e84ffedhcbA45xlbM93c.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401a7e11fferJYTtxRZ7T5q26.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 44:         \"docs/plans/025_url_fetch_implement.md\": 2\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401abdf8ffev15OO6UxyMYEGm.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 177: # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401aee2cffeBBR0nD6GxbFyao.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 924: \tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\") {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401b4168ffeQT4RWIt9yJYMzi.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 42:         \"docs/plans/025_url_fetch_implement.md\": 4\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401ba9adffevnUY8W194n5XRx.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 98: \tr.Register(toolname.URLFetch, urlFetchEntry())\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401bddeaffeEfZ7MyTTyNwkog.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 32:   \"first_prompt\": \"Run `go test ./internal/tool -run RegisterAll_.*URLFetch` and return only failed output lines.\",\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go:\n  Line 409: func TestRegisterAll_RegistersURLFetch(t *testing.T) {\n  Line 413: \tif !r.Has(toolname.URLFetch) {\n  Line 414: \t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.URLFetch)\n  Line 418: func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n  Line 422: \ttools, err := r.Resolve([]string{toolname.URLFetch})\n  Line 429: \tif tools[0].Name != toolname.URLFetch {\n  Line 430: \t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.URLFetch)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401c59a4ffeS9kW0BjZo4c0VL.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401cb5f4ffelr4KbJ56jJVEeU.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 40:         \"docs/plans/025_url_fetch_implement.md\": 33,\n  Line 41:         \"internal/tool/url_fetch.go\": 2\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go:\n  Line 23: func urlFetchEntry() ToolEntry {\n  Line 32: \t\tName:        toolname.URLFetch,\n  Line 56: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401da5abffe8eLfXBJmq1tUqC.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401dee2cffetHBeocty8TP2l9.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n  Line 15:     \"internal/tool/url_fetch.go\",\n  Line 16:     \"internal/tool/url_fetch_test.go\"\n  Line 31:   \"first_prompt\": \"Run `go test ./internal/tool -run URLFetch` in repo root. Return only failed test results; if all...\",\n  Line 40:         \"internal/tool/url_fetch.go\": 108\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_3401eca4bffeAE5pWeu2kivvyG.json:\n  Line 13:     \"docs/plans/025_url_fetch_implement.md\",\n  Line 14:     \"docs/plans/025_url_fetch_spec.md\",\n\n(Results truncated: showing 100 of 210 matches (110 hidden). Consider using a more specific path or pattern.)",
+            "title": "func\\s+urlFetchEntry|url_fetch|URLFetch",
+            "metadata": {
+              "matches": 210,
+              "truncated": true
+            },
+            "time": {
+              "start": 1772746056270,
+              "end": 1772746056318
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_04ac644e580e5fb90169a9f548159c8190bc89b98a22ebc92e"
+            }
+          },
+          "id": "prt_cbfe621b6001EdNeAywlWQmKbI",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe61a31001p7aFtMATq5gH90"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "cost": 0.00633115,
+          "tokens": {
+            "total": 8714,
+            "input": 1429,
+            "output": 117,
+            "reasoning": 67,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe61a31001p7aFtMATq5gH90"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772746056384,
+          "completed": 1772746059507
+        },
+        "parentID": "msg_cbfe61006001mettSEKKoR0zAM",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01106455,
+        "tokens": {
+          "total": 12337,
+          "input": 3641,
+          "output": 120,
+          "reasoning": 108,
+          "cache": {
+            "read": 8576,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cbfe622c0001qNiahGfFnu6pwK",
+        "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "id": "prt_cbfe623c8001cy8I9syRpyrTTM",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe622c0001qNiahGfFnu6pwK"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Assessing recent diff for issues**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0e69b1c6089dadc80169a9f548ef688195abeb9a69ce6f617b",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772746056954,
+            "end": 1772746059366
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe622c0001qNiahGfFnu6pwK"
+        },
+        {
+          "type": "text",
+          "text": "- No critical issues found.",
+          "time": {
+            "start": 1772746059427,
+            "end": 1772746059427
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_0e69b1c6089dadc80169a9f54b56188195a7b90cb4506bff25"
+            }
+          },
+          "id": "prt_cbfe62e67001SGtxn69wY8AYEI",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe622c0001qNiahGfFnu6pwK"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "8cbf2f698944302cbf94e91e4ae52f06899ad935",
+          "cost": 0.01106455,
+          "tokens": {
+            "total": 12337,
+            "input": 3641,
+            "output": 120,
+            "reasoning": 108,
+            "cache": {
+              "read": 8576,
+              "write": 0
+            }
+          },
+          "id": "prt_cbfe62eac001CCrgRjwLT6RWBz",
+          "sessionID": "ses_34019effdffeAjaAjW9oKwsJ2E",
+          "messageID": "msg_cbfe622c0001qNiahGfFnu6pwK"
+        }
+      ]
+    }
+  ]
+}

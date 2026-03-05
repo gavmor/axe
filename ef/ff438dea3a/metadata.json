@@ -3,7 +3,7 @@
   "checkpoint_id": "efff438dea3a",
   "strategy": "manual-commit",
   "branch": "iss-008/refusal-detection",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "internal/agent/agent.go",
     "internal/agent/agent_test.go",
@@ -19,13 +19,20 @@
       "context": "/ef/ff438dea3a/0/context.md",
       "content_hash": "/ef/ff438dea3a/0/content_hash.txt",
       "prompt": "/ef/ff438dea3a/0/prompt.txt"
+    },
+    {
+      "metadata": "/ef/ff438dea3a/1/metadata.json",
+      "transcript": "/ef/ff438dea3a/1/full.jsonl",
+      "context": "/ef/ff438dea3a/1/context.md",
+      "content_hash": "/ef/ff438dea3a/1/content_hash.txt",
+      "prompt": "/ef/ff438dea3a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 716,
+    "input_tokens": 5959,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 21760,
-    "output_tokens": 398,
-    "api_call_count": 3
+    "cache_read_tokens": 44544,
+    "output_tokens": 726,
+    "api_call_count": 6
   }
 }
