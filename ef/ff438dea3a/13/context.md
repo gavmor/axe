@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Inspect one or two existing tool implementations (prefer run_command.go and read_file.go) and return exact pattern for ToolEntry, Definition, Execute, deferred toolVerboseLog usage, and summary string style. Return concise snippets and file:line references only.
+
