@@ -1,0 +1,1 @@
+Run `go test ./internal/tool -run URLFetch` to verify RED state. Return only the failed output lines.
