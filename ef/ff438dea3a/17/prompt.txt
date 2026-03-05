@@ -1,0 +1,1 @@
+Run unit tests for ./internal/toolname to capture RED state after updating tests. Return only failed test output lines and brief failure reason.
