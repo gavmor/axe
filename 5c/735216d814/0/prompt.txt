@@ -1,0 +1,137 @@
+# Implementation Instructions
+
+1. Study the spec markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 025
+    - If 025 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_spec.md`
+2. Study implementation plan markdown file thoroughly
+    - located in `./docs/plans/`
+    - Use the spec file that starts with 025
+    - If 025 is empty, blank, or does not exist; the newest file formatted as `xxx_topic_implement.md`
+3. Pick the highest leverage unchecked task
+4. Complete the task
+5. Verify the changes against `## Rules and Checks` listed below.
+5. Update the implementation plan to check off the task you just completed
+6. After completeing a single phase, run the `auto-review` skill.
+7, After the review changes are finished, run `git diff --shortstat` to check the total line changes.
+    - If the changes are greater than 500 stop implementing and let the human know.
+    - If the changes are less than 500 continue to the next phase of the implementation plan
+8. Repeat steps 3-7 until all phases are complete.
+
+## Rules
+
+- Use agents for exploring the codebase
+    - Each agent must only have one explicit task.
+    - Each agent must only return the information that fulfills that task.
+    - Spin off multiple agents in parallel for tasks that do not depend on another task.
+- Use red/greed TDD
+- If there are any SQL/ORM changes, please compare them against working queries in the codebase for syntax correctness.
+- Verify that the unit tests for functions with updates have a test case to that will verify the change.
+- Verify that all new code has an unbiased unit test.
+- Verify that no import paths were changed for files in the `/lambdas` directory.
+    - If tests require different import resolution than production, fix the test infrastructure (conftest.py, pytest.ini) without modifying the Lambda source imports.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+
+---
+
+are there any steps left?
+
+---
+
+commit the changes
+
+---
+
+1. Verify that we are not on the develop branch.
+    - If we are on the develop branch ask what branch name to switch to.
+    - Once given the name create a new git branch off of develop using `git checkout -b`
+2. Review all changes made against develop.
+3. Create a Git message which lists out the changes made in a short paragraph
+4. The title should summarize the changes at a high level. Keep it UNDER 50 characters.
+5. Commit the changes locally.
+6. Push the branch to remote using `git push --set-upstream origin "$(git branch --show-current)"`
+7. Use the script at `/Users/jaronswab/ai/scripts/stacked_diff_parent.sh` to get the correct parent branch.
+8. Open a PR on GitHub if it does not already exist.
+    - Use `gh pr create --base <parent branch>` when sending the PR request to GitHub. (we use stacked diffs)
+    - Always verify before opening the PR on GitHub
+    - Make sure the the title starts with the Linear issue ID (GAI-XXXX - this should be part of the branch name already).
+    - Make sure the title is in title case.
+    - Do not add any details to the description.
+    - If a PR for the current branch is already in GitHub just push the new commit(s) to remote.
+
+---
+
+rebase this on master
+
+---
+
+commit docs/plans/025_url_fetch_spec.md
+
+---
+
+change the branch name to iss-007/url-fetch-tool
+
+---
+
+1. Verify that we are not on the develop branch.
+    - If we are on the develop branch ask what branch name to switch to.
+    - Once given the name create a new git branch off of develop using `git checkout -b`
+2. Review all changes made against develop.
+3. Create a Git message which lists out the changes made in a short paragraph
+4. The title should summarize the changes at a high level. Keep it UNDER 50 characters.
+5. Commit the changes locally.
+6. Push the branch to remote using `git push --set-upstream origin "$(git branch --show-current)"`
+7. Use the script at `/Users/jaronswab/ai/scripts/stacked_diff_parent.sh` to get the correct parent branch.
+8. Open a PR on GitHub if it does not already exist.
+    - Use `gh pr create --base <parent branch>` when sending the PR request to GitHub. (we use stacked diffs)
+    - Always verify before opening the PR on GitHub
+    - Make sure the the title starts with the Linear issue ID (GAI-XXXX - this should be part of the branch name already).
+    - Make sure the title is in title case.
+    - Do not add any details to the description.
+    - If a PR for the current branch is already in GitHub just push the new commit(s) to remote.
+
+---
+
+run golangci-lint
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config path] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config verify] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint run] in [/home/runner/work/axe/axe] ...
+  Error: internal/tool/url_fetch.go:85:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+  	defer resp.Body.Close()
+  	                     ^
+  1 issues:
+  * errcheck: 1
+  
+  Error: issues found
+  Ran golangci-lint in 5202ms
+
+---
+
+install it with `go`
+
+---
+
+run golangci-lint
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config path] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint config verify] in [/home/runner/work/axe/axe] ...
+  Running [/home/runner/golangci-lint-2.10.1-linux-amd64/golangci-lint run] in [/home/runner/work/axe/axe] ...
+  Error: internal/tool/url_fetch.go:85:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+  	defer resp.Body.Close()
+  	                     ^
+  1 issues:
+  * errcheck: 1
+  
+  Error: issues found
+  Ran golangci-lint in 5202ms
+
+---
+
+commit the changes
+
+---
+
+add `.entire/` to gitignore
+
+---
+
+comit the changes
