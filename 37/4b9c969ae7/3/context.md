@@ -118,3 +118,7 @@ truncURL with a sanitized form that keeps only scheme://host/path (drop
 userinfo, query, and fragment). Implement or call a sanitizer (e.g., a new
 sanitizeURL function) and use its output when cre...
 
+### Prompt 18
+
+commit the changes and push to remote
+
