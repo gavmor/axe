@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Run `go test ./internal/tool -run URLFetch` in repo root. Return only failed test results; if all pass return `ALL_URLFETCH_TESTS_PASSED`.
+
