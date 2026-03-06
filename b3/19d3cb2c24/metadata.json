@@ -3,9 +3,10 @@
   "checkpoint_id": "b319d3cb2c24",
   "strategy": "manual-commit",
   "branch": "iss-6/web-search-tool",
-  "checkpoints_count": 5,
+  "checkpoints_count": 7,
   "files_touched": [
     "cmd/run.go",
+    "cmd/run_mcp_integration_test.go",
     "cmd/run_test.go",
     "cmd/testdata/golden/dry-run/basic.txt",
     "cmd/testdata/golden/dry-run/with_files.txt",
@@ -13,6 +14,7 @@
     "cmd/testdata/golden/dry-run/with_skill.txt",
     "cmd/testdata/golden/dry-run/with_subagents.txt",
     "cmd/testdata/golden/dry-run/with_tools.txt",
+    "docs/plans/027_mcp_tool_support_implement.md",
     "go.mod",
     "go.sum",
     "internal/agent/agent.go",
@@ -54,13 +56,20 @@
       "context": "/b3/19d3cb2c24/4/context.md",
       "content_hash": "/b3/19d3cb2c24/4/content_hash.txt",
       "prompt": "/b3/19d3cb2c24/4/prompt.txt"
+    },
+    {
+      "metadata": "/b3/19d3cb2c24/5/metadata.json",
+      "transcript": "/b3/19d3cb2c24/5/full.jsonl",
+      "context": "/b3/19d3cb2c24/5/context.md",
+      "content_hash": "/b3/19d3cb2c24/5/content_hash.txt",
+      "prompt": "/b3/19d3cb2c24/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 137569,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 692352,
-    "output_tokens": 6059,
-    "api_call_count": 28
+    "input_tokens": 423892,
+    "cache_creation_tokens": 92115,
+    "cache_read_tokens": 1983064,
+    "output_tokens": 14678,
+    "api_call_count": 56
   }
 }
