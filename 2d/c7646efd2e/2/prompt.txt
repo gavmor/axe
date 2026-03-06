@@ -1,0 +1,53 @@
+Verify each finding against the current code and only fix it if needed.
+
+In `@internal/agent/agent.go` around lines 53 - 55, The Load() validation
+currently enforces cfg.Tools against toolname.ValidNames() before MCP discovery,
+causing valid MCP-provided tools to be rejected; update Load() (or its
+validation helper) to either (A) relax/defer validation by skipping validation
+of any tool name that matches an MCP-discovered tool name (query
+MCPServers/MCPServerConfig discovery first and merge discovered tool names, then
+validate only unknown names against toolname.ValidNames()), or (B) explicitly
+treat Tools as "built-ins only" by renaming/scoping the field and validating
+only against toolname.ValidNames(); reference the Tools field,
+MCPServers/MCPServerConfig, the Load() function, and toolname.ValidNames() when
+implementing the chosen fix. Verify each finding against the current code and only fix it if needed.
+
+In `@internal/agent/agent.go` around lines 98 - 102, The config validation
+currently only checks that server.URL is non-empty; instead parse and validate
+the URL shape (use net/url.Parse or url.ParseRequestURI) for server.URL and
+ensure it contains a valid scheme (http or https) and host before proceeding to
+the Transport checks; if parsing fails return a clear error like
+"mcp_servers[%d].url is invalid: %v" referencing server.URL, and keep the
+existing transport check (server.Transport) after the URL validation so
+malformed URLs fail fast and with actionable messages. Verify each finding against the current code and only fix it if needed.
+
+In `@internal/mcpclient/mcpclient.go` around lines 85 - 90, The request spotlights
+that CallTool currently forwards all arguments as strings (producing e.g. "3"
+instead of 3) because schemas parsed in ListTools aren't cached; fix by caching
+tool schemas on the Client (add a field like Client.toolSchemas
+map[string]Schema populated in ListTools when calling convertTool) and perform
+schema-aware coercion in Client.CallTool before invoking session.CallTool: look
+up the stored schema for call.Name, coerce each entry in the args map to the
+declared type (integer/number/boolean/string) using the same conversion logic as
+convertTool, and then pass the coerced args into mcp.CallToolParams;
+alternatively, if you prefer deferring coercion, ensure the code path that has
+schema access (e.g., wherever convertTool is called) performs the coercion and
+hands CallTool a typed args map rather than raw strings. Verify each finding against the current code and only fix it if needed.
+
+In `@internal/mcpclient/router.go` around lines 11 - 17, Router.Close only
+iterates r.tools which omits clients that registered zero routed tools, leaking
+MCP sessions; modify registration logic so every Client is recorded for shutdown
+regardless of tool filtering (e.g., add the Client to r.tools or a new r.clients
+map at the start of Register or maintain a separate allClients set keyed by
+client ID) and ensure Deregister/Close iterate that complete collection to call
+Client.Close/cleanup; update Register, Close (and any Deregister/remove paths)
+to use the chosen collection so clients that reported no routed tools are still
+closed.
+
+---
+
+go ahead
+
+---
+
+commit
