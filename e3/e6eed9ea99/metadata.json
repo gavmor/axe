@@ -5,6 +5,7 @@
   "branch": "update-openai-base-url",
   "checkpoints_count": 0,
   "files_touched": [
+    ".gitignore",
     "cmd/run_integration_test.go",
     "internal/provider/openai.go",
     "internal/provider/openai_test.go"
