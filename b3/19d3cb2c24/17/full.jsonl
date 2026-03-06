@@ -1,0 +1,384 @@
+{
+  "info": {
+    "id": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+    "slug": "nimble-nebula",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33eb4a0f5ffeUQ3mvFsxRTFwAO",
+    "title": "Review current tracked diff (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772769775263,
+      "updated": 1772769787884
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772769775268
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc1500ea30013UXcm5KYjpNXTt",
+        "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: review tracked changes from `git diff HEAD` in /Users/jaronswab/go/src/github.com/jrswab/axe and return only critical issues needing fixes now, else 'no critical issues'.",
+          "id": "prt_cc1500ea4001Qq70ScpS5wztcK",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1500ea30013UXcm5KYjpNXTt"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772769775271,
+          "completed": 1772769778394
+        },
+        "parentID": "msg_cc1500ea30013UXcm5KYjpNXTt",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0155085,
+        "tokens": {
+          "total": 7349,
+          "input": 7222,
+          "output": 127,
+          "reasoning": 78,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc1500ea7001sfNswFGIoUsrGJ",
+        "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "id": "prt_cc1501051001nAt9QiyqhdCivQ",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1500ea7001sfNswFGIoUsrGJ"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Reviewing tracked changes diff**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0c2662522d0a5c5c0169aa51f009d08196bf3e7bac06287428",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772769776060,
+            "end": 1772769777921
+          },
+          "id": "prt_cc15011bc001S87ZvoITVw5rl6",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1500ea7001sfNswFGIoUsrGJ"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+              "description": "Shows tracked changes against HEAD"
+            },
+            "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 4f0d49b..fb3d9d5 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -33,20 +33,29 @@ type SubAgentsConfig struct {\n \tTimeout  int   `toml:\"timeout\"`\n }\n \n+// MCPServerConfig holds Model Context Protocol server configuration.\n+type MCPServerConfig struct {\n+\tName      string            `toml:\"name\"`\n+\tURL       string            `toml:\"url\"`\n+\tTransport string            `toml:\"transport\"`\n+\tHeaders   map[string]string `toml:\"headers\"`\n+}\n+\n // AgentConfig represents a parsed agent TOML configuration file.\n type AgentConfig struct {\n-\tName          string          `toml:\"name\"`\n-\tDescription   string          `toml:\"description\"`\n-\tModel         string          `toml:\"model\"`\n-\tSystemPrompt  string          `toml:\"system_prompt\"`\n-\tSkill         string          `toml:\"skill\"`\n-\tFiles         []string        `toml:\"files\"`\n-\tWorkdir       string          `toml:\"workdir\"`\n-\tTools         []string        `toml:\"tools\"`\n-\tSubAgents     []string        `toml:\"sub_agents\"`\n-\tSubAgentsConf SubAgentsConfig `toml:\"sub_agents_config\"`\n-\tMemory        MemoryConfig    `toml:\"memory\"`\n-\tParams        ParamsConfig    `toml:\"params\"`\n+\tName          string            `toml:\"name\"`\n+\tDescription   string            `toml:\"description\"`\n+\tModel         string            `toml:\"model\"`\n+\tSystemPrompt  string            `toml:\"system_prompt\"`\n+\tSkill         string            `toml:\"skill\"`\n+\tFiles         []string          `toml:\"files\"`\n+\tWorkdir       string            `toml:\"workdir\"`\n+\tTools         []string          `toml:\"tools\"`\n+\tMCPServers    []MCPServerConfig `toml:\"mcp_servers\"`\n+\tSubAgents     []string          `toml:\"sub_agents\"`\n+\tSubAgentsConf SubAgentsConfig   `toml:\"sub_agents_config\"`\n+\tMemory        MemoryConfig      `toml:\"memory\"`\n+\tParams        ParamsConfig      `toml:\"params\"`\n }\n \n // Validate checks that required fields are present in the agent configuration.\n@@ -80,6 +89,23 @@ func Validate(cfg *AgentConfig) error {\n \t\t\treturn fmt.Errorf(\"unknown tool %q in tools config\", name)\n \t\t}\n \t}\n+\n+\tseenMCPNames := make(map[string]struct{}, len(cfg.MCPServers))\n+\tfor i, server := range cfg.MCPServers {\n+\t\tif strings.TrimSpace(server.Name) == \"\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].name is required\", i)\n+\t\t}\n+\t\tif strings.TrimSpace(server.URL) == \"\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].url is required\", i)\n+\t\t}\n+\t\tif server.Transport != \"sse\" && server.Transport != \"streamable-http\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].transport must be one of: sse, streamable-http\", i)\n+\t\t}\n+\t\tif _, exists := seenMCPNames[server.Name]; exists {\n+\t\t\treturn fmt.Errorf(\"mcp_servers names must be unique: %q\", server.Name)\n+\t\t}\n+\t\tseenMCPNames[server.Name] = struct{}{}\n+\t}\n \treturn nil\n }\n \ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 565aa32..8bdef86 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -943,3 +943,186 @@ func TestScaffold_ToolsBeforeSubAgents(t *testing.T) {\n \t\tt.Errorf(\"tools section (pos %d) should appear before sub_agents section (pos %d)\", toolsIdx, subAgentsIdx)\n \t}\n }\n+\n+func TestValidate_MCPServers_Valid(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: \"streamable-http\"},\n+\t\t},\n+\t}\n+\n+\tif err := Validate(cfg); err != nil {\n+\t\tt.Fatalf(\"expected no error, got %v\", err)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_MissingName(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"\", URL: \"http://localhost:8080/mcp\", Transport: \"sse\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].name is required`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_MissingURL(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"\", Transport: \"sse\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].url is required`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_InvalidTransport(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: \"stdio\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].transport must be one of: sse, streamable-http`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_ValidTransports(t *testing.T) {\n+\ttests := []struct {\n+\t\tname      string\n+\t\ttransport string\n+\t}{\n+\t\t{name: \"sse\", transport: \"sse\"},\n+\t\t{name: \"streamable-http\", transport: \"streamable-http\"},\n+\t}\n+\n+\tfor _, tc := range tests {\n+\t\tt.Run(tc.name, func(t *testing.T) {\n+\t\t\tcfg := &AgentConfig{\n+\t\t\t\tName:  \"test\",\n+\t\t\t\tModel: \"openai/gpt-4o\",\n+\t\t\t\tMCPServers: []MCPServerConfig{\n+\t\t\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: tc.transport},\n+\t\t\t\t},\n+\t\t\t}\n+\n+\t\t\tif err := Validate(cfg); err != nil {\n+\t\t\t\tt.Fatalf(\"expected no error, got %v\", err)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+func TestValidate_MCPServers_DuplicateNames(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/one\", Transport: \"sse\"},\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/two\", Transport: \"streamable-http\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers names must be unique: \"local\"`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestParseTOML_MCPServers(t *testing.T) {\n+\tagentsDir := setupAgentsDir(t)\n+\n+\ttomlContent := `\n+name = \"mcp-agent\"\n+model = \"openai/gpt-4o\"\n+\n+[[mcp_servers]]\n+name = \"github\"\n+url = \"https://example.com/mcp\"\n+transport = \"streamable-http\"\n+headers = { Authorization = \"Bearer ${TOKEN}\", \"X-Foo\" = \"bar\" }\n+\n+[[mcp_servers]]\n+name = \"files\"\n+url = \"https://example.com/sse\"\n+transport = \"sse\"\n+`\n+\twriteAgentFile(t, agentsDir, \"mcp-agent\", tomlContent)\n+\n+\tcfg, err := Load(\"mcp-agent\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif len(cfg.MCPServers) != 2 {\n+\t\tt.Fatalf(\"MCPServers length = %d, want 2\", len(cfg.MCPServers))\n+\t}\n+\tif cfg.MCPServers[0].Name != \"github\" {\n+\t\tt.Errorf(\"MCPServers[0].Name = %q, want github\", cfg.MCPServers[0].Name)\n+\t}\n+\tif cfg.MCPServers[0].URL != \"https://example.com/mcp\" {\n+\t\tt.Errorf(\"MCPServers[0].URL = %q, want https://example.com/mcp\", cfg.MCPServers[0].URL)\n+\t}\n+\tif cfg.MCPServers[0].Transport != \"streamable-http\" {\n+\t\tt.Errorf(\"MCPServers[0].Transport = %q, want streamable-http\", cfg.MCPServers[0].Transport)\n+\t}\n+\tif len(cfg.MCPServers[0].Headers) != 2 {\n+\t\tt.Fatalf(\"MCPServers[0].Headers length = %d, want 2\", len(cfg.MCPServers[0].Headers))\n+\t}\n+\tif cfg.MCPServers[0].Headers[\"Authorization\"] != \"Bearer ${TOKEN}\" {\n+\t\tt.Errorf(\"MCPServers[0].Headers[Authorization] = %q, want Bearer ${TOKEN}\", cfg.MCPServers[0].Headers[\"Authorization\"])\n+\t}\n+\tif cfg.MCPServers[1].Name != \"files\" {\n+\t\tt.Errorf(\"MCPServers[1].Name = %q, want files\", cfg.MCPServers[1].Name)\n+\t}\n+\tif cfg.MCPServers[1].Transport != \"sse\" {\n+\t\tt.Errorf(\"MCPServers[1].Transport = %q, want sse\", cfg.MCPServers[1].Transport)\n+\t}\n+}\n+\n+func TestParseTOML_MCPServers_Empty(t *testing.T) {\n+\tagentsDir := setupAgentsDir(t)\n+\n+\ttomlContent := `\n+name = \"no-mcp\"\n+model = \"openai/gpt-4o\"\n+`\n+\twriteAgentFile(t, agentsDir, \"no-mcp\", tomlContent)\n+\n+\tcfg, err := Load(\"no-mcp\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif cfg.MCPServers != nil {\n+\t\tt.Errorf(\"MCPServers = %v, want nil\", cfg.MCPServers)\n+\t}\n+}\n",
+            "title": "Shows tracked changes against HEAD",
+            "metadata": {
+              "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 4f0d49b..fb3d9d5 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -33,20 +33,29 @@ type SubAgentsConfig struct {\n \tTimeout  int   `toml:\"timeout\"`\n }\n \n+// MCPServerConfig holds Model Context Protocol server configuration.\n+type MCPServerConfig struct {\n+\tName      string            `toml:\"name\"`\n+\tURL       string            `toml:\"url\"`\n+\tTransport string            `toml:\"transport\"`\n+\tHeaders   map[string]string `toml:\"headers\"`\n+}\n+\n // AgentConfig represents a parsed agent TOML configuration file.\n type AgentConfig struct {\n-\tName          string          `toml:\"name\"`\n-\tDescription   string          `toml:\"description\"`\n-\tModel         string          `toml:\"model\"`\n-\tSystemPrompt  string          `toml:\"system_prompt\"`\n-\tSkill         string          `toml:\"skill\"`\n-\tFiles         []string        `toml:\"files\"`\n-\tWorkdir       string          `toml:\"workdir\"`\n-\tTools         []string        `toml:\"tools\"`\n-\tSubAgents     []string        `toml:\"sub_agents\"`\n-\tSubAgentsConf SubAgentsConfig `toml:\"sub_agents_config\"`\n-\tMemory        MemoryConfig    `toml:\"memory\"`\n-\tParams        ParamsConfig    `toml:\"params\"`\n+\tName          string            `toml:\"name\"`\n+\tDescription   string            `toml:\"description\"`\n+\tModel         string            `toml:\"model\"`\n+\tSystemPrompt  string            `toml:\"system_prompt\"`\n+\tSkill         string            `toml:\"skill\"`\n+\tFiles         []string          `toml:\"files\"`\n+\tWorkdir       string            `toml:\"workdir\"`\n+\tTools         []string          `toml:\"tools\"`\n+\tMCPServers    []MCPServerConfig `toml:\"mcp_servers\"`\n+\tSubAgents     []string          `toml:\"sub_agents\"`\n+\tSubAgentsConf SubAgentsConfig   `toml:\"sub_agents_config\"`\n+\tMemory        MemoryConfig      `toml:\"memory\"`\n+\tParams        ParamsConfig      `toml:\"params\"`\n }\n \n // Validate checks that required fields are present in the agent configuration.\n@@ -80,6 +89,23 @@ func Validate(cfg *AgentConfig) error {\n \t\t\treturn fmt.Errorf(\"unknown tool %q in tools config\", name)\n \t\t}\n \t}\n+\n+\tseenMCPNames := make(map[string]struct{}, len(cfg.MCPServers))\n+\tfor i, server := range cfg.MCPServers {\n+\t\tif strings.TrimSpace(server.Name) == \"\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].name is required\", i)\n+\t\t}\n+\t\tif strings.TrimSpace(server.URL) == \"\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].url is required\", i)\n+\t\t}\n+\t\tif server.Transport != \"sse\" && server.Transport != \"streamable-http\" {\n+\t\t\treturn fmt.Errorf(\"mcp_servers[%d].transport must be one of: sse, streamable-http\", i)\n+\t\t}\n+\t\tif _, exists := seenMCPNames[server.Name]; exists {\n+\t\t\treturn fmt.Errorf(\"mcp_servers names must be unique: %q\", server.Name)\n+\t\t}\n+\t\tseenMCPNames[server.Name] = struct{}{}\n+\t}\n \treturn nil\n }\n \ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 565aa32..8bdef86 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -943,3 +943,186 @@ func TestScaffold_ToolsBeforeSubAgents(t *testing.T) {\n \t\tt.Errorf(\"tools section (pos %d) should appear before sub_agents section (pos %d)\", toolsIdx, subAgentsIdx)\n \t}\n }\n+\n+func TestValidate_MCPServers_Valid(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: \"streamable-http\"},\n+\t\t},\n+\t}\n+\n+\tif err := Validate(cfg); err != nil {\n+\t\tt.Fatalf(\"expected no error, got %v\", err)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_MissingName(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"\", URL: \"http://localhost:8080/mcp\", Transport: \"sse\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].name is required`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_MissingURL(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"\", Transport: \"sse\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].url is required`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_InvalidTransport(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: \"stdio\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers[0].transport must be one of: sse, streamable-http`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestValidate_MCPServers_ValidTransports(t *testing.T) {\n+\ttests := []struct {\n+\t\tname      string\n+\t\ttransport string\n+\t}{\n+\t\t{name: \"sse\", transport: \"sse\"},\n+\t\t{name: \"streamable-http\", transport: \"streamable-http\"},\n+\t}\n+\n+\tfor _, tc := range tests {\n+\t\tt.Run(tc.name, func(t *testing.T) {\n+\t\t\tcfg := &AgentConfig{\n+\t\t\t\tName:  \"test\",\n+\t\t\t\tModel: \"openai/gpt-4o\",\n+\t\t\t\tMCPServers: []MCPServerConfig{\n+\t\t\t\t\t{Name: \"local\", URL: \"http://localhost:8080/mcp\", Transport: tc.transport},\n+\t\t\t\t},\n+\t\t\t}\n+\n+\t\t\tif err := Validate(cfg); err != nil {\n+\t\t\t\tt.Fatalf(\"expected no error, got %v\", err)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+func TestValidate_MCPServers_DuplicateNames(t *testing.T) {\n+\tcfg := &AgentConfig{\n+\t\tName:  \"test\",\n+\t\tModel: \"openai/gpt-4o\",\n+\t\tMCPServers: []MCPServerConfig{\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/one\", Transport: \"sse\"},\n+\t\t\t{Name: \"local\", URL: \"http://localhost:8080/two\", Transport: \"streamable-http\"},\n+\t\t},\n+\t}\n+\n+\terr := Validate(cfg)\n+\tif err == nil {\n+\t\tt.Fatal(\"expected error, got nil\")\n+\t}\n+\tif got, want := err.Error(), `mcp_servers names must be unique: \"local\"`; got != want {\n+\t\tt.Fatalf(\"got %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestParseTOML_MCPServers(t *testing.T) {\n+\tagentsDir := setupAgentsDir(t)\n+\n+\ttomlContent := `\n+name = \"mcp-agent\"\n+model = \"openai/gpt-4o\"\n+\n+[[mcp_servers]]\n+name = \"github\"\n+url = \"https://example.com/mcp\"\n+transport = \"streamable-http\"\n+headers = { Authorization = \"Bearer ${TOKEN}\", \"X-Foo\" = \"bar\" }\n+\n+[[mcp_servers]]\n+name = \"files\"\n+url = \"https://example.com/sse\"\n+transport = \"sse\"\n+`\n+\twriteAgentFile(t, agentsDir, \"mcp-agent\", tomlContent)\n+\n+\tcfg, err := Load(\"mcp-agent\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif len(cfg.MCPServers) != 2 {\n+\t\tt.Fatalf(\"MCPServers length = %d, want 2\", len(cfg.MCPServers))\n+\t}\n+\tif cfg.MCPServers[0].Name != \"github\" {\n+\t\tt.Errorf(\"MCPServers[0].Name = %q, want github\", cfg.MCPServers[0].Name)\n+\t}\n+\tif cfg.MCPServers[0].URL != \"https://example.com/mcp\" {\n+\t\tt.Errorf(\"MCPServers[0].URL = %q, want https://example.com/mcp\", cfg.MCPServers[0].URL)\n+\t}\n+\tif cfg.MCPServers[0].Transport != \"streamable-http\" {\n+\t\tt.Errorf(\"MCPServers[0].Transport = %q, want streamable-http\", cfg.MCPServers[0].Transport)\n+\t}\n+\tif len(cfg.MCPServers[0].Headers) != 2 {\n+\t\tt.Fatalf(\"MCPServers[0].Headers length = %d, want 2\", len(cfg.MCPServers[0].Headers))\n+\t}\n+\tif cfg.MCPServers[0].Headers[\"Authorization\"] != \"Bearer ${TOKEN}\" {\n+\t\tt.Errorf(\"MCPServers[0].Headers[Authorization] = %q, want Bearer ${TOKEN}\", cfg.MCPServers[0].Headers[\"Authorization\"])\n+\t}\n+\tif cfg.MCPServers[1].Name != \"files\" {\n+\t\tt.Errorf(\"MCPServers[1].Name = %q, want files\", cfg.MCPServers[1].Name)\n+\t}\n+\tif cfg.MCPServers[1].Transport != \"sse\" {\n+\t\tt.Errorf(\"MCPServers[1].Transport = %q, want sse\", cfg.MCPServers[1].Transport)\n+\t}\n+}\n+\n+func TestParseTOML_MCPServers_Empty(t *testing.T) {\n+\tagentsDir := setupAgentsDir(t)\n+\n+\ttomlContent := `\n+name = \"no-mcp\"\n+model = \"openai/gpt-4o\"\n+`\n+\twriteAgentFile(t, agentsDir, \"no-mcp\", tomlContent)\n+\n+\tcfg, err := Load(\"no-mcp\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif cfg.MCPServers != nil {\n+\t\tt.Errorf(\"MCPServers = %v, want nil\", cfg.MCPServers)\n+\t}\n+}\n",
+              "exit": 0,
+              "description": "Shows tracked changes against HEAD",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772769778277,
+              "end": 1772769778326
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0c2662522d0a5c5c0169aa51f1e4e0819696df6a679e342dbd"
+            }
+          },
+          "id": "prt_cc1501903001QMbhz5fLwSw6vH",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1500ea7001sfNswFGIoUsrGJ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "cost": 0.0155085,
+          "tokens": {
+            "total": 7349,
+            "input": 7222,
+            "output": 127,
+            "reasoning": 78,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc1501a97001rFFmxRORpSlUTh",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1500ea7001sfNswFGIoUsrGJ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772769778395,
+          "completed": 1772769787856
+        },
+        "parentID": "msg_cc1500ea30013UXcm5KYjpNXTt",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01811565,
+        "tokens": {
+          "total": 10439,
+          "input": 2819,
+          "output": 452,
+          "reasoning": 400,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc1501adb001f24y7poLpRMCMx",
+        "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "id": "prt_cc1501c5c001KE3bWNB9oFOsSA",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1501adb001f24y7poLpRMCMx"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Identifying potential backward compatibility and uniqueness issues**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_007d9de54c2c943c0169aa51f37fcc8195ba13c18c17159b29",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772769779521,
+            "end": 1772769787520
+          },
+          "id": "prt_cc1501f4100118affVklSwWCmw",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1501adb001f24y7poLpRMCMx"
+        },
+        {
+          "type": "tool",
+          "callID": "call_CmnLFYhNP70oV3BCfnFKqg0c",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/agent",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+              "description": "Runs internal agent package tests"
+            },
+            "output": "ok  \tgithub.com/jrswab/axe/internal/agent\t(cached)\n",
+            "title": "Runs internal agent package tests",
+            "metadata": {
+              "output": "ok  \tgithub.com/jrswab/axe/internal/agent\t(cached)\n",
+              "exit": 0,
+              "description": "Runs internal agent package tests",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772769787651,
+              "end": 1772769787798
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_007d9de54c2c943c0169aa51fb7d988195bdc5761a62b8c1e1"
+            }
+          },
+          "id": "prt_cc1503e81001S7In29gsnoAN6R",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1501adb001f24y7poLpRMCMx"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "cost": 0.01811565,
+          "tokens": {
+            "total": 10439,
+            "input": 2819,
+            "output": 452,
+            "reasoning": 400,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cc1503f97001ML5OAxWr4iM01j",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1501adb001f24y7poLpRMCMx"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772769787856,
+          "completed": 1772769789813
+        },
+        "parentID": "msg_cc1500ea30013UXcm5KYjpNXTt",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01912575,
+        "tokens": {
+          "total": 10524,
+          "input": 10497,
+          "output": 27,
+          "reasoning": 27,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc1503fd0001sfZSIMRiRYKucC",
+        "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "id": "prt_cc1504109001bjCXEfWEphLqqQ",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1503fd0001sfZSIMRiRYKucC"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Clarifying output formatting**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_03adb3ae5ca0c39c0169aa51fc67ac8195809040617d9f0837",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772769788425,
+            "end": 1772769789596
+          },
+          "id": "prt_cc150420900100aGpkpkFRf4Pz",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1503fd0001sfZSIMRiRYKucC"
+        },
+        {
+          "type": "text",
+          "text": "no critical issues",
+          "time": {
+            "start": 1772769789657,
+            "end": 1772769789657
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_03adb3ae5ca0c39c0169aa51fd91e4819588521466f8ed9be6"
+            }
+          },
+          "id": "prt_cc150469f001lveP2fuqRdgtoy",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1503fd0001sfZSIMRiRYKucC"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "851d36b28d1ec91633c2fdff1d0c971ceda512d0",
+          "cost": 0.01912575,
+          "tokens": {
+            "total": 10524,
+            "input": 10497,
+            "output": 27,
+            "reasoning": 27,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc1504705001JWbJ2RS6PbU9TA",
+          "sessionID": "ses_33eaff161ffeWJYsBlJcmpNmTm",
+          "messageID": "msg_cc1503fd0001sfZSIMRiRYKucC"
+        }
+      ]
+    }
+  ]
+}
