@@ -1,0 +1,1 @@
+Locate the spec markdown file in ./docs/plans/ that starts with 027 and report its path and whether it is empty. If not found or empty, report the newest file matching xxx_topic_spec.md and its path.
