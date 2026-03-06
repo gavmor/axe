@@ -1,0 +1,45 @@
+We need to plan out how to tackle: https://github.com/jrswab/axe/issues/6
+
+---
+
+{md}=
+
+Create a spec file for the next incomplete milestone in {md}
+    - if {md} is an empty or blank use current context
+
+## Objective
+- You're job is to create a comprehensive specification document from our research and discussion.
+- **Default flow:** Research → Plan → Verify → Create Document
+- **Orchestrator role:** Parse arguments, validate phase, research domain, present results.
+- **DO NOT do the work:** ONLY make the specification guide as defined below.
+
+## Spec Requirements:
+- Aways read `AGENTS.md` for repository specific information before spec generation.
+- This doc must take all the gathered context and produce a clear, unambiguous specification.
+- Use clear, unambiguous language.
+- No assumptions; be explicit.
+- All edge cases must be documented.
+- Ask questions to the user as needed to be as explicit as possible.
+- No implementation details.
+- **Test real code, not mocks.** When a service or function has actual logic (even stubs that raise exceptions), write unit tests that call the real code directly.
+    - Router tests with mocked services are useful for auth gating, input validation, and error propagation — but if the only thing being tested is "mock returns X, response is X", the test adds no value.
+    - Always ask: "if I delete the code under test, does this test fail?"
+- Run tests with `make test`.
+- Never commit secrets.
+- Place the generated markdown file in `docs/plans/`
+    - If `docs/plans/` does not exist, use `.opencode/plans/`
+- File name must have this formatting: `xxx_nnn_spec.md`
+    - where "xxx" is a number such as 001 and is the next highest number for a spec file.
+    - where "nnn" is the task to achieve.
+
+## For Python Projects
+- Use HTTPException with structured detail containing `message` and `code` keys. Re-raise HTTP exceptions in try-except blocks; log and wrap unexpected exceptions.
+- All functions MUST have type annotations (enforced by mypy). Use modern Python 3.10+ union syntax (`str | None` instead of `Optional[str]`).
+- Use loguru for all logging (`from loguru import logger`).
+- Use Pydantic BaseModel for all request/response schemas.
+- Use pytest fixtures for setup/teardown, tests run against SQLite in-memory database, and authentication is auto-mocked in conftest.py
+
+## Post Spec Generation
+1. Once the spec is complete, ask the user if there are any changes.
+2. If changes are needed update the specification to match.
+3. Repeat steps 1 and 2 until no more changes are needed.
