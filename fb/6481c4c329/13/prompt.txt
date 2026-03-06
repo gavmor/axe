@@ -1,0 +1,1 @@
+Single task: run `go test ./internal/toolname` and return only failed results. If all pass, respond exactly: ALL_PASS.
