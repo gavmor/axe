@@ -1,0 +1,486 @@
+{
+  "info": {
+    "id": "ses_33f24b930ffeT1oDeKloKhkyPN",
+    "slug": "neon-wolf",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33f2dd6b0ffejnG7KO74wOarbx",
+    "title": "Final auto-review (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772762121935,
+      "updated": 1772762130890
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772762121937
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc0db46d10014yNdMBqEGc2tqy",
+        "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: review `git diff HEAD` and list only actionable bugs/regressions. Return markdown list; if none, `- No critical issues found.`",
+          "id": "prt_cc0db46d2001G17cu05smuVj2x",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db46d10014yNdMBqEGc2tqy"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762121939,
+          "completed": 1772762123686
+        },
+        "parentID": "msg_cc0db46d10014yNdMBqEGc2tqy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01408925,
+        "tokens": {
+          "total": 7279,
+          "input": 7211,
+          "output": 68,
+          "reasoning": 37,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0db46d3001PAV50fyZQZMYDh",
+        "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "id": "prt_cc0db480e001p9WqLFgBOTpn1U",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db46d3001PAV50fyZQZMYDh"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Preparing to review git diff**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0689a553b784e5b00169aa340a91208190a2f6b56fc402687a",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762122689,
+            "end": 1772762123452
+          },
+          "id": "prt_cc0db49c1001L1CjsBofFnwrMa",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db46d3001PAV50fyZQZMYDh"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Shows changes compared to HEAD commit"
+            },
+            "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 3cd2358..4f0d49b 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 622e822..3049cf0 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -96,4 +96,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n \tr.Register(toolname.URLFetch, urlFetchEntry())\n+\tr.Register(toolname.WebSearch, webSearchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex 579c98f..49653f5 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -434,6 +434,34 @@ func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.WebSearch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.WebSearch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.WebSearch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.WebSearch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.WebSearch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"query\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'query' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+            "title": "Shows changes compared to HEAD commit",
+            "metadata": {
+              "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 3cd2358..4f0d49b 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 622e822..3049cf0 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -96,4 +96,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n \tr.Register(toolname.URLFetch, urlFetchEntry())\n+\tr.Register(toolname.WebSearch, webSearchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex 579c98f..49653f5 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -434,6 +434,34 @@ func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.WebSearch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.WebSearch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.WebSearch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.WebSearch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.WebSearch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"query\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'query' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+              "exit": 0,
+              "description": "Shows changes compared to HEAD commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762123540,
+              "end": 1772762123588
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0689a553b784e5b00169aa340b6f388190bf86035eb337a176"
+            }
+          },
+          "id": "prt_cc0db4cbe001rq7Fx69f0ksCGZ",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db46d3001PAV50fyZQZMYDh"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "cost": 0.01408925,
+          "tokens": {
+            "total": 7279,
+            "input": 7211,
+            "output": 68,
+            "reasoning": 37,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0db4d45001j4Uy40xtU5E6XL",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db46d3001PAV50fyZQZMYDh"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762123687,
+          "completed": 1772762129436
+        },
+        "parentID": "msg_cc0db46d10014yNdMBqEGc2tqy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00998865,
+        "tokens": {
+          "total": 8653,
+          "input": 1239,
+          "output": 246,
+          "reasoning": 223,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0db4da7001oh4bp7v0Lkr28f",
+        "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "id": "prt_cc0db4ee6001UqMJyJ2o7Io7V4",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db4da7001oh4bp7v0Lkr28f"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Assessing potential regressions from diff**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0255aeef457005d40169aa340c303c819588a8674cfb53c6ce",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762124202,
+            "end": 1772762129236
+          },
+          "id": "prt_cc0db4faa001SYoyKVpyRBjR0r",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db4da7001oh4bp7v0Lkr28f"
+        },
+        {
+          "type": "tool",
+          "callID": "call_Ha8zKx26wjimsSQVm17i7eZx",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/*web*"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search_test.go",
+            "title": "",
+            "metadata": {
+              "count": 2,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762129308,
+              "end": 1772762129323
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0255aeef457005d40169aa3411372081958348a14c6eeb126b"
+            }
+          },
+          "id": "prt_cc0db6356001NNEzviYzV27BYR",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db4da7001oh4bp7v0Lkr28f"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "cost": 0.00998865,
+          "tokens": {
+            "total": 8653,
+            "input": 1239,
+            "output": 246,
+            "reasoning": 223,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0db63ae001J6glA17fx7VOQC",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db4da7001oh4bp7v0Lkr28f"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762129436,
+          "completed": 1772762130859
+        },
+        "parentID": "msg_cc0db46d10014yNdMBqEGc2tqy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00277655,
+        "tokens": {
+          "total": 8762,
+          "input": 129,
+          "output": 57,
+          "reasoning": 18,
+          "cache": {
+            "read": 8576,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0db641c001NVyc9JLNjloNBI",
+        "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "id": "prt_cc0db656d001v7EN3ZPmA4Q8pJ",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db641c001NVyc9JLNjloNBI"
+        },
+        {
+          "type": "reasoning",
+          "text": "",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0c16c6c47c1c0f570169aa341202a88196a49055cf7c5211a5",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762130032,
+            "end": 1772762130646
+          },
+          "id": "prt_cc0db6670001WmCJmDZ68YwhAu",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db641c001NVyc9JLNjloNBI"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"encoding/json\"\n7: \t\"fmt\"\n8: \t\"io\"\n9: \t\"net/http\"\n10: \t\"os\"\n11: \t\"strings\"\n12: \n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: \t\"github.com/jrswab/axe/internal/toolname\"\n15: )\n16: \n17: const (\n18: \ttavilyDefaultURL       = \"https://api.tavily.com\"\n19: \ttavilyMaxResults       = 10\n20: \ttavilyMaxResponseBytes = 102400\n21: \ttavilyErrorBodyMax     = 500\n22: \twebSearchQueryLogMax   = 80\n23: )\n24: \n25: type tavilySearchRequest struct {\n26: \tQuery         string `json:\"query\"`\n27: \tMaxResults    int    `json:\"max_results\"`\n28: \tSearchDepth   string `json:\"search_depth\"`\n29: \tAPIKey        string `json:\"api_key\"`\n30: \tIncludeImages bool   `json:\"include_images\"`\n31: \tIncludeVideos bool   `json:\"include_videos\"`\n32: }\n33: \n34: type tavilySearchResult struct {\n35: \tTitle   string `json:\"title\"`\n36: \tURL     string `json:\"url\"`\n37: \tContent string `json:\"content\"`\n38: }\n39: \n40: type tavilySearchResponse struct {\n41: \tResults []tavilySearchResult `json:\"results\"`\n42: }\n43: \n44: func webSearchEntry() ToolEntry {\n45: \treturn ToolEntry{\n46: \t\tDefinition: webSearchDefinition,\n47: \t\tExecute:    webSearchExecute,\n48: \t}\n49: }\n50: \n51: func webSearchDefinition() provider.Tool {\n52: \treturn provider.Tool{\n53: \t\tName:        toolname.WebSearch,\n54: \t\tDescription: \"Search the web using Tavily and return text results including titles, URLs, and snippets.\",\n55: \t\tParameters: map[string]provider.ToolParameter{\n56: \t\t\t\"query\": {\n57: \t\t\t\tType:        \"string\",\n58: \t\t\t\tDescription: \"The search query to perform.\",\n59: \t\t\t\tRequired:    true,\n60: \t\t\t},\n61: \t\t},\n62: \t}\n63: }\n64: \n65: func webSearchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n66: \tquery := call.Arguments[\"query\"]\n67: \n68: \tdefer func() {\n69: \t\tloggedQuery := query\n70: \t\tif len(loggedQuery) > webSearchQueryLogMax {\n71: \t\t\tloggedQuery = loggedQuery[:webSearchQueryLogMax] + \"...\"\n72: \t\t}\n73: \t\tsummary := fmt.Sprintf(\"query %q\", loggedQuery)\n74: \t\tif result.IsError {\n75: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateResultSummary(result.Content, 120))\n76: \t\t}\n77: \t\ttoolVerboseLog(ec, toolname.WebSearch, result, summary)\n78: \t}()\n79: \n80: \tif query == \"\" {\n81: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"query is required\", IsError: true}\n82: \t}\n83: \n84: \tapiKey := os.Getenv(\"TAVILY_API_KEY\")\n85: \tif apiKey == \"\" {\n86: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"TAVILY_API_KEY environment variable is not set\", IsError: true}\n87: \t}\n88: \n89: \tbaseURL := os.Getenv(\"AXE_TAVILY_BASE_URL\")\n90: \tif baseURL == \"\" {\n91: \t\tbaseURL = tavilyDefaultURL\n92: \t}\n93: \n94: \tbody, err := json.Marshal(tavilySearchRequest{\n95: \t\tQuery:         query,\n96: \t\tMaxResults:    tavilyMaxResults,\n97: \t\tSearchDepth:   \"basic\",\n98: \t\tAPIKey:        apiKey,\n99: \t\tIncludeImages: false,\n100: \t\tIncludeVideos: false,\n101: \t})\n102: \tif err != nil {\n103: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n104: \t}\n105: \n106: \treq, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+\"/search\", bytes.NewReader(body))\n107: \tif err != nil {\n108: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n109: \t}\n110: \treq.Header.Set(\"Content-Type\", \"application/json\")\n111: \treq.Header.Set(\"Authorization\", \"Bearer \"+apiKey)\n112: \n113: \tresp, err := http.DefaultClient.Do(req)\n114: \tif err != nil {\n115: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n116: \t}\n117: \tdefer func() {\n118: \t\t_ = resp.Body.Close()\n119: \t}()\n120: \n121: \trespBody, err := io.ReadAll(io.LimitReader(resp.Body, tavilyMaxResponseBytes+1))\n122: \tif err != nil {\n123: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n124: \t}\n125: \n126: \tif len(respBody) > tavilyMaxResponseBytes {\n127: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"Tavily response too large to process\", IsError: true}\n128: \t}\n129: \n130: \tif resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {\n131: \t\terrorBody := string(respBody)\n132: \t\tif len(errorBody) > tavilyErrorBodyMax {\n133: \t\t\terrorBody = errorBody[:tavilyErrorBodyMax]\n134: \t\t}\n135: \t\treturn provider.ToolResult{\n136: \t\t\tCallID:  call.ID,\n137: \t\t\tContent: fmt.Sprintf(\"Tavily API error (HTTP %d): %s\", resp.StatusCode, errorBody),\n138: \t\t\tIsError: true,\n139: \t\t}\n140: \t}\n141: \n142: \tvar parsed tavilySearchResponse\n143: \tif err := json.Unmarshal(respBody, &parsed); err != nil {\n144: \t\treturn provider.ToolResult{CallID: call.ID, Content: fmt.Sprintf(\"failed to parse Tavily response: %v\", err), IsError: true}\n145: \t}\n146: \n147: \tif len(parsed.Results) == 0 {\n148: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"No results found.\", IsError: false}\n149: \t}\n150: \n151: \tvar b strings.Builder\n152: \tfor i, item := range parsed.Results {\n153: \t\tif i > 0 {\n154: \t\t\tb.WriteString(\"\\n\\n\")\n155: \t\t}\n156: \t\tfmt.Fprintf(&b, \"Title: %s\\nURL: %s\\nSnippet: %s\", item.Title, item.URL, item.Content)\n157: \t}\n158: \n159: \treturn provider.ToolResult{CallID: call.ID, Content: strings.TrimSpace(b.String()), IsError: false}\n160: }\n161: \n162: func truncateResultSummary(s string, maxLen int) string {\n163: \tif len(s) <= maxLen {\n164: \t\treturn s\n165: \t}\n166: \treturn s[:maxLen] + \"...\"\n167: }\n\n(End of file - total 167 lines)\n</content>",
+            "title": "internal/tool/web_search.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"encoding/json\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"os\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst (\n\ttavilyDefaultURL       = \"https://api.tavily.com\"\n\ttavilyMaxResults       = 10\n\ttavilyMaxResponseBytes = 102400",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772762130753,
+              "end": 1772762130757
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0c16c6c47c1c0f570169aa3412987081968e638a46e994a703"
+            }
+          },
+          "id": "prt_cc0db68d70014L8UYlFJ3qfPTP",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db641c001NVyc9JLNjloNBI"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "cost": 0.00277655,
+          "tokens": {
+            "total": 8762,
+            "input": 129,
+            "output": 57,
+            "reasoning": 18,
+            "cache": {
+              "read": 8576,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0db6946001o97YwC6A5bBcYk",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db641c001NVyc9JLNjloNBI"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762130859,
+          "completed": 1772762136129
+        },
+        "parentID": "msg_cc0db46d10014yNdMBqEGc2tqy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01046605,
+        "tokens": {
+          "total": 10720,
+          "input": 1939,
+          "output": 205,
+          "reasoning": 193,
+          "cache": {
+            "read": 8576,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc0db69ab001hZWi1LDVqiT48a",
+        "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "id": "prt_cc0db6b310010WtNpMPcxjwo0k",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db69ab001hZWi1LDVqiT48a"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Reviewing diff for critical issues**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_044f35649a68651c0169aa3413696881939483fba0c9332d12",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762131427,
+            "end": 1772762135880
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db69ab001hZWi1LDVqiT48a"
+        },
+        {
+          "type": "text",
+          "text": "- No critical issues found.",
+          "time": {
+            "start": 1772762135968,
+            "end": 1772762135968
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_044f35649a68651c0169aa3417dc808193946f9c24f586eb1a"
+            }
+          },
+          "id": "prt_cc0db7d51001aimy6vyOdFhUOA",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db69ab001hZWi1LDVqiT48a"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "0523da03524ca41f9b3e77580f5ed875c055ed24",
+          "cost": 0.01046605,
+          "tokens": {
+            "total": 10720,
+            "input": 1939,
+            "output": 205,
+            "reasoning": 193,
+            "cache": {
+              "read": 8576,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0db7dd1001wqoQa7EQl6192l",
+          "sessionID": "ses_33f24b930ffeT1oDeKloKhkyPN",
+          "messageID": "msg_cc0db69ab001hZWi1LDVqiT48a"
+        }
+      ]
+    }
+  ]
+}
