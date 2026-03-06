@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Single task: review current `git diff HEAD` in /Users/jaronswab/go/src/github.com/jrswab/axe for correctness and risks. Return only critical issues that need fixes now, with file and line references. If none, return 'no critical issues'.
+
