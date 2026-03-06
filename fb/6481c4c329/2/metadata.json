@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "fb6481c4c329",
+  "session_id": "ses_33f252a95ffex38g9CTKWnwVx5",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T02:40:37.356232Z",
+  "branch": "iss-6/web-search-tool",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "internal/agent/agent.go",
+    "internal/tool/registry.go",
+    "internal/tool/registry_test.go",
+    "internal/toolname/toolname.go",
+    "internal/toolname/toolname_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "8e92ee65182a",
+  "token_usage": {
+    "input_tokens": 7542,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7040,
+    "output_tokens": 109,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T02:40:37.352929Z",
+    "agent_lines": 36,
+    "human_added": 1363,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1399,
+    "agent_percentage": 2.573266619013581
+  }
+}
