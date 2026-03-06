@@ -1,0 +1,736 @@
+{
+  "info": {
+    "id": "ses_33f263de9ffeWYVZ637nwftynW",
+    "slug": "eager-pixel",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33f2dd6b0ffejnG7KO74wOarbx",
+    "title": "Auto-review current diff (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772762022422,
+      "updated": 1772762044718
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772762022426
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: review `git diff HEAD` for bugs/regressions. Return concise markdown list of issues with severity and exact file:line. If no actionable issues, return `- No critical issues found.`",
+          "id": "prt_cc0d9c21a001xkst0ZLEeBKj08",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9c219001z46iwjXUKBS4WT"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762022429,
+          "completed": 1772762025091
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00460075,
+        "tokens": {
+          "total": 7345,
+          "input": 181,
+          "output": 124,
+          "reasoning": 94,
+          "cache": {
+            "read": 7040,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d9c21d001VzxaT5relZyplh",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0d9c32f001v4Qkc7C3Bg7X9Y",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9c21d001VzxaT5relZyplh"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Preparing to review current diff**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_060296334501bc990169aa33a6f8f0819690368860437d4b57",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762023050,
+            "end": 1772762024878
+          },
+          "id": "prt_cc0d9c48a001W3NTzJ0pzoDciG",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9c21d001VzxaT5relZyplh"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Shows all changes from HEAD"
+            },
+            "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 3cd2358..4f0d49b 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 992e43f..565aa32 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -921,7 +921,7 @@ func TestScaffold_ContainsValidToolNames(t *testing.T) {\n \tif err != nil {\n \t\tt.Fatalf(\"unexpected error: %v\", err)\n \t}\n-\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\") {\n+\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\") {\n \t\tt.Errorf(\"scaffold output missing valid tool names comment\\nfull output:\\n%s\", out)\n \t}\n }\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 622e822..3049cf0 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -96,4 +96,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n \tr.Register(toolname.URLFetch, urlFetchEntry())\n+\tr.Register(toolname.WebSearch, webSearchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex 579c98f..49653f5 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -434,6 +434,34 @@ func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.WebSearch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.WebSearch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.WebSearch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.WebSearch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.WebSearch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"query\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'query' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+            "title": "Shows all changes from HEAD",
+            "metadata": {
+              "output": "diff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 3cd2358..4f0d49b 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -174,7 +174,7 @@ model = \"provider/model-name\"\n # workdir = \"\"\n \n # Tools this agent can use (optional)\n-# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\n+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n # Sub-agents this agent can invoke (optional)\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 992e43f..565aa32 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -921,7 +921,7 @@ func TestScaffold_ContainsValidToolNames(t *testing.T) {\n \tif err != nil {\n \t\tt.Fatalf(\"unexpected error: %v\", err)\n \t}\n-\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch\") {\n+\tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\") {\n \t\tt.Errorf(\"scaffold output missing valid tool names comment\\nfull output:\\n%s\", out)\n \t}\n }\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 622e822..3049cf0 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -96,4 +96,5 @@ func RegisterAll(r *Registry) {\n \tr.Register(toolname.EditFile, editFileEntry())\n \tr.Register(toolname.RunCommand, runCommandEntry())\n \tr.Register(toolname.URLFetch, urlFetchEntry())\n+\tr.Register(toolname.WebSearch, webSearchEntry())\n }\ndiff --git a/internal/tool/registry_test.go b/internal/tool/registry_test.go\nindex 579c98f..49653f5 100644\n--- a/internal/tool/registry_test.go\n+++ b/internal/tool/registry_test.go\n@@ -434,6 +434,34 @@ func TestRegisterAll_ResolvesURLFetch(t *testing.T) {\n \t}\n }\n \n+func TestRegisterAll_RegistersWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\tif !r.Has(toolname.WebSearch) {\n+\t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.WebSearch)\n+\t}\n+}\n+\n+func TestRegisterAll_ResolvesWebSearch(t *testing.T) {\n+\tr := NewRegistry()\n+\tRegisterAll(r)\n+\n+\ttools, err := r.Resolve([]string{toolname.WebSearch})\n+\tif err != nil {\n+\t\tt.Fatalf(\"Resolve returned error: %v\", err)\n+\t}\n+\tif len(tools) != 1 {\n+\t\tt.Fatalf(\"expected 1 tool, got %d\", len(tools))\n+\t}\n+\tif tools[0].Name != toolname.WebSearch {\n+\t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.WebSearch)\n+\t}\n+\tif _, ok := tools[0].Parameters[\"query\"]; !ok {\n+\t\tt.Error(\"expected tool to have a 'query' parameter\")\n+\t}\n+}\n+\n func TestRegisterAll_Idempotent(t *testing.T) {\n \tr := NewRegistry()\n \tRegisterAll(r)\ndiff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+              "exit": 0,
+              "description": "Shows all changes from HEAD",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762024949,
+              "end": 1772762024994
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_060296334501bc990169aa33a8dbe881969cd4fd7c5de15ff1"
+            }
+          },
+          "id": "prt_cc0d9cbb0001CcZd064yexNQuc",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9c21d001VzxaT5relZyplh"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.00460075,
+          "tokens": {
+            "total": 7345,
+            "input": 181,
+            "output": 124,
+            "reasoning": 94,
+            "cache": {
+              "read": 7040,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d9cc230017PvSVGCffEESqw",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9c21d001VzxaT5relZyplh"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762025092,
+          "completed": 1772762028712
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00855365,
+        "tokens": {
+          "total": 8874,
+          "input": 1491,
+          "output": 215,
+          "reasoning": 120,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d9cc84001PvaPUgBEyDCyAV",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0d9ce07001NOaSE40zoDUJMm",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9cc84001PvaPUgBEyDCyAV"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting web search tool registration**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_09179e77f92ba31c0169aa33a99f48819683246a56c44f7073",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762025638,
+            "end": 1772762028564
+          },
+          "id": "prt_cc0d9cea6001MDy6fwRn29Mbfo",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9cc84001PvaPUgBEyDCyAV"
+        },
+        {
+          "type": "tool",
+          "callID": "call_TZhC0v3NV22ToLcMad88O8xT",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/*web*"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search_test.go",
+            "title": "",
+            "metadata": {
+              "count": 2,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762028577,
+              "end": 1772762028598
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_09179e77f92ba31c0169aa33ac8bec81968a2e86c8730c8439"
+            }
+          },
+          "id": "prt_cc0d9da15001dy6dsvb3EM96d9",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9cc84001PvaPUgBEyDCyAV"
+        },
+        {
+          "type": "tool",
+          "callID": "call_yK6u0HaxrvoOaGxtRqL39uo7",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "func\\s+webSearchEntry|type\\s+.*webSearch|WebSearch",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool",
+              "include": "*.go"
+            },
+            "output": "Found 34 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 99: \tr.Register(toolname.WebSearch, webSearchEntry())\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go:\n  Line 437: func TestRegisterAll_RegistersWebSearch(t *testing.T) {\n  Line 441: \tif !r.Has(toolname.WebSearch) {\n  Line 442: \t\tt.Fatalf(\"Has(%q) returned false after RegisterAll\", toolname.WebSearch)\n  Line 446: func TestRegisterAll_ResolvesWebSearch(t *testing.T) {\n  Line 450: \ttools, err := r.Resolve([]string{toolname.WebSearch})\n  Line 457: \tif tools[0].Name != toolname.WebSearch {\n  Line 458: \t\tt.Errorf(\"tool Name: got %q, want %q\", tools[0].Name, toolname.WebSearch)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go:\n  Line 44: func webSearchEntry() ToolEntry {\n  Line 53: \t\tName:        toolname.WebSearch,\n  Line 77: \t\ttoolVerboseLog(ec, toolname.WebSearch, result, summary)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search_test.go:\n  Line 19: func TestWebSearch_EmptyQuery(t *testing.T) {\n  Line 33: func TestWebSearch_MissingQueryArgument(t *testing.T) {\n  Line 47: func TestWebSearch_MissingAPIKey(t *testing.T) {\n  Line 61: func TestWebSearch_Success(t *testing.T) {\n  Line 94: func TestWebSearch_CallIDPassthrough(t *testing.T) {\n  Line 112: func TestWebSearch_EmptyResults(t *testing.T) {\n  Line 132: func TestWebSearch_NullResults(t *testing.T) {\n  Line 152: func TestWebSearch_HTTPError_401(t *testing.T) {\n  Line 176: func TestWebSearch_HTTPError_429(t *testing.T) {\n  Line 197: func TestWebSearch_HTTPError_500(t *testing.T) {\n  Line 221: func TestWebSearch_InvalidJSON(t *testing.T) {\n  Line 241: func TestWebSearch_ContextCancellation(t *testing.T) {\n  Line 269: func TestWebSearch_ConnectionRefused(t *testing.T) {\n  Line 293: func TestWebSearch_BaseURLOverride(t *testing.T) {\n  Line 317: func TestWebSearch_RequestBody(t *testing.T) {\n  Line 358: func TestWebSearch_AuthorizationHeader(t *testing.T) {\n  Line 377: func TestWebSearch_VerboseLog(t *testing.T) {\n  Line 403: func TestWebSearch_VerboseLogQueryTruncation(t *testing.T) {\n  Line 430: func TestWebSearch_LargeResponseTruncation(t *testing.T) {\n  Line 451: func TestWebSearch_ErrorBodyTruncation(t *testing.T) {\n  Line 477: func TestWebSearch_Definition(t *testing.T) {\n  Line 496: func TestWebSearch_BaseURLDefault(t *testing.T) {\n  Line 511: func TestWebSearch_Non2xxBodyFormatting(t *testing.T) {",
+            "title": "func\\s+webSearchEntry|type\\s+.*webSearch|WebSearch",
+            "metadata": {
+              "matches": 34,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762028593,
+              "end": 1772762028611
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_09179e77f92ba31c0169aa33ac8c048196af8091dab02d757e"
+            }
+          },
+          "id": "prt_cc0d9da22001FlYT7wDpl5nlym",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9cc84001PvaPUgBEyDCyAV"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.00855365,
+          "tokens": {
+            "total": 8874,
+            "input": 1491,
+            "output": 215,
+            "reasoning": 120,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d9da44001KW4GlRZymLEWYv",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9cc84001PvaPUgBEyDCyAV"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762028713,
+          "completed": 1772762032158
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0056917,
+        "tokens": {
+          "total": 9801,
+          "input": 966,
+          "output": 131,
+          "reasoning": 46,
+          "cache": {
+            "read": 8704,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d9daa9001pMyzJMN8rvxev6",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0d9dbde001NaDtWgaUpIiuZn",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9daa9001pMyzJMN8rvxev6"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Preparing to audit usage patterns**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0c08e90f5589df300169aa33adf2e08197bce325a7545170ce",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762030014,
+            "end": 1772762031274
+          },
+          "id": "prt_cc0d9dfbe001MuteypTEjasWw3",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9daa9001pMyzJMN8rvxev6"
+        },
+        {
+          "type": "tool",
+          "callID": "call_EA40V5lpdrFrgJb1oUAz4Xbb",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "url_fetch|edit_file|run_command|list_directory|read_file|write_file|ValidNames\\(\\)|len\\(names\\) != 6|tool names|tools = \\[\\]",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+              "include": "*.go"
+            },
+            "output": "Found 196 matches (showing first 100)\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 77: \tvalidTools := toolname.ValidNames()\n  Line 177: # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n  Line 178: # tools = []\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 747: tools = [\"read_file\", \"list_directory\"]\n  Line 759: \tif cfg.Tools[0] != \"read_file\" {\n  Line 760: \t\tt.Errorf(\"Tools[0] = %q, want %q\", cfg.Tools[0], \"read_file\")\n  Line 762: \tif cfg.Tools[1] != \"list_directory\" {\n  Line 763: \t\tt.Errorf(\"Tools[1] = %q, want %q\", cfg.Tools[1], \"list_directory\")\n  Line 792: tools = []\n  Line 815: \t\tTools: []string{\"read_file\", \"write_file\"},\n  Line 827: \t\tTools: []string{\"read_file\", \"bogus\"},\n  Line 899: \t\tTools: []string{\"list_directory\", \"read_file\", \"write_file\", \"edit_file\", \"run_command\"},\n  Line 914: \tif !strings.Contains(out, \"# tools = []\") {\n  Line 915: \t\tt.Errorf(\"scaffold output missing '# tools = []'\\nfull output:\\n%s\", out)\n  Line 924: \tif !strings.Contains(out, \"# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\") {\n  Line 925: \t\tt.Errorf(\"scaffold output missing valid tool names comment\\nfull output:\\n%s\", out)\n  Line 934: \ttoolsIdx := strings.Index(out, \"# tools = []\")\n  Line 937: \t\tt.Fatal(\"scaffold output missing '# tools = []'\")\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 25: // Registry maps tool names to their definitions and executors.\n  Line 51: // Resolve takes a list of tool names and returns their provider.Tool definitions.\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname.go:\n  Line 8: \tListDirectory = \"list_directory\"\n  Line 9: \tReadFile      = \"read_file\"\n  Line 10: \tWriteFile     = \"write_file\"\n  Line 11: \tEditFile      = \"edit_file\"\n  Line 12: \tRunCommand    = \"run_command\"\n  Line 13: \tURLFetch      = \"url_fetch\"\n  Line 17: // ValidNames returns the set of tool names that can appear in an agent's\n  Line 20: func ValidNames() map[string]bool {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname_test.go:\n  Line 6: \tnames := ValidNames()\n  Line 8: \t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n  Line 13: \tnames := ValidNames()\n  Line 17: \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n  Line 23: \tnames := ValidNames()\n  Line 25: \t\tt.Error(\"ValidNames() should not contain call_agent\")\n  Line 30: \tfirst := ValidNames()\n  Line 33: \tsecond := ValidNames()\n  Line 35: \t\tt.Error(\"ValidNames() returned a shared map; modifying one affected the other\")\n  Line 46: \t\t{\"ListDirectory\", ListDirectory, \"list_directory\"},\n  Line 47: \t\t{\"ReadFile\", ReadFile, \"read_file\"},\n  Line 48: \t\t{\"WriteFile\", WriteFile, \"write_file\"},\n  Line 49: \t\t{\"EditFile\", EditFile, \"edit_file\"},\n  Line 50: \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n  Line 51: \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 1225: \t\t// Turn 1: LLM requests read_file\n  Line 1227: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"hello.txt\"}},\n  Line 1236: tools = [\"read_file\", \"list_directory\"]\n  Line 1268: \t// First request should contain tool definitions for both read_file and list_directory\n  Line 1270: \tif !strings.Contains(body0, \"read_file\") {\n  Line 1271: \t\tt.Errorf(\"expected first request to contain read_file tool definition, body: %s\", body0)\n  Line 1273: \tif !strings.Contains(body0, \"list_directory\") {\n  Line 1274: \t\tt.Errorf(\"expected first request to contain list_directory tool definition, body: %s\", body0)\n  Line 1288: \t\t// Turn 1: LLM requests write_file\n  Line 1290: \t\t\t{ID: \"tc_wf1\", Name: \"write_file\", Input: map[string]string{\"path\": \"output.txt\", \"content\": \"first draft\"}},\n  Line 1292: \t\t// Turn 2: LLM requests edit_file\n  Line 1294: \t\t\t{ID: \"tc_ef1\", Name: \"edit_file\", Input: map[string]string{\"path\": \"output.txt\", \"old_string\": \"first\", \"new_string\": \"final\"}},\n  Line 1303: tools = [\"write_file\", \"edit_file\"]\n  Line 1340: \t// Verify write_file success message in second request\n  Line 1346: \t// Verify edit_file success message in third request\n  Line 1357: \t\t// Turn 1: LLM requests run_command\n  Line 1359: \t\t\t{ID: \"tc_rc1\", Name: \"run_command\", Input: map[string]string{\"command\": \"echo hello\"}},\n  Line 1368: tools = [\"run_command\"]\n  Line 1407: \t\t// Turn 1: LLM requests read_file\n  Line 1409: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"data.txt\"}},\n  Line 1424: tools = [\"read_file\"]\n  Line 1459: \t// First request should contain both read_file and call_agent tool definitions\n  Line 1461: \tif !strings.Contains(body0, \"read_file\") {\n  Line 1462: \t\tt.Errorf(\"expected first request to contain read_file tool, body: %s\", body0)\n  Line 1468: \t// Second request should contain the read_file tool result\n  Line 1485: \t\t// Turn 1: LLM requests both read_file and call_agent simultaneously\n  Line 1487: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"info.txt\"}},\n  Line 1490: \t\t// Sub-agent response (read_file completes synchronously, so sub-agent HTTP call is next)\n  Line 1499: tools = [\"read_file\"]\n  Line 1537: \t\tt.Errorf(\"expected final request to contain read_file result, body: %s\", body2)\n  Line 1548: \t\t// Turn 1: list_directory\n  Line 1550: \t\t\t{ID: \"tc_ld1\", Name: \"list_directory\", Input: map[string]string{\"path\": \".\"}},\n  Line 1552: \t\t// Turn 2: read_file\n  Line 1554: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"readme.txt\"}},\n  Line 1556: \t\t// Turn 3: run_command\n  Line 1558: \t\t\t{ID: \"tc_rc1\", Name: \"run_command\", Input: map[string]string{\"command\": \"echo done\"}},\n  Line 1567: tools = [\"list_directory\", \"read_file\", \"run_command\"]\n  Line 1623: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"a.txt\"}},\n  Line 1624: \t\t\t{ID: \"tc_ld1\", Name: \"list_directory\", Input: map[string]string{\"path\": \".\"}},\n  Line 1628: \t\t\t{ID: \"tc_rc1\", Name: \"run_command\", Input: map[string]string{\"command\": \"echo final\"}},\n  Line 1637: tools = [\"read_file\", \"list_directory\", \"run_command\"]\n  Line 1680: \twantOrder := []string{\"read_file\", \"list_directory\", \"run_command\"}\n  Line 1721: \t\t// Turn 1: read_file tool call\n  Line 1723: \t\t\t{ID: \"tc_rf1\", Name: \"read_file\", Input: map[string]string{\"path\": \"test.txt\"}},\n  Line 1732: tools = [\"read_file\"]\n  Line 1763: \tif !strings.Contains(stderrStr, \"[tool] read_file:\") {\n  Line 1764: \t\tt.Errorf(\"expected stderr to contain '[tool] read_file:', got: %s\", stderrStr)\n  Line 1779: \t\t\t{ID: \"tc_big\", Name: \"read_file\", Input: map[string]string{\"path\": \"big.txt\"}},\n  Line 1787: tools = [\"read_file\"]\n  Line 1830: \t\t\t{ID: \"tc_err\", Name: \"read_file\", Input: map[string]string{\"path\": \"../escape.txt\"}},\n  Line 1838: tools = [\"read_file\"]\n  Line 1863: \tif name, ok := entry[\"name\"].(string); !ok || name != \"read_file\" {\n  Line 1864: \t\tt.Fatalf(\"expected name read_file, got %v\", entry[\"name\"])\n  Line 1880: tools = [\"write_file\", \"run_command\"]\n  Line 1898: \tif !strings.Contains(output, \"write_file, run_command\") {\n  Line 1899: \t\tt.Errorf(\"expected stdout to contain 'write_file, run_command', got: %s\", output)\n  Line 1901: \tif strings.Contains(output, \"read_file\") {\n\n(Results truncated: showing 100 of 196 matches (96 hidden). Consider using a more specific path or pattern.)",
+            "title": "url_fetch|edit_file|run_command|list_directory|read_file|write_file|ValidNames\\(\\)|len\\(names\\) != 6|tool names|tools = \\[\\]",
+            "metadata": {
+              "matches": 196,
+              "truncated": true
+            },
+            "time": {
+              "start": 1772762032030,
+              "end": 1772762032055
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0c08e90f5589df300169aa33af400081979771c502e28226a5"
+            }
+          },
+          "id": "prt_cc0d9e4aa001RTbF6dixi2embp",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9daa9001pMyzJMN8rvxev6"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.0056917,
+          "tokens": {
+            "total": 9801,
+            "input": 966,
+            "output": 131,
+            "reasoning": 46,
+            "cache": {
+              "read": 8704,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d9e7b80013YdOpI75JwyP71",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9daa9001pMyzJMN8rvxev6"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762032159,
+          "completed": 1772762041895
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03245025,
+        "tokens": {
+          "total": 12558,
+          "input": 12127,
+          "output": 431,
+          "reasoning": 371,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d9e81f001Ghwf540LKkMRFY",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0d9e960001CRylcxQj2hDxHA",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9e81f001Ghwf540LKkMRFY"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Reviewing tool registration impact**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0f0486b353836bf10169aa33b0de308197b66681f8839114dc",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762032886,
+            "end": 1772762041036
+          },
+          "id": "prt_cc0d9eaf6001Ds1o5uLs8gCn8P",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9e81f001Ghwf540LKkMRFY"
+        },
+        {
+          "type": "tool",
+          "callID": "call_zkQUEnPC1NCqskdU10ZPvQFJ",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/agent ./internal/tool ./internal/toolname",
+              "description": "Runs tests for modified internal packages",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "ok  \tgithub.com/jrswab/axe/internal/agent\t(cached)\nok  \tgithub.com/jrswab/axe/internal/tool\t(cached)\nok  \tgithub.com/jrswab/axe/internal/toolname\t(cached)\n",
+            "title": "Runs tests for modified internal packages",
+            "metadata": {
+              "output": "ok  \tgithub.com/jrswab/axe/internal/agent\t(cached)\nok  \tgithub.com/jrswab/axe/internal/tool\t(cached)\nok  \tgithub.com/jrswab/axe/internal/toolname\t(cached)\n",
+              "exit": 0,
+              "description": "Runs tests for modified internal packages",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762041596,
+              "end": 1772762041835
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0f0486b353836bf10169aa33b903288197a77c11335887e03e"
+            }
+          },
+          "id": "prt_cc0da0acc001J99MDNTyZ8Ima0",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9e81f001Ghwf540LKkMRFY"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.03245025,
+          "tokens": {
+            "total": 12558,
+            "input": 12127,
+            "output": 431,
+            "reasoning": 371,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0da0deb0019DL6CDSjHaPyoB",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0d9e81f001Ghwf540LKkMRFY"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762041896,
+          "completed": 1772762044683
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00982765,
+        "tokens": {
+          "total": 12761,
+          "input": 2891,
+          "output": 142,
+          "reasoning": 77,
+          "cache": {
+            "read": 9728,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0da0e280014CQii90La00zqP",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0da0f8b001r13zQGlSwoEkcD",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da0e280014CQii90La00zqP"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Checking doc-tool list consistency**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0f40ef17931ad4680169aa33ba6fe88195821b06639ddc481c",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762042507,
+            "end": 1772762044273
+          },
+          "id": "prt_cc0da108a00160qVmBxEkESztM",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da0e280014CQii90La00zqP"
+        },
+        {
+          "type": "tool",
+          "callID": "call_pJWaXNguz4e8II2pTPuv0ztd",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "list_directory, read_file, write_file, edit_file, run_command, url_fetch(?!, web_search)",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+              "include": "*.go"
+            },
+            "output": "No files found",
+            "title": "list_directory, read_file, write_file, edit_file, run_command, url_fetch(?!, web_search)",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772762044562,
+              "end": 1772762044571
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0f40ef17931ad4680169aa33bc416c8195bb9156e2b70da357"
+            }
+          },
+          "id": "prt_cc0da17740016dPBpc0DdGKXWA",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da0e280014CQii90La00zqP"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.00982765,
+          "tokens": {
+            "total": 12761,
+            "input": 2891,
+            "output": 142,
+            "reasoning": 77,
+            "cache": {
+              "read": 9728,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0da189c001PIK0ylYJ04ZMbo",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da0e280014CQii90La00zqP"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772762044684,
+          "completed": 1772762048459
+        },
+        "parentID": "msg_cc0d9c219001z46iwjXUKBS4WT",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00614985,
+        "tokens": {
+          "total": 12915,
+          "input": 103,
+          "output": 140,
+          "reasoning": 128,
+          "cache": {
+            "read": 12672,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc0da190c0012aD9MD0ms53uK2",
+        "sessionID": "ses_33f263de9ffeWYVZ637nwftynW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "id": "prt_cc0da1a490013v9upj076L6A3J",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da190c0012aD9MD0ms53uK2"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Clarifying output format for issues**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0ee6300c3c027c8f0169aa33bd82d88194a4d184c5660599f9",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772762045580,
+            "end": 1772762048248
+          },
+          "id": "prt_cc0da1c8c00172thC5YA69anSS",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da190c0012aD9MD0ms53uK2"
+        },
+        {
+          "type": "text",
+          "text": "- No critical issues found.",
+          "time": {
+            "start": 1772762048317,
+            "end": 1772762048317
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_0ee6300c3c027c8f0169aa33c039c48194964ee3fb8e4d4f09"
+            }
+          },
+          "id": "prt_cc0da26f9001Pg6VsNSg05JCtS",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da190c0012aD9MD0ms53uK2"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "faf7af255695659d7f6eae24a9889625de23963c",
+          "cost": 0.00614985,
+          "tokens": {
+            "total": 12915,
+            "input": 103,
+            "output": 140,
+            "reasoning": 128,
+            "cache": {
+              "read": 12672,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0da275a0011kRz6BHzBzW36Z",
+          "sessionID": "ses_33f263de9ffeWYVZ637nwftynW",
+          "messageID": "msg_cc0da190c0012aD9MD0ms53uK2"
+        }
+      ]
+    }
+  ]
+}
