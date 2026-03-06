@@ -13,7 +13,7 @@
     },
     "time": {
       "created": 1772770700775,
-      "updated": 1772771054247
+      "updated": 1772771067666
     }
   },
   "messages": [
@@ -4779,7 +4779,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1772771054150
+          "created": 1772771054150,
+          "completed": 1772771067584
         },
         "parentID": "msg_cc16363bd001c6NHcwPEga0jW2",
         "modelID": "gpt-5.3-codex",
@@ -4790,16 +4791,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.154595,
         "tokens": {
-          "input": 0,
-          "output": 0,
-          "reasoning": 0,
+          "total": 83951,
+          "input": 83628,
+          "output": 323,
+          "reasoning": 266,
           "cache": {
             "read": 0,
             "write": 0
           }
         },
+        "finish": "tool-calls",
         "id": "msg_cc16392460020zZ3R589SAU951",
         "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r"
       },
@@ -4833,13 +4836,22 @@
           "callID": "call_xF5DuU4FM3TUGFcjnh07gAms",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add . && git commit -m \"Add MCP server tool integration and end-to-end coverage\" && git status --short",
               "description": "Stage all changes, commit, and verify clean status"
             },
+            "output": "[iss-6/web-search-tool 7e53a89] Add MCP server tool integration and end-to-end coverage\n 22 files changed, 2757 insertions(+), 57 deletions(-)\n create mode 100644 cmd/run_mcp_integration_test.go\n create mode 100644 docs/plans/027_mcp_tool_support_implement.md\n create mode 100644 docs/plans/027_mcp_tool_support_spec.md\n create mode 100644 internal/envinterp/envinterp.go\n create mode 100644 internal/envinterp/envinterp_test.go\n create mode 100644 internal/mcpclient/mcpclient.go\n create mode 100644 internal/mcpclient/mcpclient_test.go\n create mode 100644 internal/mcpclient/router.go\n create mode 100644 internal/mcpclient/router_test.go\n",
+            "title": "Stage all changes, commit, and verify clean status",
+            "metadata": {
+              "output": "[iss-6/web-search-tool 7e53a89] Add MCP server tool integration and end-to-end coverage\n 22 files changed, 2757 insertions(+), 57 deletions(-)\n create mode 100644 cmd/run_mcp_integration_test.go\n create mode 100644 docs/plans/027_mcp_tool_support_implement.md\n create mode 100644 docs/plans/027_mcp_tool_support_spec.md\n create mode 100644 internal/envinterp/envinterp.go\n create mode 100644 internal/envinterp/envinterp_test.go\n create mode 100644 internal/mcpclient/mcpclient.go\n create mode 100644 internal/mcpclient/mcpclient_test.go\n create mode 100644 internal/mcpclient/router.go\n create mode 100644 internal/mcpclient/router_test.go\n",
+              "exit": 0,
+              "description": "Stage all changes, commit, and verify clean status",
+              "truncated": false
+            },
             "time": {
-              "start": 1772771062784
+              "start": 1772771062784,
+              "end": 1772771067517
             }
           },
           "metadata": {
@@ -4850,6 +4862,118 @@
           "id": "prt_cc163b2860014fbvf3lxSq3qbo",
           "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
           "messageID": "msg_cc16392460020zZ3R589SAU951"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "c7516032965c21350e7c65be0b89cea0ccd4a426",
+          "cost": 0.154595,
+          "tokens": {
+            "total": 83951,
+            "input": 83628,
+            "output": 323,
+            "reasoning": 266,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc163c67d0014YTuVcAhCfFV9g",
+          "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
+          "messageID": "msg_cc16392460020zZ3R589SAU951"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772771067586,
+          "completed": 1772771069994
+        },
+        "parentID": "msg_cc16363bd001c6NHcwPEga0jW2",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01753675,
+        "tokens": {
+          "total": 84264,
+          "input": 293,
+          "output": 131,
+          "reasoning": 37,
+          "cache": {
+            "read": 83840,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc163c6c2002bsmiVjxq2ewiZn",
+        "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "c7516032965c21350e7c65be0b89cea0ccd4a426",
+          "id": "prt_cc163c8b7001cvzE1BOUyBCC3j",
+          "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
+          "messageID": "msg_cc163c6c2002bsmiVjxq2ewiZn"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Confirming clean commit status**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_04da167f1554cc950169aa56fc4f648197bfe6b02c68e50432",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772771068334,
+            "end": 1772771069094
+          },
+          "id": "prt_cc163c9ae0013MXb97Yx07C815",
+          "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
+          "messageID": "msg_cc163c6c2002bsmiVjxq2ewiZn"
+        },
+        {
+          "type": "text",
+          "text": "Done — I committed everything, including the needed untracked files.\n\n- Commit: `7e53a89`\n- Message: `Add MCP server tool integration and end-to-end coverage`\n- Included: MCP client/router/env interpolation packages, run/tool integration updates, tests (including MCP integration smoke), dry-run golden updates, and `027` spec/implementation plan docs.\n\n`git status --short` is clean (no remaining changes).",
+          "time": {
+            "start": 1772771069841,
+            "end": 1772771069841
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_04da167f1554cc950169aa56fd107c81979ea15dcbea565e3c"
+            }
+          },
+          "id": "prt_cc163cca600113DB5iGJO6iYJk",
+          "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
+          "messageID": "msg_cc163c6c2002bsmiVjxq2ewiZn"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "c7516032965c21350e7c65be0b89cea0ccd4a426",
+          "cost": 0.01753675,
+          "tokens": {
+            "total": 84264,
+            "input": 293,
+            "output": 131,
+            "reasoning": 37,
+            "cache": {
+              "read": 83840,
+              "write": 0
+            }
+          },
+          "id": "prt_cc163cfb7001VfHX252LRo9flU",
+          "sessionID": "ses_33ea1d218ffeX3TJN5AAENP44r",
+          "messageID": "msg_cc163c6c2002bsmiVjxq2ewiZn"
         }
       ]
     }
