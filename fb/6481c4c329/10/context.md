@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Single task: locate exact places/tests to update for registering a new tool and scaffold comment. Return file paths and exact relevant snippets/line references for registry.go, registry_test.go, and internal/agent/agent.go. Thoroughness quick.
+
