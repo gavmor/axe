@@ -1,0 +1,1 @@
+Single task: run `go test ./internal/agent/...` in /Users/jaronswab/go/src/github.com/jrswab/axe and return only failing test names and key compile/test errors (no passing output).
