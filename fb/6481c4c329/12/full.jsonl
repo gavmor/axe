@@ -1,0 +1,919 @@
+{
+  "info": {
+    "id": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+    "slug": "glowing-planet",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33f2dd6b0ffejnG7KO74wOarbx",
+    "title": "Auto-review phase changes (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772761610029,
+      "updated": 1772761651798
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772761610032
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: review `git diff HEAD` for potential bugs/regressions in current changes only. Return a concise markdown list of actionable issues. If none, return `- No critical issues found.`",
+          "id": "prt_cc0d37730001lopTfyxQglikn2",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3772f001gMHFE5NjOl3QUy"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761610038,
+          "completed": 1772761612765
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01522325,
+        "tokens": {
+          "total": 7327,
+          "input": 7219,
+          "output": 108,
+          "reasoning": 77,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d37736001FollqaB0tBa37J",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d378580014wQh3h5gWRHYLR",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d37736001FollqaB0tBa37J"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Preparing concise diff review**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_069f4215241788030169aa320ac4cc81938044847a7acf796e",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761610799,
+            "end": 1772761612526
+          },
+          "id": "prt_cc0d37a2f001NJiqq9AiiCcDna",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d37736001FollqaB0tBa37J"
+        },
+        {
+          "type": "tool",
+          "callID": "call_yaugqcyCiRE4LfPmUfYpahXN",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Shows all current changes against HEAD"
+            },
+            "output": "diff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+            "title": "Shows all current changes against HEAD",
+            "metadata": {
+              "output": "diff --git a/internal/toolname/toolname.go b/internal/toolname/toolname.go\nindex df8f0b7..ba00c59 100644\n--- a/internal/toolname/toolname.go\n+++ b/internal/toolname/toolname.go\n@@ -11,6 +11,7 @@ const (\n \tEditFile      = \"edit_file\"\n \tRunCommand    = \"run_command\"\n \tURLFetch      = \"url_fetch\"\n+\tWebSearch     = \"web_search\"\n )\n \n // ValidNames returns the set of tool names that can appear in an agent's\n@@ -24,5 +25,6 @@ func ValidNames() map[string]bool {\n \t\tEditFile:      true,\n \t\tRunCommand:    true,\n \t\tURLFetch:      true,\n+\t\tWebSearch:     true,\n \t}\n }\ndiff --git a/internal/toolname/toolname_test.go b/internal/toolname/toolname_test.go\nindex 1452cbc..e764811 100644\n--- a/internal/toolname/toolname_test.go\n+++ b/internal/toolname/toolname_test.go\n@@ -4,14 +4,14 @@ import \"testing\"\n \n func TestValidNames_ReturnsExpectedCount(t *testing.T) {\n \tnames := ValidNames()\n-\tif len(names) != 6 {\n-\t\tt.Errorf(\"ValidNames() returned %d entries, want 6\", len(names))\n+\tif len(names) != 7 {\n+\t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n \t}\n }\n \n func TestValidNames_ContainsAllExpectedNames(t *testing.T) {\n \tnames := ValidNames()\n-\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch}\n+\texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n \tfor _, name := range expected {\n \t\tif !names[name] {\n \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n@@ -49,6 +49,7 @@ func TestConstants_Values(t *testing.T) {\n \t\t{\"EditFile\", EditFile, \"edit_file\"},\n \t\t{\"RunCommand\", RunCommand, \"run_command\"},\n \t\t{\"URLFetch\", URLFetch, \"url_fetch\"},\n+\t\t{\"WebSearch\", WebSearch, \"web_search\"},\n \t}\n \n \tfor _, tt := range tests {\n",
+              "exit": 0,
+              "description": "Shows all current changes against HEAD",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761612663,
+              "end": 1772761612695
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_069f4215241788030169aa320c7afc8193ab1ef9fe88b28d87"
+            }
+          },
+          "id": "prt_cc0d380f0001Z4a4I46WKI9prx",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d37736001FollqaB0tBa37J"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.01522325,
+          "tokens": {
+            "total": 7327,
+            "input": 7219,
+            "output": 108,
+            "reasoning": 77,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d381970018oPFVwwFW1xX8B",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d37736001FollqaB0tBa37J"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761612765,
+          "completed": 1772761620403
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0068124,
+        "tokens": {
+          "total": 8025,
+          "input": 680,
+          "output": 177,
+          "reasoning": 135,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d381dd001S5tWeV3sAsE0gG",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "REDACTED",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d381dd001S5tWeV3sAsE0gG"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting tool integration risk**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_02790fb70f34a4680169aa320fbabc81978daca082661d182a",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761615752,
+            "end": 1772761620049
+          },
+          "id": "prt_cc0d38d8800112644XHjjUPH7m",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d381dd001S5tWeV3sAsE0gG"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "web_search|WebSearch",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "Found 132 matches (showing first 100)\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f2c88d3ffeHMrMauy5J7csrX.json:\n  Line 13:     \"docs/plans/026_web_search_implement.md\",\n  Line 14:     \"docs/plans/026_web_search_spec.md\"\n  Line 26:       \"docs/plans/026_web_search_implement.md\": 6\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_implement.md:\n  Line 1: # Implementation: `web_search` Built-in Tool (Tavily)\n  Line 3: **Spec:** `docs/plans/026_web_search_spec.md`\n  Line 11: - [x] Add `WebSearch = \"web_search\"` constant to the `const` block in `internal/toolname/toolname.go` *(Req 1.1)*\n  Line 12: - [x] Add `WebSearch: true` entry to the map returned by `ValidNames()` in `internal/toolname/toolname.go` *(Req 1.2)*\n  Line 14: - [x] Update `TestValidNames_ContainsAllExpectedNames` in `internal/toolname/toolname_test.go`: add `WebSearch` to the `expected` slice *(Req 5.2)*\n  Line 15: - [x] Update `TestConstants_Values` in `internal/toolname/toolname_test.go`: add table entry `{\"WebSearch\", WebSearch, \"web_search\"}` *(Req 5.3)*\n  Line 22: - [ ] Create file `internal/tool/web_search.go` *(Req 2.1)*\n  Line 28: - [ ] `Definition` function returns tool with `Name: toolname.WebSearch` (not hardcoded) *(Req 2.3, 2.4)*\n  Line 55: - [ ] Add deferred `toolVerboseLog(ec, toolname.WebSearch, result, summary)` call *(Req 3.17)*\n  Line 64: - [ ] Add `r.Register(toolname.WebSearch, webSearchEntry())` to `RegisterAll` in `internal/tool/registry.go` *(Req 4.1)*\n  Line 71: - [ ] Update `Scaffold()` in `internal/agent/agent.go` tools comment to: `# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search` *(Req 6.1)*\n  Line 80: - [ ] `TestValidNames_ContainsAllExpectedNames` — includes `WebSearch`\n  Line 81: - [ ] `TestConstants_Values` — includes `{\"WebSearch\", WebSearch, \"web_search\"}`\n  Line 88: - [ ] `TestRegisterAll_RegistersWebSearch` — `r.Has(toolname.WebSearch)` returns true *(Spec 7.4)*\n  Line 89: - [ ] `TestRegisterAll_ResolvesWebSearch` — resolved tool has `Name == toolname.WebSearch` with `query` parameter *(Spec 7.4)*\n  Line 99: - [ ] `TestWebSearch_EmptyQuery` — empty Arguments map → `\"query is required\"`, `IsError: true` *(Spec 7.2)*\n  Line 100: - [ ] `TestWebSearch_MissingQueryArgument` — `{\"query\": \"\"}` → `\"query is required\"`, `IsError: true` *(Spec 7.2)*\n  Line 101: - [ ] `TestWebSearch_MissingAPIKey` — `TAVILY_API_KEY=\"\"` → `\"TAVILY_API_KEY environment variable is not set\"`, `IsError: true` *(Spec 7.2)*\n  Line 104: - [ ] `TestWebSearch_Success` — 2 results, verify formatted output, `IsError: false`, `CallID` match *(Spec 7.2)*\n  Line 105: - [ ] `TestWebSearch_CallIDPassthrough` — `call.ID = \"ws-unique-42\"` → `ToolResult.CallID == \"ws-unique-42\"` *(Spec 7.2)*\n  Line 108: - [ ] `TestWebSearch_EmptyResults` — `{\"results\": []}` → `\"No results found.\"`, `IsError: false` *(Spec 7.2)*\n  Line 109: - [ ] `TestWebSearch_NullResults` — `{\"results\": null}` → `\"No results found.\"`, `IsError: false` *(Spec 7.2)*\n  Line 112: - [ ] `TestWebSearch_HTTPError_401` — status 401 → `\"Tavily API error (HTTP 401)\"`, contains `\"Invalid API key\"` *(Spec 7.2)*\n  Line 113: - [ ] `TestWebSearch_HTTPError_429` — status 429 → `\"Tavily API error (HTTP 429)\"` *(Spec 7.2)*\n  Line 114: - [ ] `TestWebSearch_HTTPError_500` — status 500 → `\"Tavily API error (HTTP 500)\"`, contains `\"internal error\"` *(Spec 7.2)*\n  Line 117: - [ ] `TestWebSearch_InvalidJSON` — `\"not json\"` with 200 → `\"failed to parse Tavily response\"` *(Spec 7.2)*\n  Line 120: - [ ] `TestWebSearch_ContextCancellation` — handler blocks 10s, context timeout 50ms → `IsError: true` *(Spec 7.2)*\n  Line 121: - [ ] `TestWebSearch_ConnectionRefused` — closed port → `IsError: true`, non-empty content *(Spec 7.2)*\n  Line 124: - [ ] `TestWebSearch_BaseURLOverride` — verify server receives POST to `/search` *(Spec 7.2)*\n  Line 125: - [ ] `TestWebSearch_RequestBody` — verify body contains `query`, `max_results: 10`, `search_depth: \"basic\"`, `api_key` *(Spec 7.2)*\n  Line 126: - [ ] `TestWebSearch_AuthorizationHeader` — verify header `\"Bearer test-key-123\"` *(Spec 7.2)*\n  Line 129: - [ ] `TestWebSearch_VerboseLog` — `Verbose: true`, buffer contains query, does NOT contain API key *(Spec 7.2)*\n  Line 130: - [ ] `TestWebSearch_VerboseLogQueryTruncation` — query >80 chars, logged summary is truncated *(Spec 7.2)*\n  Line 133: - [ ] `TestWebSearch_LargeResponseTruncation` — body >102400 bytes → `\"Tavily response too large to process\"` *(Spec 7.2)*\n  Line 134: - [ ] `TestWebSearch_ErrorBodyTruncation` — status 400, body >500 bytes → error body portion ≤500 bytes *(Spec 7.2)*\n  Line 147: - [ ] Scaffold comment includes `web_search`\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f2cf18dffeVBFSzCTT25WQMe.json:\n  Line 13:     \"docs/plans/026_web_search_implement.md\",\n  Line 14:     \"docs/plans/026_web_search_spec.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname.go:\n  Line 14: \tWebSearch     = \"web_search\"\n  Line 28: \t\tWebSearch:     true,\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f2d194affeKpNUbTU1dGXCOM.json:\n  Line 13:     \"docs/plans/026_web_search_implement.md\",\n  Line 14:     \"docs/plans/026_web_search_spec.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname_test.go:\n  Line 14: \texpected := []string{ListDirectory, ReadFile, WriteFile, EditFile, RunCommand, URLFetch, WebSearch}\n  Line 52: \t\t{\"WebSearch\", WebSearch, \"web_search\"},\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f2dbcafffet2XJ80OnmKufkt.json:\n  Line 13:     \"docs/plans/026_web_search_implement.md\",\n  Line 14:     \"docs/plans/026_web_search_spec.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f2dd6b0ffejnG7KO74wOarbx.json:\n  Line 13:     \"docs/plans/026_web_search_implement.md\",\n  Line 14:     \"docs/plans/026_web_search_spec.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f325135ffeCDMVfQzWnnzNfP.json:\n  Line 13:     \"docs/plans/026_web_search_spec.md\"\n  Line 16:     \"docs/plans/026_web_search_implement.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/.git/entire-sessions/ses_33f45a386ffetsFE55va0J5jx5.json:\n  Line 13:     \"docs/plans/026_web_search_spec.md\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_spec.md:\n  Line 1: # Specification: `web_search` Built-in Tool (Tavily)\n  Line 13: Implement the `web_search` tool — a built-in tool registered in the `Registry` that performs web searches via the Tavily Search API and returns results as formatted text (titles, URLs, snippets). This tool is needed for feature parity when axe replaces the custom container worker in Agent Engine.\n  Line 18: - **`toolname.WebSearch`** — new constant declared in `internal/toolname/toolname.go`\n  Line 75: **Requirement 1.1:** Add a new constant `WebSearch = \"web_search\"` to the `const` block in `internal/toolname/toolname.go`.\n  Line 77: **Requirement 1.2:** Add `WebSearch: true` to the map returned by `ValidNames()` in `internal/toolname/toolname.go`.\n  Line 79: ### 3.2 `web_search` Tool Definition\n  Line 81: **Requirement 2.1:** Create a file `internal/tool/web_search.go`.\n  Line 86: - `Name`: the value of `toolname.WebSearch` (i.e., `\"web_search\"`)\n  Line 94: **Requirement 2.4:** The tool name in the definition must use `toolname.WebSearch`, not a hardcoded string.\n  Line 98: ### 3.3 `web_search` Tool Executor\n  Line 148: **Requirement 3.17 (Verbose Logging):** Use `toolVerboseLog(ec, toolname.WebSearch, result, summary)` via a deferred function, consistent with all other tools. The summary must include the query (truncated to 80 characters if longer). The summary must NOT include the API key.\n  Line 152: **Requirement 4.1:** Add `r.Register(toolname.WebSearch, webSearchEntry())` to the `RegisterAll` function in `internal/tool/registry.go`.\n  Line 158: **Requirement 5.1:** The `toolname_test.go` test `TestValidNames_ReturnsExpectedCount` currently asserts `len(names) != 6`. After adding `WebSearch`, this test must be updated to assert `len(names) != 7`.\n  Line 160: **Requirement 5.2:** The `toolname_test.go` test `TestValidNames_ContainsAllExpectedNames` currently lists 6 tools. After adding `WebSearch`, this test must be updated to include `WebSearch` in the expected list.\n  Line 162: **Requirement 5.3:** The `toolname_test.go` test `TestConstants_Values` currently has 7 entries (including `CallAgent`). After adding `WebSearch`, this test must be updated to include a case for `{\"WebSearch\", WebSearch, \"web_search\"}`.\n  Line 166: **Requirement 6.1:** Update the `Scaffold()` function in `internal/agent/agent.go` to include `web_search` in the commented tools list. The comment should read:\n  Line 168: # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n  Line 181: │   │   ├── toolname.go              # MODIFIED: add WebSearch constant + ValidNames entry\n  Line 182: │   │   └── toolname_test.go         # MODIFIED: update count (6→7), add WebSearch to expected lists\n  Line 184: │       ├── web_search.go            # NEW: Definition, Execute, request/response types, entry func\n  Line 185: │       ├── web_search_test.go       # NEW: tests\n  Line 315: - **Descriptive names:** `TestWebSearch_Scenario` with underscores.\n  Line 320: ### 7.2 `internal/tool/web_search_test.go` Tests\n  Line 322: **Test: `TestWebSearch_Success`** — Start an `httptest.NewServer` that returns a JSON response with 2 results (`{\"results\": [{\"title\": \"Result 1\", \"url\": \"https://example.com/1\", \"content\": \"Snippet 1\"}, {\"title\": \"Result 2\", \"url\": \"https://example.com/2\", \"content\": \"Snippet 2\"}]}`) with status 200. Set `t.Setenv(\"TAVILY_API_KEY\", \"test-key\")` and `t.Setenv(\"AXE_TAVILY_BASE_URL\", server.URL)`. Call `Execute` with `Arguments: {\"query\": \"test query\"}` and `ExecContext{}`. Verify `IsError` is false. Verify `Content` contains `\"Title: Result 1\"`. Verify `Content` contains `\"URL: https://example.com/1\"`. Verify `Content` contains `\"Snippet: Snippet 1\"`. Verify `Content` contains `\"Title: Result 2\"`. Verify `CallID` matches the input `call.ID`.\n  Line 324: **Test: `TestWebSearch_EmptyQuery`** — Set `t.Setenv(\"TAVILY_API_KEY\", \"test-key\")`. Call `Execute` with empty `Arguments` map `{}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `\"query is required\"`.\n  Line 326: **Test: `TestWebSearch_MissingQueryArgument`** — Set `t.Setenv(\"TAVILY_API_KEY\", \"test-key\")`. Call `Execute` with `Arguments: {\"query\": \"\"}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `\"query is required\"`.\n  Line 328: **Test: `TestWebSearch_MissingAPIKey`** — Ensure `TAVILY_API_KEY` is not set (use `t.Setenv(\"TAVILY_API_KEY\", \"\")`). Call `Execute` with `Arguments: {\"query\": \"test\"}` and `ExecContext{}`. Verify `IsError` is true. Verify `Content` contains `\"TAVILY_API_KEY environment variable is not set\"`.\n  Line 330: **Test: `TestWebSearch_HTTPError_401`** — Start an `httptest.NewServer` that returns status 401 with body `{\"detail\": {\"error\": \"Invalid API key\"}}`. Set `t.Setenv(\"TAVILY_API_KEY\", \"bad-key\")` and `t.Setenv(\"AXE_TAVILY_BASE_URL\", server.URL)`. Call `Execute` with `Arguments: {\"query\": \"test\"}`. Verify `IsError` is true. Verify `Content` contains `\"Tavily API error (HTTP 401)\"`. Verify `Content` contains `\"Invalid API key\"`.\n  Line 332: **Test: `TestWebSearch_HTTPError_429`** — Start an `httptest.NewServer` that returns status 429 with body `{\"detail\": {\"error\": \"Rate limit exceeded\"}}`. Set env vars. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `\"Tavily API error (HTTP 429)\"`.\n  Line 334: **Test: `TestWebSearch_HTTPError_500`** — Start an `httptest.NewServer` that returns status 500 with body `\"internal error\"`. Set env vars. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `\"Tavily API error (HTTP 500)\"`. Verify `Content` contains `\"internal error\"`.\n  Line 336: **Test: `TestWebSearch_EmptyResults`** — Start an `httptest.NewServer` that returns `{\"results\": []}` with status 200. Set env vars. Call `Execute`. Verify `IsError` is false. Verify `Content` equals `\"No results found.\"`.\n  Line 338: **Test: `TestWebSearch_NullResults`** — Start an `httptest.NewServer` that returns `{\"results\": null}` with status 200. Set env vars. Call `Execute`. Verify `IsError` is false. Verify `Content` equals `\"No results found.\"`.\n  Line 340: **Test: `TestWebSearch_InvalidJSON`** — Start an `httptest.NewServer` that returns `\"not json\"` with status 200. Set env vars. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `\"failed to parse Tavily response\"`.\n  Line 342: **Test: `TestWebSearch_ContextCancellation`** — Start an `httptest.NewServer` with a handler that blocks for 10 seconds. Create a context with a short timeout (50ms). Set env vars. Call `Execute` with the short-lived context. Verify `IsError` is true.\n  Line 344: **Test: `TestWebSearch_ConnectionRefused`** — Create a URL pointing to `http://127.0.0.1:<closed-port>` (use a port from a recently-closed listener). Set `t.Setenv(\"TAVILY_API_KEY\", \"test-key\")` and `t.Setenv(\"AXE_TAVILY_BASE_URL\", \"http://127.0.0.1:<port>\")`. Call `Execute`. Verify `IsError` is true. Verify `Content` is non-empty.\n  Line 346: **Test: `TestWebSearch_CallIDPassthrough`** — Start an `httptest.NewServer` returning valid results. Set env vars. Call `Execute` with `call.ID` set to `\"ws-unique-42\"`. Verify the returned `ToolResult.CallID` equals `\"ws-unique-42\"`.\n  Line 348: **Test: `TestWebSearch_BaseURLOverride`** — Start an `httptest.NewServer` that records incoming request paths. Set `t.Setenv(\"AXE_TAVILY_BASE_URL\", server.URL)` and `t.Setenv(\"TAVILY_API_KEY\", \"test-key\")`. Call `Execute`. Verify the server received a request to the `/search` path. Verify the request method is `POST`.\n  Line 350: **Test: `TestWebSearch_RequestBody`** — Start an `httptest.NewServer` that captures the request body and verifies it contains the expected fields. Set env vars. Call `Execute` with `Arguments: {\"query\": \"my search\"}`. Verify the captured request body contains `\"query\": \"my search\"`, `\"max_results\": 10`, `\"search_depth\": \"basic\"`, and `\"api_key\": \"test-key\"`.\n  Line 352: **Test: `TestWebSearch_AuthorizationHeader`** — Start an `httptest.NewServer` that captures the `Authorization` header. Set env vars with `TAVILY_API_KEY=test-key-123`. Call `Execute`. Verify the captured header equals `\"Bearer test-key-123\"`.\n  Line 354: **Test: `TestWebSearch_VerboseLog`** — Set env vars. Start an `httptest.NewServer` returning valid results. Create an `ExecContext` with `Verbose: true` and `Stderr` set to a `bytes.Buffer`. Call `Execute` with `Arguments: {\"query\": \"my verbose test\"}`. Verify the buffer contains `\"my verbose test\"`. Verify the buffer does NOT contain the API key value.\n  Line 356: **Test: `TestWebSearch_VerboseLogQueryTruncation`** — Same as above but with a query longer than 80 characters. Verify the logged summary is truncated (does not contain the full query).\n  Line 358: **Test: `TestWebSearch_LargeResponseTruncation`** — Start an `httptest.NewServer` that returns a 200 response with a body larger than 102400 bytes. Set env vars. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `\"Tavily response too large to process\"`.\n  Line 360: **Test: `TestWebSearch_ErrorBodyTruncation`** — Start an `httptest.NewServer` that returns status 400 with a body larger than 500 bytes (e.g., 1000 bytes of `'E'`). Set env vars. Call `Execute`. Verify `IsError` is true. Verify `Content` contains `\"Tavily API error (HTTP 400)\"`. Verify the length of the error body portion in `Content` does not exceed 500 bytes.\n  Line 366: **Update: `TestValidNames_ContainsAllExpectedNames`** — Add `WebSearch` to the `expected` slice.\n  Line 368: **Update: `TestConstants_Values`** — Add a table entry: `{\"WebSearch\", WebSearch, \"web_search\"}`.\n  Line 372: **Test: `TestRegisterAll_RegistersWebSearch`** — Call `NewRegistry()`, then `RegisterAll(r)`. Verify `r.Has(toolname.WebSearch)` returns true.\n\n(Results truncated: showing 100 of 132 matches (32 hidden). Consider using a more specific path or pattern.)",
+            "title": "web_search|WebSearch",
+            "metadata": {
+              "matches": 132,
+              "truncated": true
+            },
+            "time": {
+              "start": 1772761620284,
+              "end": 1772761620340
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_02790fb70f34a4680169aa3214042c8197ba1db8c0ae311f26"
+            }
+          },
+          "id": "prt_cc0d39e53001Tay12PRdkxYXob",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d381dd001S5tWeV3sAsE0gG"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.0068124,
+          "tokens": {
+            "total": 8025,
+            "input": 680,
+            "output": 177,
+            "reasoning": 135,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d39f75001ppHsU7kwH0E3Ek",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d381dd001S5tWeV3sAsE0gG"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761620404,
+          "completed": 1772761629224
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02128,
+        "tokens": {
+          "total": 13081,
+          "input": 10408,
+          "output": 113,
+          "reasoning": 74,
+          "cache": {
+            "read": 2560,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d39fb3001XQVwmvL3yE3VnQ",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d3a0da001YRD9QP9BovMGJx",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d39fb3001XQVwmvL3yE3VnQ"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Verifying schema validation usage**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_07d06e7e4dfa98830169aa3219f3648190a8ddccad154a3af6",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761625973,
+            "end": 1772761629034
+          },
+          "id": "prt_cc0d3b57500171eN8UmGJWG97h",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d39fb3001XQVwmvL3yE3VnQ"
+        },
+        {
+          "type": "tool",
+          "callID": "call_vvKwEoWMaPV7ZjagPjmOXANx",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \n8: \t\"github.com/jrswab/axe/internal/provider\"\n9: \t\"github.com/jrswab/axe/internal/toolname\"\n10: )\n11: \n12: // ExecContext holds the minimal context needed by generic tool executors.\n13: type ExecContext struct {\n14: \tWorkdir string\n15: \tStderr  io.Writer\n16: \tVerbose bool\n17: }\n18: \n19: // ToolEntry holds a tool's definition and executor functions.\n20: type ToolEntry struct {\n21: \tDefinition func() provider.Tool\n22: \tExecute    func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult\n23: }\n24: \n25: // Registry maps tool names to their definitions and executors.\n26: // Registration must happen at startup before any concurrent Dispatch calls.\n27: // Concurrent Dispatch calls (read-only) are safe after registration is complete.\n28: type Registry struct {\n29: \tentries map[string]ToolEntry\n30: }\n31: \n32: // NewRegistry returns a new Registry with an empty, initialized entries map.\n33: func NewRegistry() *Registry {\n34: \treturn &Registry{\n35: \t\tentries: make(map[string]ToolEntry),\n36: \t}\n37: }\n38: \n39: // Register adds a tool entry to the registry, keyed by name.\n40: // If a tool with the same name already exists, it is silently replaced.\n41: func (r *Registry) Register(name string, entry ToolEntry) {\n42: \tr.entries[name] = entry\n43: }\n44: \n45: // Has returns true if a tool with the given name exists in the registry.\n46: func (r *Registry) Has(name string) bool {\n47: \t_, ok := r.entries[name]\n48: \treturn ok\n49: }\n50: \n51: // Resolve takes a list of tool names and returns their provider.Tool definitions.\n52: // Each entry's Definition() is called on every Resolve invocation (not cached).\n53: // Returns an error if any name is not found in the registry or has a nil Definition.\n54: // Returns an empty non-nil slice for nil or empty input.\n55: func (r *Registry) Resolve(names []string) ([]provider.Tool, error) {\n56: \tif len(names) == 0 {\n57: \t\treturn []provider.Tool{}, nil\n58: \t}\n59: \n60: \ttools := make([]provider.Tool, 0, len(names))\n61: \tfor _, name := range names {\n62: \t\tentry, ok := r.entries[name]\n63: \t\tif !ok {\n64: \t\t\treturn nil, fmt.Errorf(\"unknown tool %q\", name)\n65: \t\t}\n66: \t\tif entry.Definition == nil {\n67: \t\t\treturn nil, fmt.Errorf(\"tool %q has no definition\", name)\n68: \t\t}\n69: \t\ttools = append(tools, entry.Definition())\n70: \t}\n71: \treturn tools, nil\n72: }\n73: \n74: // Dispatch looks up the tool by call.Name and executes it.\n75: // Returns (ToolResult, nil) on success, or (zero ToolResult, error) for\n76: // unknown tools or tools with nil executors.\n77: func (r *Registry) Dispatch(ctx context.Context, call provider.ToolCall, ec ExecContext) (provider.ToolResult, error) {\n78: \tentry, ok := r.entries[call.Name]\n79: \tif !ok {\n80: \t\treturn provider.ToolResult{}, fmt.Errorf(\"unknown tool %q\", call.Name)\n81: \t}\n82: \tif entry.Execute == nil {\n83: \t\treturn provider.ToolResult{}, fmt.Errorf(\"tool %q has no executor\", call.Name)\n84: \t}\n85: \treturn entry.Execute(ctx, call, ec), nil\n86: }\n87: \n88: // RegisterAll registers all implemented tool entries into the given registry.\n89: // Both cmd/run.go and ExecuteCallAgent call this after NewRegistry().\n90: // Future milestones add lines here — no call-site changes needed.\n91: // Safe to call multiple times (Register silently replaces duplicates).\n92: func RegisterAll(r *Registry) {\n93: \tr.Register(toolname.ListDirectory, listDirectoryEntry())\n94: \tr.Register(toolname.ReadFile, readFileEntry())\n95: \tr.Register(toolname.WriteFile, writeFileEntry())\n96: \tr.Register(toolname.EditFile, editFileEntry())\n97: \tr.Register(toolname.RunCommand, runCommandEntry())\n98: \tr.Register(toolname.URLFetch, urlFetchEntry())\n99: }\n\n(End of file - total 99 lines)\n</content>",
+            "title": "internal/tool/registry.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// ExecContext holds the minimal context needed by generic tool executors.\ntype ExecContext struct {\n\tWorkdir string\n\tStderr  io.Writer\n\tVerbose bool\n}\n\n// ToolEntry holds a tool's definition and executor functions.\ntype ToolEntry struct {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761629120,
+              "end": 1772761629129
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_07d06e7e4dfa98830169aa321d000481909650540d79b942f1"
+            }
+          },
+          "id": "prt_cc0d3c16a001iIih7OzNvU1B7A",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d39fb3001XQVwmvL3yE3VnQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.02128,
+          "tokens": {
+            "total": 13081,
+            "input": 10408,
+            "output": 113,
+            "reasoning": 74,
+            "cache": {
+              "read": 2560,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d3c1d7001oRMkPP7EkSBH3N",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d39fb3001XQVwmvL3yE3VnQ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761629225,
+          "completed": 1772761633197
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01502025,
+        "tokens": {
+          "total": 14263,
+          "input": 6479,
+          "output": 104,
+          "reasoning": 63,
+          "cache": {
+            "read": 7680,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d3c229001DC9JtZkCM7JugH",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d3c3e9001scOFgoGzt6G10J",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3c229001DC9JtZkCM7JugH"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Investigating validation usage**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_08cae66feb7d7bf20169aa321f19dc81938ec23749b1748fac",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761631125,
+            "end": 1772761632915
+          },
+          "id": "prt_cc0d3c995001SD2Iwe6A01mqlt",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3c229001DC9JtZkCM7JugH"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "ValidNames\\(",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "Found 35 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_implement.md:\n  Line 12: - [x] Add `WebSearch: true` entry to the map returned by `ValidNames()` in `internal/toolname/toolname.go` *(Req 1.2)*\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname.go:\n  Line 20: func ValidNames() map[string]bool {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname_test.go:\n  Line 6: \tnames := ValidNames()\n  Line 8: \t\tt.Errorf(\"ValidNames() returned %d entries, want 7\", len(names))\n  Line 13: \tnames := ValidNames()\n  Line 17: \t\t\tt.Errorf(\"ValidNames() missing %q\", name)\n  Line 23: \tnames := ValidNames()\n  Line 25: \t\tt.Error(\"ValidNames() should not contain call_agent\")\n  Line 30: \tfirst := ValidNames()\n  Line 33: \tsecond := ValidNames()\n  Line 35: \t\tt.Error(\"ValidNames() returned a shared map; modifying one affected the other\")\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_spec.md:\n  Line 77: **Requirement 1.2:** Add `WebSearch: true` to the map returned by `ValidNames()` in `internal/toolname/toolname.go`.\n  Line 413: | `ValidNames()` includes `web_search` | `TestValidNames_ReturnsExpectedCount` (7) and `TestValidNames_ContainsAllExpectedNames` pass |\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 77: \tvalidTools := toolname.ValidNames()\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md:\n  Line 65: **Requirement 1.2:** Add `URLFetch: true` to the map returned by `ValidNames()` in `internal/toolname/toolname.go`.\n  Line 366: | `ValidNames()` includes `url_fetch` | `TestValidNames_ReturnsExpectedCount` (6) and `TestValidNames_ContainsAllExpectedNames` pass |\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_implement.md:\n  Line 12: - [x] Add `URLFetch: true` entry to the `ValidNames()` map in `internal/toolname/toolname.go` (Req 1.2)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/013_tool_registry_spec.md:\n  Line 413: 8. Validation that `cfg.Tools` entries correspond to registered tools at config load time (validation only checks against `toolname.ValidNames()`, which was established in M1)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/012_tools_config_implement.md:\n  Line 18: - [x] **1.4** Implement `ValidNames() map[string]bool` in `toolname.go` returning a fresh map of the five configurable names. Verify all `toolname_test.go` tests pass.\n  Line 29: - [x] **3.4** Add tools validation logic to `Validate()` in `internal/agent/agent.go` — iterate `cfg.Tools`, check each against `toolname.ValidNames()`, return `fmt.Errorf(\"unknown tool %q in tools config\", name)` on first unknown. Add `internal/toolname` import. Verify all validation tests pass.\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/012_tools_config_spec.md:\n  Line 56: func ValidNames() map[string]bool\n  Line 63: **Requirement 1.5:** Each call to `ValidNames()` must return a new map instance. Callers must be able to modify the returned map without affecting other callers.\n  Line 97: **Requirement 4.2:** For each entry in `cfg.Tools`, if the entry is not present in `toolname.ValidNames()`, the `Validate` function must return an error with the message:\n  Line 176: │   │   ├── toolname.go             # NEW: tool name constants and ValidNames()\n  Line 177: │   │   └── toolname_test.go        # NEW: tests for constants and ValidNames()\n  Line 216: ### 5.3 ValidNames() Function\n  Line 221: | `CallAgent` queried in `ValidNames()` | Returns `false`; `call_agent` is not in the valid names set. |\n  Line 263: **Test: `TestValidNames_ReturnsExpectedCount`** — Call `ValidNames()`, verify the returned map has exactly 5 entries.\n  Line 265: **Test: `TestValidNames_ContainsAllExpectedNames`** — Call `ValidNames()`, verify each of the five tool names (`list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`) is present with value `true`.\n  Line 267: **Test: `TestValidNames_ExcludesCallAgent`** — Call `ValidNames()`, verify `call_agent` is NOT present in the map.\n  Line 269: **Test: `TestValidNames_ReturnsNewMapEachCall`** — Call `ValidNames()` twice, modify the first map, verify the second map is unaffected.\n  Line 339: | `ValidNames()` returns exactly 5 entries | `TestValidNames_ReturnsExpectedCount` passes |\n  Line 340: | `ValidNames()` excludes `call_agent` | `TestValidNames_ExcludesCallAgent` passes |\n  Line 341: | `ValidNames()` returns independent maps | `TestValidNames_ReturnsNewMapEachCall` passes |\n  Line 395: - The `call_agent` constant is included in `internal/toolname/` for reference by `internal/tool/tool.go`, but it is explicitly excluded from `ValidNames()` because it is not user-configurable via the `tools` field.",
+            "title": "ValidNames\\(",
+            "metadata": {
+              "matches": 35,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761633087,
+              "end": 1772761633130
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_08cae66feb7d7bf20169aa3220e1d88193824def9e7f908ee6"
+            }
+          },
+          "id": "prt_cc0d3d095001MFjN0kd3SZbM1C",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3c229001DC9JtZkCM7JugH"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.01502025,
+          "tokens": {
+            "total": 14263,
+            "input": 6479,
+            "output": 104,
+            "reasoning": 63,
+            "cache": {
+              "read": 7680,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d3d16b001YFY0tXmbZ5gcHT",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3c229001DC9JtZkCM7JugH"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761633198,
+          "completed": 1772761643230
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0066255,
+        "tokens": {
+          "total": 15687,
+          "input": 1530,
+          "output": 77,
+          "reasoning": 29,
+          "cache": {
+            "read": 14080,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d3d1ae001S264kN5b18qs5t",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d3d2f7001uJ1n2yC74WWj06",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3d1ae001S264kN5b18qs5t"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting agent validation flow**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_03fb081262a0d2240169aa32285bf48194b86604d5818ad924",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761640471,
+            "end": 1772761641693
+          },
+          "id": "prt_cc0d3ee17001oMkRhk5sHYqg9K",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3d1ae001S264kN5b18qs5t"
+        },
+        {
+          "type": "tool",
+          "callID": "call_kDyE2b2v0MW8C6ry89HpIBbv",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go",
+              "offset": 1,
+              "limit": 170
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go</path>\n<type>file</type>\n<content>1: package agent\n2: \n3: import (\n4: \t\"errors\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \t\"path/filepath\"\n8: \t\"strings\"\n9: \n10: \t\"github.com/BurntSushi/toml\"\n11: \t\"github.com/jrswab/axe/internal/toolname\"\n12: \t\"github.com/jrswab/axe/internal/xdg\"\n13: )\n14: \n15: // MemoryConfig holds memory sub-configuration for an agent.\n16: type MemoryConfig struct {\n17: \tEnabled    bool   `toml:\"enabled\"`\n18: \tPath       string `toml:\"path\"`\n19: \tLastN      int    `toml:\"last_n\"`\n20: \tMaxEntries int    `toml:\"max_entries\"`\n21: }\n22: \n23: // ParamsConfig holds model parameter overrides for an agent.\n24: type ParamsConfig struct {\n25: \tTemperature float64 `toml:\"temperature\"`\n26: \tMaxTokens   int     `toml:\"max_tokens\"`\n27: }\n28: \n29: // SubAgentsConfig holds sub-agent execution configuration for an agent.\n30: type SubAgentsConfig struct {\n31: \tMaxDepth int   `toml:\"max_depth\"`\n32: \tParallel *bool `toml:\"parallel\"`\n33: \tTimeout  int   `toml:\"timeout\"`\n34: }\n35: \n36: // AgentConfig represents a parsed agent TOML configuration file.\n37: type AgentConfig struct {\n38: \tName          string          `toml:\"name\"`\n39: \tDescription   string          `toml:\"description\"`\n40: \tModel         string          `toml:\"model\"`\n41: \tSystemPrompt  string          `toml:\"system_prompt\"`\n42: \tSkill         string          `toml:\"skill\"`\n43: \tFiles         []string        `toml:\"files\"`\n44: \tWorkdir       string          `toml:\"workdir\"`\n45: \tTools         []string        `toml:\"tools\"`\n46: \tSubAgents     []string        `toml:\"sub_agents\"`\n47: \tSubAgentsConf SubAgentsConfig `toml:\"sub_agents_config\"`\n48: \tMemory        MemoryConfig    `toml:\"memory\"`\n49: \tParams        ParamsConfig    `toml:\"params\"`\n50: }\n51: \n52: // Validate checks that required fields are present in the agent configuration.\n53: // It checks name first (fail-fast): if name is missing, it returns that error\n54: // without checking model.\n55: func Validate(cfg *AgentConfig) error {\n56: \tif strings.TrimSpace(cfg.Name) == \"\" {\n57: \t\treturn errors.New(\"agent config missing required field: name\")\n58: \t}\n59: \tif strings.TrimSpace(cfg.Model) == \"\" {\n60: \t\treturn errors.New(\"agent config missing required field: model\")\n61: \t}\n62: \tif cfg.SubAgentsConf.MaxDepth < 0 {\n63: \t\treturn errors.New(\"sub_agents_config.max_depth must be non-negative\")\n64: \t}\n65: \tif cfg.SubAgentsConf.MaxDepth > 5 {\n66: \t\treturn errors.New(\"sub_agents_config.max_depth cannot exceed 5\")\n67: \t}\n68: \tif cfg.SubAgentsConf.Timeout < 0 {\n69: \t\treturn errors.New(\"sub_agents_config.timeout must be non-negative\")\n70: \t}\n71: \tif cfg.Memory.LastN < 0 {\n72: \t\treturn errors.New(\"memory.last_n must be non-negative\")\n73: \t}\n74: \tif cfg.Memory.MaxEntries < 0 {\n75: \t\treturn errors.New(\"memory.max_entries must be non-negative\")\n76: \t}\n77: \tvalidTools := toolname.ValidNames()\n78: \tfor _, name := range cfg.Tools {\n79: \t\tif !validTools[name] {\n80: \t\t\treturn fmt.Errorf(\"unknown tool %q in tools config\", name)\n81: \t\t}\n82: \t}\n83: \treturn nil\n84: }\n85: \n86: // Load reads and parses an agent TOML configuration file by name.\n87: // The name parameter is the agent name without the .toml extension.\n88: func Load(name string) (*AgentConfig, error) {\n89: \tconfigDir, err := xdg.GetConfigDir()\n90: \tif err != nil {\n91: \t\treturn nil, err\n92: \t}\n93: \n94: \tpath := filepath.Join(configDir, \"agents\", name+\".toml\")\n95: \n96: \tif _, err := os.Stat(path); os.IsNotExist(err) {\n97: \t\treturn nil, fmt.Errorf(\"agent config not found: %s\", name)\n98: \t}\n99: \n100: \tdata, err := os.ReadFile(path)\n101: \tif err != nil {\n102: \t\treturn nil, fmt.Errorf(\"failed to read agent config %q: %w\", name, err)\n103: \t}\n104: \n105: \tvar cfg AgentConfig\n106: \tif _, err := toml.Decode(string(data), &cfg); err != nil {\n107: \t\treturn nil, fmt.Errorf(\"failed to parse agent config %q: %w\", name, err)\n108: \t}\n109: \n110: \tif err := Validate(&cfg); err != nil {\n111: \t\treturn nil, err\n112: \t}\n113: \n114: \treturn &cfg, nil\n115: }\n116: \n117: // List returns all valid agent configurations from the agents directory.\n118: // Invalid files are silently skipped. If the agents directory does not exist,\n119: // an empty slice is returned.\n120: func List() ([]AgentConfig, error) {\n121: \tconfigDir, err := xdg.GetConfigDir()\n122: \tif err != nil {\n123: \t\treturn nil, err\n124: \t}\n125: \n126: \tagentsDir := filepath.Join(configDir, \"agents\")\n127: \n128: \tentries, err := os.ReadDir(agentsDir)\n129: \tif err != nil {\n130: \t\tif os.IsNotExist(err) {\n131: \t\t\treturn []AgentConfig{}, nil\n132: \t\t}\n133: \t\treturn nil, err\n134: \t}\n135: \n136: \tvar agents []AgentConfig\n137: \tfor _, entry := range entries {\n138: \t\tif entry.IsDir() {\n139: \t\t\tcontinue\n140: \t\t}\n141: \t\tif !strings.HasSuffix(entry.Name(), \".toml\") {\n142: \t\t\tcontinue\n143: \t\t}\n144: \t\tname := strings.TrimSuffix(entry.Name(), \".toml\")\n145: \t\tcfg, err := Load(name)\n146: \t\tif err != nil {\n147: \t\t\tcontinue // skip invalid files\n148: \t\t}\n149: \t\tagents = append(agents, *cfg)\n150: \t}\n151: \n152: \treturn agents, nil\n153: }\n154: \n155: // Scaffold returns a TOML template string for a new agent configuration.\n156: // The name argument is interpolated into the template.\n157: func Scaffold(name string) (string, error) {\n158: \ttmpl := `name = \"` + name + `\"\n159: description = \"\"\n160: \n161: # Full provider/model per models.dev\n162: model = \"provider/model-name\"\n163: \n164: # Agent persona (optional)\n165: # system_prompt = \"\"\n166: \n167: # Default skill (optional, can be overridden with --skill flag)\n168: # skill = \"\"\n169: \n170: # Context files - glob patterns resolved from workdir or cwd (optional)\n\n(Showing lines 1-170 of 202. Use offset=171 to continue.)\n</content>",
+            "title": "internal/agent/agent.go",
+            "metadata": {
+              "preview": "package agent\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\t\"path/filepath\"\n\t\"strings\"\n\n\t\"github.com/BurntSushi/toml\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n\t\"github.com/jrswab/axe/internal/xdg\"\n)\n\n// MemoryConfig holds memory sub-configuration for an agent.\ntype MemoryConfig struct {\n\tEnabled    bool   `toml:\"enabled\"`\n\tPath       string `toml:\"path\"`\n\tLastN      int    `toml:\"last_n\"`\n\tMaxEntries int    `toml:\"max_entries\"`",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761643108,
+              "end": 1772761643112
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_03fb081262a0d2240169aa3229a8c0819494854db855235058"
+            }
+          },
+          "id": "prt_cc0d3f2e0001LcZiykSqQ0piTE",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3d1ae001S264kN5b18qs5t"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.0066255,
+          "tokens": {
+            "total": 15687,
+            "input": 1530,
+            "output": 77,
+            "reasoning": 29,
+            "cache": {
+              "read": 14080,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d3f890001xRO7pgKSKfhhNa",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3d1ae001S264kN5b18qs5t"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761643230,
+          "completed": 1772761648935
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0074788,
+        "tokens": {
+          "total": 17482,
+          "input": 1784,
+          "output": 82,
+          "reasoning": 34,
+          "cache": {
+            "read": 15616,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d3f8de001ek6IYFxxA8PhAQ",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d3fa68001vC68aA3hV7o8jt",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3f8de001ek6IYFxxA8PhAQ"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting runtime tool resolution**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0932faa1f44092d30169aa322fc4cc8194bc4d040d47ec0b50",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761647787,
+            "end": 1772761648618
+          },
+          "id": "prt_cc0d40aab001R172YBUct4aMlD",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3f8de001ek6IYFxxA8PhAQ"
+        },
+        {
+          "type": "tool",
+          "callID": "call_jm22hOc2ixHVc13fQdsj0yPM",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "Resolve\\(|RegisterAll\\(|unknown tool",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal"
+            },
+            "output": "Found 48 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go:\n  Line 51: \ttools, err := r.Resolve([]string{\"test_tool\"})\n  Line 73: \ttools, err := r.Resolve([]string{\"tool_a\", \"tool_b\"})\n  Line 96: \t_, err := r.Resolve([]string{\"tool_a\", \"nonexistent\"})\n  Line 98: \t\tt.Fatal(\"Resolve should return error for unknown tool\")\n  Line 100: \tif !strings.Contains(err.Error(), `unknown tool \"nonexistent\"`) {\n  Line 101: \t\tt.Errorf(\"error should contain unknown tool message, got: %v\", err)\n  Line 109: \ttools, err := r.Resolve([]string{})\n  Line 111: \t\tt.Fatalf(\"Resolve([]string{}) returned error: %v\", err)\n  Line 114: \t\tt.Fatal(\"Resolve([]string{}) returned nil slice, expected empty non-nil\")\n  Line 121: \ttools, err = r.Resolve(nil)\n  Line 123: \t\tt.Fatalf(\"Resolve(nil) returned error: %v\", err)\n  Line 126: \t\tt.Fatal(\"Resolve(nil) returned nil slice, expected empty non-nil\")\n  Line 142: \t_, err := r.Resolve([]string{\"bad_tool\"})\n  Line 194: \t\tt.Fatal(\"Dispatch should return error for unknown tool\")\n  Line 196: \tif !strings.Contains(err.Error(), `unknown tool \"nonexistent\"`) {\n  Line 197: \t\tt.Errorf(\"error should contain unknown tool message, got: %v\", err)\n  Line 265: \tRegisterAll(r)\n  Line 274: \tRegisterAll(r)\n  Line 276: \ttools, err := r.Resolve([]string{toolname.ListDirectory})\n  Line 293: \tRegisterAll(r)\n  Line 302: \tRegisterAll(r)\n  Line 304: \ttools, err := r.Resolve([]string{toolname.ReadFile})\n  Line 323: \tRegisterAll(r)\n  Line 332: \tRegisterAll(r)\n  Line 334: \ttools, err := r.Resolve([]string{toolname.WriteFile})\n  Line 353: \tRegisterAll(r)\n  Line 362: \tRegisterAll(r)\n  Line 364: \ttools, err := r.Resolve([]string{toolname.EditFile})\n  Line 383: \tRegisterAll(r)\n  Line 392: \tRegisterAll(r)\n  Line 394: \ttools, err := r.Resolve([]string{toolname.RunCommand})\n  Line 411: \tRegisterAll(r)\n  Line 420: \tRegisterAll(r)\n  Line 422: \ttools, err := r.Resolve([]string{toolname.URLFetch})\n  Line 439: \tRegisterAll(r)\n  Line 440: \tRegisterAll(r) // second call should not panic\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 55: func (r *Registry) Resolve(names []string) ([]provider.Tool, error) {\n  Line 64: \t\t\treturn nil, fmt.Errorf(\"unknown tool %q\", name)\n  Line 76: // unknown tools or tools with nil executors.\n  Line 80: \t\treturn provider.ToolResult{}, fmt.Errorf(\"unknown tool %q\", call.Name)\n  Line 92: func RegisterAll(r *Registry) {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 831: \t\tt.Fatal(\"expected error for unknown tool, got nil\")\n  Line 833: \twant := `unknown tool \"bogus\" in tools config`\n  Line 849: \twant := `unknown tool \"call_agent\" in tools config`\n  Line 865: \twant := `unknown tool \"\" in tools config`\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 80: \t\t\treturn fmt.Errorf(\"unknown tool %q in tools config\", name)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 239: \tRegisterAll(registry)\n  Line 241: \t\tresolvedTools, resolveErr := registry.Resolve(cfg.Tools)",
+            "title": "Resolve\\(|RegisterAll\\(|unknown tool",
+            "metadata": {
+              "matches": 48,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761648831,
+              "end": 1772761648856
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0932faa1f44092d30169aa323097c081949e36b23828ac168d"
+            }
+          },
+          "id": "prt_cc0d40deb001j7W45l4YqwFUoq",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3f8de001ek6IYFxxA8PhAQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.0074788,
+          "tokens": {
+            "total": 17482,
+            "input": 1784,
+            "output": 82,
+            "reasoning": 34,
+            "cache": {
+              "read": 15616,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d40ed9001gt6yMkYqwveBg6",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d3f8de001ek6IYFxxA8PhAQ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761648937,
+          "completed": 1772761651766
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.006069,
+        "tokens": {
+          "total": 18473,
+          "input": 1132,
+          "output": 61,
+          "reasoning": 15,
+          "cache": {
+            "read": 17280,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d40f29001xGRQFx3dEU1LCw",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d412350019n46B8ciJqztaN",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d40f29001xGRQFx3dEU1LCw"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting specific code segment**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_02745750e996c1a20169aa323224e08196ba5b4dc9eb1028d5",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761650171,
+            "end": 1772761651058
+          },
+          "id": "prt_cc0d413fb001QBcnTozv7E7eXl",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d40f29001xGRQFx3dEU1LCw"
+        },
+        {
+          "type": "tool",
+          "callID": "call_3i2EfuNO5oFtEFsUFlV1XcZa",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 220,
+              "limit": 50
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>220: \t}\n221: \n222: \t// Step 12: Build request\n223: \treq := &provider.Request{\n224: \t\tModel:       modelName,\n225: \t\tSystem:      systemPrompt,\n226: \t\tMessages:    []provider.Message{{Role: \"user\", Content: userMessage}},\n227: \t\tTemperature: cfg.Params.Temperature,\n228: \t\tMaxTokens:   cfg.Params.MaxTokens,\n229: \t}\n230: \n231: \t// Inject tools if sub-agent has sub_agents and depth allows\n232: \tnewDepth := opts.Depth + 1\n233: \tif len(cfg.SubAgents) > 0 && newDepth < opts.MaxDepth {\n234: \t\treq.Tools = []provider.Tool{CallAgentTool(cfg.SubAgents)}\n235: \t}\n236: \n237: \t// Resolve configured tools for the sub-agent\n238: \tregistry := NewRegistry()\n239: \tRegisterAll(registry)\n240: \tif len(cfg.Tools) > 0 {\n241: \t\tresolvedTools, resolveErr := registry.Resolve(cfg.Tools)\n242: \t\tif resolveErr != nil {\n243: \t\t\treturn provider.ToolResult{\n244: \t\t\t\tCallID:  call.ID,\n245: \t\t\t\tContent: fmt.Sprintf(\"failed to resolve tools for agent %q: %s\", agentName, resolveErr),\n246: \t\t\t\tIsError: true,\n247: \t\t\t}\n248: \t\t}\n249: \t\treq.Tools = append(req.Tools, resolvedTools...)\n250: \t}\n251: \n252: \t// Step 13: Create timeout context\n253: \tvar callCtx context.Context\n254: \tvar cancel context.CancelFunc\n255: \tif opts.Timeout > 0 {\n256: \t\tcallCtx, cancel = context.WithTimeout(ctx, time.Duration(opts.Timeout)*time.Second)\n257: \t} else {\n258: \t\tcallCtx, cancel = context.WithCancel(ctx)\n259: \t}\n260: \tdefer cancel()\n261: \n262: \t// Step 14: Run conversation loop (or single-shot if no tools)\n263: \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, opts, workdir)\n264: \tif err != nil {\n265: \t\tdurationMs := time.Since(start).Milliseconds()\n266: \t\tif opts.Verbose && opts.Stderr != nil {\n267: \t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, err)\n268: \t\t}\n269: \t\t_ = durationMs\n\n(Showing lines 220-269 of 404. Use offset=270 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\t}\n\n\t// Step 12: Build request\n\treq := &provider.Request{\n\t\tModel:       modelName,\n\t\tSystem:      systemPrompt,\n\t\tMessages:    []provider.Message{{Role: \"user\", Content: userMessage}},\n\t\tTemperature: cfg.Params.Temperature,\n\t\tMaxTokens:   cfg.Params.MaxTokens,\n\t}\n\n\t// Inject tools if sub-agent has sub_agents and depth allows\n\tnewDepth := opts.Depth + 1\n\tif len(cfg.SubAgents) > 0 && newDepth < opts.MaxDepth {\n\t\treq.Tools = []provider.Tool{CallAgentTool(cfg.SubAgents)}\n\t}\n\n\t// Resolve configured tools for the sub-agent\n\tregistry := NewRegistry()\n\tRegisterAll(registry)",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761651603,
+              "end": 1772761651610
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_02745750e996c1a20169aa3232fbb4819694fb7398eee4ee71"
+            }
+          },
+          "id": "prt_cc0d41775001J5BNRU8c1EKgZk",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d40f29001xGRQFx3dEU1LCw"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.006069,
+          "tokens": {
+            "total": 18473,
+            "input": 1132,
+            "output": 61,
+            "reasoning": 15,
+            "cache": {
+              "read": 17280,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d419ec0014PxrSmaMJo3htF",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d40f29001xGRQFx3dEU1LCw"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761651767,
+          "completed": 1772761656609
+        },
+        "parentID": "msg_cc0d3772f001gMHFE5NjOl3QUy",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01850065,
+        "tokens": {
+          "total": 19346,
+          "input": 6159,
+          "output": 259,
+          "reasoning": 131,
+          "cache": {
+            "read": 12928,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc0d41a370017gVinF1yuZXP87",
+        "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d41b880013T70GSyyB47q1D",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d41a370017gVinF1yuZXP87"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Highlighting runtime error risk**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_005b834e056d624f0169aa32347a108194b59bc1285c5ad4dd",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761652498,
+            "end": 1772761655334
+          },
+          "id": "prt_cc0d41d12001jhN79CtkrbKG9P",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d41a370017gVinF1yuZXP87"
+        },
+        {
+          "type": "text",
+          "text": "- **High:** `web_search` is now accepted by config validation (`internal/toolname/toolname.go:28`), but it is not registered in `RegisterAll` (`internal/tool/registry.go:92`), so agents that specify `tools = [\"web_search\"]` will validate successfully and then fail at runtime with `unknown tool \"web_search\"` during tool resolution (`internal/tool/tool.go:241`).  \n  **Action:** either register/implement `web_search` in `internal/tool/registry.go` in the same change, or remove it from `ValidNames()` until implementation lands.",
+          "time": {
+            "start": 1772761656516,
+            "end": 1772761656516
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_005b834e056d624f0169aa32374c7481948ceeb20e04557faf"
+            }
+          },
+          "id": "prt_cc0d428280012mS9Ttp4HdyYSS",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d41a370017gVinF1yuZXP87"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.01850065,
+          "tokens": {
+            "total": 19346,
+            "input": 6159,
+            "output": 259,
+            "reasoning": 131,
+            "cache": {
+              "read": 12928,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d42cc7001X8yH75qbW524Wr",
+          "sessionID": "ses_33f2c88d3ffeHMrMauy5J7csrX",
+          "messageID": "msg_cc0d41a370017gVinF1yuZXP87"
+        }
+      ]
+    }
+  ]
+}
