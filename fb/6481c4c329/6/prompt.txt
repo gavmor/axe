@@ -1,0 +1,1 @@
+Single task: run `go test ./internal/agent -run TestScaffold_ContainsValidToolNames` and return only failing results.
