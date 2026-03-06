@@ -1,0 +1,802 @@
+{
+  "info": {
+    "id": "ses_33f2b84adffeAq9nevqC8bqvET",
+    "slug": "neon-river",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33f2dd6b0ffejnG7KO74wOarbx",
+    "title": "Find tool implementation pattern (@explore subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772761676626,
+      "updated": 1772761696669
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772761676635
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "explore",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: inspect existing tool files and return the canonical pattern for a new tool file in internal/tool (entry function structure, Definition shape, Execute function placement, verbose logging pattern). Include concrete file references and minimal code-shape bullets only. Thoroughness medium.",
+          "id": "prt_cc0d47b5b001vj3ws3P2dmNBrX",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b58001JLhL88KuBeI5nu"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761676645,
+          "completed": 1772761679160
+        },
+        "parentID": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "explore",
+        "agent": "explore",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00347795,
+        "tokens": {
+          "total": 4589,
+          "input": 237,
+          "output": 128,
+          "reasoning": 38,
+          "cache": {
+            "read": 4224,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d47b65001z53M71KlflbRLi",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d47c67001KkeI2BzVL4jaaB",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b65001z53M71KlflbRLi"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting internal tool files**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_022e6ed47fafbaa30169aa324d8c48819687970dc6952197f2",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761677562,
+            "end": 1772761679057
+          },
+          "id": "prt_cc0d47efa001KpZK6RMnFETQta",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b65001z53M71KlflbRLi"
+        },
+        {
+          "type": "tool",
+          "callID": "call_IbxdZQ1IN7D6QCw3TFIJqGDd",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/**/*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation_test.go",
+            "title": "",
+            "metadata": {
+              "count": 20,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761679060,
+              "end": 1772761679087
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_022e6ed47fafbaa30169aa324ef8e081968d4a2f85f052be29"
+            }
+          },
+          "id": "prt_cc0d484d20010tWwmZxaHq5rr4",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b65001z53M71KlflbRLi"
+        },
+        {
+          "type": "tool",
+          "callID": "call_ID8S3IYVHkby8pcW5cKZ1OxG",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation_test.go",
+            "title": "",
+            "metadata": {
+              "count": 20,
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761679062,
+              "end": 1772761679087
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_022e6ed47fafbaa30169aa324ef8f48196bd939be8331ddb8e"
+            }
+          },
+          "id": "prt_cc0d484d4001Bqiaz7Ec08VZDS",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b65001z53M71KlflbRLi"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.00347795,
+          "tokens": {
+            "total": 4589,
+            "input": 237,
+            "output": 128,
+            "reasoning": 38,
+            "cache": {
+              "read": 4224,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d484f0001IAi7kUx5jp7Fyz",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d47b65001z53M71KlflbRLi"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761679160,
+          "completed": 1772761688195
+        },
+        "parentID": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "explore",
+        "agent": "explore",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00597275,
+        "tokens": {
+          "total": 5645,
+          "input": 981,
+          "output": 184,
+          "reasoning": 64,
+          "cache": {
+            "read": 4480,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d48538001Q8c1WF0o0eEBXp",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d486aa001Rfr1CXec201Dko",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting tool definition structure**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0ae3136fb306949b0169aa3254ab4c8196bd85919a3bd96498",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761684715,
+            "end": 1772761688060
+          },
+          "id": "prt_cc0d49aeb001sv8P484QGmES1D",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"strings\"\n8: \t\"time\"\n9: \n10: \t\"github.com/jrswab/axe/internal/agent\"\n11: \t\"github.com/jrswab/axe/internal/config\"\n12: \t\"github.com/jrswab/axe/internal/memory\"\n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: \t\"github.com/jrswab/axe/internal/resolve\"\n15: \t\"github.com/jrswab/axe/internal/toolname\"\n16: \t\"github.com/jrswab/axe/internal/xdg\"\n17: )\n18: \n19: // CallAgentToolName is the constant name for the sub-agent invocation tool.\n20: const CallAgentToolName = toolname.CallAgent\n21: \n22: // maxConversationTurns is the safety limit for the conversation loop.\n23: const maxConversationTurns = 50\n24: \n25: // ExecuteOptions holds configuration for executing a call_agent tool call.\n26: type ExecuteOptions struct {\n27: \tAllowedAgents []string\n28: \tParentModel   string\n29: \tDepth         int\n30: \tMaxDepth      int\n31: \tTimeout       int\n32: \tGlobalConfig  *config.GlobalConfig\n33: \tVerbose       bool\n34: \tStderr        io.Writer\n35: }\n36: \n37: // CallAgentTool returns the call_agent tool definition for LLM tool calling.\n38: // The allowedAgents list is included in the description and parameter descriptions\n39: // so the LLM knows which agent names are valid.\n40: func CallAgentTool(allowedAgents []string) provider.Tool {\n41: \tagentList := strings.Join(allowedAgents, \", \")\n42: \n43: \treturn provider.Tool{\n44: \t\tName:        CallAgentToolName,\n45: \t\tDescription: \"Delegate a task to a sub-agent. The sub-agent runs independently with its own context and returns only its final result. Available agents: \" + agentList,\n46: \t\tParameters: map[string]provider.ToolParameter{\n47: \t\t\t\"agent\": {\n48: \t\t\t\tType:        \"string\",\n49: \t\t\t\tDescription: \"Name of the sub-agent to invoke (must be one of: \" + agentList + \")\",\n50: \t\t\t\tRequired:    true,\n51: \t\t\t},\n52: \t\t\t\"task\": {\n53: \t\t\t\tType:        \"string\",\n54: \t\t\t\tDescription: \"What you need the sub-agent to do\",\n55: \t\t\t\tRequired:    true,\n56: \t\t\t},\n57: \t\t\t\"context\": {\n58: \t\t\t\tType:        \"string\",\n59: \t\t\t\tDescription: \"Additional context from your conversation to pass along\",\n60: \t\t\t\tRequired:    false,\n61: \t\t\t},\n62: \t\t},\n63: \t}\n64: }\n65: \n66: // ExecuteCallAgent executes a call_agent tool call by loading and running a sub-agent.\n67: // It always returns a ToolResult (never an error). Errors are communicated via\n68: // ToolResult.Content and ToolResult.IsError fields.\n69: func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteOptions) provider.ToolResult {\n70: \t// Step 1: Extract arguments\n71: \tagentName := call.Arguments[\"agent\"]\n72: \ttask := call.Arguments[\"task\"]\n73: \ttaskContext := call.Arguments[\"context\"]\n74: \n75: \t// Step 2: Validate agent name\n76: \tif agentName == \"\" {\n77: \t\treturn provider.ToolResult{\n78: \t\t\tCallID:  call.ID,\n79: \t\t\tContent: `call_agent error: \"agent\" argument is required`,\n80: \t\t\tIsError: true,\n81: \t\t}\n82: \t}\n83: \n84: \t// Step 3: Validate task\n85: \tif task == \"\" {\n86: \t\treturn provider.ToolResult{\n87: \t\t\tCallID:  call.ID,\n88: \t\t\tContent: `call_agent error: \"task\" argument is required`,\n89: \t\t\tIsError: true,\n90: \t\t}\n91: \t}\n92: \n93: \t// Step 4: Validate agent is allowed\n94: \tallowed := false\n95: \tfor _, a := range opts.AllowedAgents {\n96: \t\tif a == agentName {\n97: \t\t\tallowed = true\n98: \t\t\tbreak\n99: \t\t}\n100: \t}\n101: \tif !allowed {\n102: \t\treturn provider.ToolResult{\n103: \t\t\tCallID:  call.ID,\n104: \t\t\tContent: fmt.Sprintf(\"call_agent error: agent %q is not in this agent's sub_agents list\", agentName),\n105: \t\t\tIsError: true,\n106: \t\t}\n107: \t}\n108: \n109: \t// Step 5: Check depth limit\n110: \tif opts.Depth >= opts.MaxDepth {\n111: \t\treturn provider.ToolResult{\n112: \t\t\tCallID:  call.ID,\n113: \t\t\tContent: fmt.Sprintf(\"call_agent error: maximum sub-agent depth (%d) reached\", opts.MaxDepth),\n114: \t\t\tIsError: true,\n115: \t\t}\n116: \t}\n117: \n118: \t// Verbose: log before sub-agent call\n119: \tif opts.Verbose && opts.Stderr != nil {\n120: \t\ttaskPreview := task\n121: \t\tif len(taskPreview) > 80 {\n122: \t\t\ttaskPreview = taskPreview[:80] + \"...\"\n123: \t\t}\n124: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Calling %q (depth %d) with task: %s\\n\", agentName, opts.Depth+1, taskPreview)\n125: \t}\n126: \n127: \tstart := time.Now()\n128: \n129: \t// Step 6: Load sub-agent config\n130: \tcfg, err := agent.Load(agentName)\n131: \tif err != nil {\n132: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load agent %q: %s\", agentName, err), opts)\n133: \t}\n134: \n135: \t// Step 7: Parse sub-agent's model\n136: \tprovName, modelName, err := parseModel(cfg.Model)\n137: \tif err != nil {\n138: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n139: \t}\n140: \n141: \t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n142: \tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n143: \tif err != nil {\n144: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve workdir for agent %q: %s\", agentName, err), opts)\n145: \t}\n146: \n147: \tfiles, err := resolve.Files(cfg.Files, workdir)\n148: \tif err != nil {\n149: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve files for agent %q: %s\", agentName, err), opts)\n150: \t}\n151: \n152: \tconfigDir, err := xdg.GetConfigDir()\n153: \tif err != nil {\n154: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to get config dir: %s\", err), opts)\n155: \t}\n156: \n157: \tskillContent, err := resolve.Skill(cfg.Skill, configDir)\n158: \tif err != nil {\n159: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load skill for agent %q: %s\", agentName, err), opts)\n160: \t}\n161: \n162: \tsystemPrompt := resolve.BuildSystemPrompt(cfg.SystemPrompt, skillContent, files)\n163: \n164: \t// Step 8b: Memory — load entries into system prompt\n165: \tif cfg.Memory.Enabled {\n166: \t\tmemPath, memErr := memory.FilePath(agentName, cfg.Memory.Path)\n167: \t\tif memErr != nil {\n168: \t\t\tif opts.Verbose && opts.Stderr != nil {\n169: \t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to load memory for %q: %v\\n\", agentName, memErr)\n170: \t\t\t}\n171: \t\t} else {\n172: \t\t\tentries, memErr := memory.LoadEntries(memPath, cfg.Memory.LastN)\n173: \t\t\tif memErr != nil {\n174: \t\t\t\tif opts.Verbose && opts.Stderr != nil {\n175: \t\t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to load memory for %q: %v\\n\", agentName, memErr)\n176: \t\t\t\t}\n177: \t\t\t} else if entries != \"\" {\n178: \t\t\t\tsystemPrompt += \"\\n\\n---\\n\\n## Memory\\n\\n\" + entries\n179: \t\t\t}\n180: \n181: \t\t\tmemCount, memErr := memory.CountEntries(memPath)\n182: \t\t\tif memErr != nil {\n183: \t\t\t\tif opts.Verbose && opts.Stderr != nil {\n184: \t\t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to count memory entries for %q: %v\\n\", agentName, memErr)\n185: \t\t\t\t}\n186: \t\t\t} else if cfg.Memory.MaxEntries > 0 && memCount >= cfg.Memory.MaxEntries {\n187: \t\t\t\tif opts.Verbose && opts.Stderr != nil {\n188: \t\t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\\n\", agentName, memCount, cfg.Memory.MaxEntries, agentName)\n189: \t\t\t\t}\n190: \t\t\t}\n191: \t\t}\n192: \t}\n193: \n194: \t// Step 9: Resolve API key and base URL\n195: \tglobalCfg := opts.GlobalConfig\n196: \tif globalCfg == nil {\n197: \t\tglobalCfg = &config.GlobalConfig{}\n198: \t}\n199: \n200: \tapiKey := globalCfg.ResolveAPIKey(provName)\n201: \tbaseURL := globalCfg.ResolveBaseURL(provName)\n202: \n203: \tif provider.Supported(provName) && provName != \"ollama\" && apiKey == \"\" {\n204: \t\tenvVar := config.APIKeyEnvVar(provName)\n205: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"API key for provider %q is not configured (set %s or add to config.toml)\", provName, envVar), opts)\n206: \t}\n207: \n208: \t// Step 10: Create provider\n209: \tprov, err := provider.New(provName, apiKey, baseURL)\n210: \tif err != nil {\n211: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to create provider for agent %q: %s\", agentName, err), opts)\n212: \t}\n213: \n214: \t// Step 11: Build user message\n215: \tvar userMessage string\n216: \tif strings.TrimSpace(taskContext) != \"\" {\n217: \t\tuserMessage = fmt.Sprintf(\"Task: %s\\n\\nContext:\\n%s\", task, taskContext)\n218: \t} else {\n219: \t\tuserMessage = fmt.Sprintf(\"Task: %s\", task)\n220: \t}\n221: \n222: \t// Step 12: Build request\n223: \treq := &provider.Request{\n224: \t\tModel:       modelName,\n225: \t\tSystem:      systemPrompt,\n226: \t\tMessages:    []provider.Message{{Role: \"user\", Content: userMessage}},\n227: \t\tTemperature: cfg.Params.Temperature,\n228: \t\tMaxTokens:   cfg.Params.MaxTokens,\n229: \t}\n230: \n231: \t// Inject tools if sub-agent has sub_agents and depth allows\n232: \tnewDepth := opts.Depth + 1\n233: \tif len(cfg.SubAgents) > 0 && newDepth < opts.MaxDepth {\n234: \t\treq.Tools = []provider.Tool{CallAgentTool(cfg.SubAgents)}\n235: \t}\n236: \n237: \t// Resolve configured tools for the sub-agent\n238: \tregistry := NewRegistry()\n239: \tRegisterAll(registry)\n240: \tif len(cfg.Tools) > 0 {\n241: \t\tresolvedTools, resolveErr := registry.Resolve(cfg.Tools)\n242: \t\tif resolveErr != nil {\n243: \t\t\treturn provider.ToolResult{\n244: \t\t\t\tCallID:  call.ID,\n245: \t\t\t\tContent: fmt.Sprintf(\"failed to resolve tools for agent %q: %s\", agentName, resolveErr),\n246: \t\t\t\tIsError: true,\n247: \t\t\t}\n248: \t\t}\n249: \t\treq.Tools = append(req.Tools, resolvedTools...)\n250: \t}\n251: \n252: \t// Step 13: Create timeout context\n253: \tvar callCtx context.Context\n254: \tvar cancel context.CancelFunc\n255: \tif opts.Timeout > 0 {\n256: \t\tcallCtx, cancel = context.WithTimeout(ctx, time.Duration(opts.Timeout)*time.Second)\n257: \t} else {\n258: \t\tcallCtx, cancel = context.WithCancel(ctx)\n259: \t}\n260: \tdefer cancel()\n261: \n262: \t// Step 14: Run conversation loop (or single-shot if no tools)\n263: \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, opts, workdir)\n264: \tif err != nil {\n265: \t\tdurationMs := time.Since(start).Milliseconds()\n266: \t\tif opts.Verbose && opts.Stderr != nil {\n267: \t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, err)\n268: \t\t}\n269: \t\t_ = durationMs\n270: \t\treturn errorResult(call.ID, agentName, err.Error(), opts)\n271: \t}\n272: \n273: \t// Step 14b: Memory — append entry after successful response\n274: \tif cfg.Memory.Enabled {\n275: \t\tappendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)\n276: \t\tif appendErr != nil {\n277: \t\t\tif opts.Verbose && opts.Stderr != nil {\n278: \t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n279: \t\t\t}\n280: \t\t} else {\n281: \t\t\tif appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {\n282: \t\t\t\tif opts.Verbose && opts.Stderr != nil {\n283: \t\t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n284: \t\t\t\t}\n285: \t\t\t}\n286: \t\t}\n287: \t}\n288: \n289: \t// Step 15: Return result\n290: \tdurationMs := time.Since(start).Milliseconds()\n291: \tif opts.Verbose && opts.Stderr != nil {\n292: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q completed in %dms (%d chars returned)\\n\", agentName, durationMs, len(resp.Content))\n293: \t}\n294: \n295: \treturn provider.ToolResult{\n296: \t\tCallID:  call.ID,\n297: \t\tContent: resp.Content,\n298: \t\tIsError: false,\n299: \t}\n300: }\n301: \n302: // runConversationLoop runs the multi-turn conversation loop for a sub-agent.\n303: // If the sub-agent has no tools, this is a single-shot call.\n304: func runConversationLoop(ctx context.Context, prov provider.Provider, req *provider.Request, cfg *agent.AgentConfig, registry *Registry, depth int, opts ExecuteOptions, toolWorkdir string) (*provider.Response, error) {\n305: \tfor turn := 0; turn < maxConversationTurns; turn++ {\n306: \t\tresp, err := prov.Send(ctx, req)\n307: \t\tif err != nil {\n308: \t\t\treturn nil, err\n309: \t\t}\n310: \n311: \t\t// No tool calls: we're done\n312: \t\tif len(resp.ToolCalls) == 0 {\n313: \t\t\treturn resp, nil\n314: \t\t}\n315: \n316: \t\t// If no tools were sent, treat as done even if response has tool calls\n317: \t\tif len(req.Tools) == 0 {\n318: \t\t\treturn resp, nil\n319: \t\t}\n320: \n321: \t\t// Append assistant message with tool calls\n322: \t\tassistantMsg := provider.Message{\n323: \t\t\tRole:      \"assistant\",\n324: \t\t\tContent:   resp.Content,\n325: \t\t\tToolCalls: resp.ToolCalls,\n326: \t\t}\n327: \t\treq.Messages = append(req.Messages, assistantMsg)\n328: \n329: \t\t// Execute tool calls and collect results\n330: \t\tresults := make([]provider.ToolResult, len(resp.ToolCalls))\n331: \t\tfor i, tc := range resp.ToolCalls {\n332: \t\t\tif tc.Name == CallAgentToolName {\n333: \t\t\t\tsubOpts := ExecuteOptions{\n334: \t\t\t\t\tAllowedAgents: cfg.SubAgents,\n335: \t\t\t\t\tParentModel:   cfg.Model,\n336: \t\t\t\t\tDepth:         depth,\n337: \t\t\t\t\tMaxDepth:      opts.MaxDepth,\n338: \t\t\t\t\tTimeout:       opts.Timeout,\n339: \t\t\t\t\tGlobalConfig:  opts.GlobalConfig,\n340: \t\t\t\t\tVerbose:       opts.Verbose,\n341: \t\t\t\t\tStderr:        opts.Stderr,\n342: \t\t\t\t}\n343: \t\t\t\tresults[i] = ExecuteCallAgent(ctx, tc, subOpts)\n344: \t\t\t} else {\n345: \t\t\t\texecCtx := ExecContext{\n346: \t\t\t\t\tWorkdir: toolWorkdir,\n347: \t\t\t\t\tStderr:  opts.Stderr,\n348: \t\t\t\t\tVerbose: opts.Verbose,\n349: \t\t\t\t}\n350: \t\t\t\tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n351: \t\t\t\tif dispatchErr != nil {\n352: \t\t\t\t\tresults[i] = provider.ToolResult{\n353: \t\t\t\t\t\tCallID:  tc.ID,\n354: \t\t\t\t\t\tContent: dispatchErr.Error(),\n355: \t\t\t\t\t\tIsError: true,\n356: \t\t\t\t\t}\n357: \t\t\t\t} else {\n358: \t\t\t\t\tresults[i] = result\n359: \t\t\t\t}\n360: \t\t\t}\n361: \t\t}\n362: \n363: \t\t// Append tool result message\n364: \t\ttoolMsg := provider.Message{\n365: \t\t\tRole:        \"tool\",\n366: \t\t\tToolResults: results,\n367: \t\t}\n368: \t\treq.Messages = append(req.Messages, toolMsg)\n369: \t}\n370: \n371: \treturn nil, fmt.Errorf(\"sub-agent exceeded maximum conversation turns (%d)\", maxConversationTurns)\n372: }\n373: \n374: // errorResult creates an error ToolResult for a sub-agent failure.\n375: func errorResult(callID, agentName, errMsg string, opts ExecuteOptions) provider.ToolResult {\n376: \tif opts.Verbose && opts.Stderr != nil {\n377: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, errMsg)\n378: \t}\n379: \treturn provider.ToolResult{\n380: \t\tCallID:  callID,\n381: \t\tContent: fmt.Sprintf(\"Error: sub-agent %q failed - %s. You may retry or proceed without this result.\", agentName, errMsg),\n382: \t\tIsError: true,\n383: \t}\n384: }\n385: \n386: // parseModel splits a \"provider/model-name\" string into provider and model parts.\n387: func parseModel(model string) (providerName, modelName string, err error) {\n388: \tidx := strings.Index(model, \"/\")\n389: \tif idx < 0 {\n390: \t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: expected provider/model-name\", model)\n391: \t}\n392: \n393: \tproviderName = model[:idx]\n394: \tmodelName = model[idx+1:]\n395: \n396: \tif providerName == \"\" {\n397: \t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: empty provider\", model)\n398: \t}\n399: \tif modelName == \"\" {\n400: \t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: empty model name\", model)\n401: \t}\n402: \n403: \treturn providerName, modelName, nil\n404: }\n\n(End of file - total 404 lines)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"strings\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/config\"\n\t\"github.com/jrswab/axe/internal/memory\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/resolve\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n\t\"github.com/jrswab/axe/internal/xdg\"\n)\n\n// CallAgentToolName is the constant name for the sub-agent invocation tool.\nconst CallAgentToolName = toolname.CallAgent",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761688079,
+              "end": 1772761688083
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0ae3136fb306949b0169aa325805448196a74c1fa91e90471e"
+            }
+          },
+          "id": "prt_cc0d4a7fe001TZSfo1HvCruzEw",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"fmt\"\n5: \n6: \t\"github.com/jrswab/axe/internal/provider\"\n7: )\n8: \n9: // toolVerboseLog emits a single log line to ec.Stderr when ec.Verbose is true.\n10: // Format: [tool] <toolName>: <summary> (success|error)\n11: func toolVerboseLog(ec ExecContext, toolName string, result provider.ToolResult, summary string) {\n12: \tif !ec.Verbose || ec.Stderr == nil {\n13: \t\treturn\n14: \t}\n15: \n16: \tstatus := \"success\"\n17: \tif result.IsError {\n18: \t\tstatus = \"error\"\n19: \t}\n20: \n21: \t_, _ = fmt.Fprintf(ec.Stderr, \"[tool] %s: %s (%s)\\n\", toolName, summary, status)\n22: }\n\n(End of file - total 22 lines)\n</content>",
+            "title": "internal/tool/verbose.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\n// toolVerboseLog emits a single log line to ec.Stderr when ec.Verbose is true.\n// Format: [tool] <toolName>: <summary> (success|error)\nfunc toolVerboseLog(ec ExecContext, toolName string, result provider.ToolResult, summary string) {\n\tif !ec.Verbose || ec.Stderr == nil {\n\t\treturn\n\t}\n\n\tstatus := \"success\"\n\tif result.IsError {\n\t\tstatus = \"error\"\n\t}\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761688100,
+              "end": 1772761688103
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0ae3136fb306949b0169aa3258055481969f466aca14df1244"
+            }
+          },
+          "id": "prt_cc0d4a811001wiFRECVsmGmsRn",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        },
+        {
+          "type": "tool",
+          "callID": "call_hzDFZj3sPhS3ygqrdgJLa47c",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \n8: \t\"github.com/jrswab/axe/internal/provider\"\n9: \t\"github.com/jrswab/axe/internal/toolname\"\n10: )\n11: \n12: // ExecContext holds the minimal context needed by generic tool executors.\n13: type ExecContext struct {\n14: \tWorkdir string\n15: \tStderr  io.Writer\n16: \tVerbose bool\n17: }\n18: \n19: // ToolEntry holds a tool's definition and executor functions.\n20: type ToolEntry struct {\n21: \tDefinition func() provider.Tool\n22: \tExecute    func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult\n23: }\n24: \n25: // Registry maps tool names to their definitions and executors.\n26: // Registration must happen at startup before any concurrent Dispatch calls.\n27: // Concurrent Dispatch calls (read-only) are safe after registration is complete.\n28: type Registry struct {\n29: \tentries map[string]ToolEntry\n30: }\n31: \n32: // NewRegistry returns a new Registry with an empty, initialized entries map.\n33: func NewRegistry() *Registry {\n34: \treturn &Registry{\n35: \t\tentries: make(map[string]ToolEntry),\n36: \t}\n37: }\n38: \n39: // Register adds a tool entry to the registry, keyed by name.\n40: // If a tool with the same name already exists, it is silently replaced.\n41: func (r *Registry) Register(name string, entry ToolEntry) {\n42: \tr.entries[name] = entry\n43: }\n44: \n45: // Has returns true if a tool with the given name exists in the registry.\n46: func (r *Registry) Has(name string) bool {\n47: \t_, ok := r.entries[name]\n48: \treturn ok\n49: }\n50: \n51: // Resolve takes a list of tool names and returns their provider.Tool definitions.\n52: // Each entry's Definition() is called on every Resolve invocation (not cached).\n53: // Returns an error if any name is not found in the registry or has a nil Definition.\n54: // Returns an empty non-nil slice for nil or empty input.\n55: func (r *Registry) Resolve(names []string) ([]provider.Tool, error) {\n56: \tif len(names) == 0 {\n57: \t\treturn []provider.Tool{}, nil\n58: \t}\n59: \n60: \ttools := make([]provider.Tool, 0, len(names))\n61: \tfor _, name := range names {\n62: \t\tentry, ok := r.entries[name]\n63: \t\tif !ok {\n64: \t\t\treturn nil, fmt.Errorf(\"unknown tool %q\", name)\n65: \t\t}\n66: \t\tif entry.Definition == nil {\n67: \t\t\treturn nil, fmt.Errorf(\"tool %q has no definition\", name)\n68: \t\t}\n69: \t\ttools = append(tools, entry.Definition())\n70: \t}\n71: \treturn tools, nil\n72: }\n73: \n74: // Dispatch looks up the tool by call.Name and executes it.\n75: // Returns (ToolResult, nil) on success, or (zero ToolResult, error) for\n76: // unknown tools or tools with nil executors.\n77: func (r *Registry) Dispatch(ctx context.Context, call provider.ToolCall, ec ExecContext) (provider.ToolResult, error) {\n78: \tentry, ok := r.entries[call.Name]\n79: \tif !ok {\n80: \t\treturn provider.ToolResult{}, fmt.Errorf(\"unknown tool %q\", call.Name)\n81: \t}\n82: \tif entry.Execute == nil {\n83: \t\treturn provider.ToolResult{}, fmt.Errorf(\"tool %q has no executor\", call.Name)\n84: \t}\n85: \treturn entry.Execute(ctx, call, ec), nil\n86: }\n87: \n88: // RegisterAll registers all implemented tool entries into the given registry.\n89: // Both cmd/run.go and ExecuteCallAgent call this after NewRegistry().\n90: // Future milestones add lines here — no call-site changes needed.\n91: // Safe to call multiple times (Register silently replaces duplicates).\n92: func RegisterAll(r *Registry) {\n93: \tr.Register(toolname.ListDirectory, listDirectoryEntry())\n94: \tr.Register(toolname.ReadFile, readFileEntry())\n95: \tr.Register(toolname.WriteFile, writeFileEntry())\n96: \tr.Register(toolname.EditFile, editFileEntry())\n97: \tr.Register(toolname.RunCommand, runCommandEntry())\n98: \tr.Register(toolname.URLFetch, urlFetchEntry())\n99: }\n\n(End of file - total 99 lines)\n</content>",
+            "title": "internal/tool/registry.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// ExecContext holds the minimal context needed by generic tool executors.\ntype ExecContext struct {\n\tWorkdir string\n\tStderr  io.Writer\n\tVerbose bool\n}\n\n// ToolEntry holds a tool's definition and executor functions.\ntype ToolEntry struct {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761688101,
+              "end": 1772761688102
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0ae3136fb306949b0169aa325805608196a37fe2f4eace3e32"
+            }
+          },
+          "id": "prt_cc0d4a8250014Gc47rh6ulUBOT",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.00597275,
+          "tokens": {
+            "total": 5645,
+            "input": 981,
+            "output": 184,
+            "reasoning": 64,
+            "cache": {
+              "read": 4480,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d4a836001b2FLWZ22z8dPyL",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d48538001Q8c1WF0o0eEBXp"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761688196,
+          "completed": 1772761692830
+        },
+        "parentID": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "explore",
+        "agent": "explore",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01638245,
+        "tokens": {
+          "total": 11731,
+          "input": 7347,
+          "output": 160,
+          "reasoning": 39,
+          "cache": {
+            "read": 4224,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d4a884001oQ7MFg2aW6c8nf",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d4a9b3001xWll0nwfjEhCwj",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Inspecting core tool entry structure**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_089dea60084a45490169aa325a76cc819097907da65faa8b29",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761690478,
+            "end": 1772761692703
+          },
+          "id": "prt_cc0d4b16e001F3Rm46Ny8YxyOo",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        },
+        {
+          "type": "tool",
+          "callID": "call_Yq4ojvQX6JJnPhzr4QIXIM5T",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \t\"strings\"\n8: \n9: \t\"github.com/jrswab/axe/internal/provider\"\n10: \t\"github.com/jrswab/axe/internal/toolname\"\n11: )\n12: \n13: // listDirectoryEntry returns the ToolEntry for the list_directory tool.\n14: func listDirectoryEntry() ToolEntry {\n15: \treturn ToolEntry{\n16: \t\tDefinition: listDirectoryDefinition,\n17: \t\tExecute:    listDirectoryExecute,\n18: \t}\n19: }\n20: \n21: func listDirectoryDefinition() provider.Tool {\n22: \treturn provider.Tool{\n23: \t\tName:        toolname.ListDirectory,\n24: \t\tDescription: \"List the contents of a directory relative to the working directory. Returns one entry per line; subdirectories are suffixed with /.\",\n25: \t\tParameters: map[string]provider.ToolParameter{\n26: \t\t\t\"path\": {\n27: \t\t\t\tType:        \"string\",\n28: \t\t\t\tDescription: \"Relative path to the directory to list. Use \\\".\\\" to list the working directory root.\",\n29: \t\t\t\tRequired:    true,\n30: \t\t\t},\n31: \t\t},\n32: \t}\n33: }\n34: \n35: func listDirectoryExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n36: \tpath := call.Arguments[\"path\"]\n37: \n38: \tdefer func() {\n39: \t\tvar summary string\n40: \t\tif result.IsError {\n41: \t\t\tsummary = fmt.Sprintf(\"path %q: %s\", path, result.Content)\n42: \t\t} else {\n43: \t\t\tsummary = fmt.Sprintf(\"path %q\", path)\n44: \t\t}\n45: \t\ttoolVerboseLog(ec, toolname.ListDirectory, result, summary)\n46: \t}()\n47: \n48: \tresolved, err := validatePath(ec.Workdir, path)\n49: \tif err != nil {\n50: \t\treturn provider.ToolResult{\n51: \t\t\tCallID:  call.ID,\n52: \t\t\tContent: err.Error(),\n53: \t\t\tIsError: true,\n54: \t\t}\n55: \t}\n56: \n57: \tentries, err := os.ReadDir(resolved)\n58: \tif err != nil {\n59: \t\treturn provider.ToolResult{\n60: \t\t\tCallID:  call.ID,\n61: \t\t\tContent: err.Error(),\n62: \t\t\tIsError: true,\n63: \t\t}\n64: \t}\n65: \n66: \tif len(entries) == 0 {\n67: \t\treturn provider.ToolResult{\n68: \t\t\tCallID:  call.ID,\n69: \t\t\tContent: \"\",\n70: \t\t\tIsError: false,\n71: \t\t}\n72: \t}\n73: \n74: \tvar b strings.Builder\n75: \tfor i, entry := range entries {\n76: \t\tif i > 0 {\n77: \t\t\tb.WriteByte('\\n')\n78: \t\t}\n79: \t\tb.WriteString(entry.Name())\n80: \t\tif entry.IsDir() {\n81: \t\t\tb.WriteByte('/')\n82: \t\t}\n83: \t}\n84: \n85: \treturn provider.ToolResult{\n86: \t\tCallID:  call.ID,\n87: \t\tContent: b.String(),\n88: \t\tIsError: false,\n89: \t}\n90: }\n\n(End of file - total 90 lines)\n</content>",
+            "title": "internal/tool/list_directory.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"os\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// listDirectoryEntry returns the ToolEntry for the list_directory tool.\nfunc listDirectoryEntry() ToolEntry {\n\treturn ToolEntry{\n\t\tDefinition: listDirectoryDefinition,\n\t\tExecute:    listDirectoryExecute,\n\t}\n}\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761692716,
+              "end": 1772761692723
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_089dea60084a45490169aa325cae8c81908404a6f3eccc39ea"
+            }
+          },
+          "id": "prt_cc0d4ba20001nFO4VZEBqh8PnB",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        },
+        {
+          "type": "tool",
+          "callID": "call_T7ul1A69anJSW8nlZ5DOugQ2",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"fmt\"\n7: \t\"os\"\n8: \t\"strconv\"\n9: \t\"strings\"\n10: \n11: \t\"github.com/jrswab/axe/internal/provider\"\n12: \t\"github.com/jrswab/axe/internal/toolname\"\n13: )\n14: \n15: // readFileEntry returns the ToolEntry for the read_file tool.\n16: func readFileEntry() ToolEntry {\n17: \treturn ToolEntry{\n18: \t\tDefinition: readFileDefinition,\n19: \t\tExecute:    readFileExecute,\n20: \t}\n21: }\n22: \n23: func readFileDefinition() provider.Tool {\n24: \treturn provider.Tool{\n25: \t\tName:        toolname.ReadFile,\n26: \t\tDescription: \"Read the contents of a file relative to the working directory. Returns line-numbered output in the format 'N: content' for each line.\",\n27: \t\tParameters: map[string]provider.ToolParameter{\n28: \t\t\t\"path\": {\n29: \t\t\t\tType:        \"string\",\n30: \t\t\t\tDescription: \"Relative path to the file to read.\",\n31: \t\t\t\tRequired:    true,\n32: \t\t\t},\n33: \t\t\t\"offset\": {\n34: \t\t\t\tType:        \"string\",\n35: \t\t\t\tDescription: \"1-indexed line number to start reading from. Defaults to 1.\",\n36: \t\t\t\tRequired:    false,\n37: \t\t\t},\n38: \t\t\t\"limit\": {\n39: \t\t\t\tType:        \"string\",\n40: \t\t\t\tDescription: \"Maximum number of lines to return. Defaults to 2000.\",\n41: \t\t\t\tRequired:    false,\n42: \t\t\t},\n43: \t\t},\n44: \t}\n45: }\n46: \n47: func readFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n48: \tpath := call.Arguments[\"path\"]\n49: \n50: \tdefer func() {\n51: \t\tvar summary string\n52: \t\tif result.IsError {\n53: \t\t\tsummary = fmt.Sprintf(\"path %q: %s\", path, result.Content)\n54: \t\t} else {\n55: \t\t\tlineCount := 0\n56: \t\t\tif result.Content != \"\" {\n57: \t\t\t\tlineCount = strings.Count(result.Content, \"\\n\") + 1\n58: \t\t\t}\n59: \t\t\tsummary = fmt.Sprintf(\"path %q (%d lines)\", path, lineCount)\n60: \t\t}\n61: \t\ttoolVerboseLog(ec, toolname.ReadFile, result, summary)\n62: \t}()\n63: \n64: \tresolved, err := validatePath(ec.Workdir, path)\n65: \tif err != nil {\n66: \t\treturn provider.ToolResult{\n67: \t\t\tCallID:  call.ID,\n68: \t\t\tContent: err.Error(),\n69: \t\t\tIsError: true,\n70: \t\t}\n71: \t}\n72: \n73: \tinfo, err := os.Stat(resolved)\n74: \tif err != nil {\n75: \t\treturn provider.ToolResult{\n76: \t\t\tCallID:  call.ID,\n77: \t\t\tContent: err.Error(),\n78: \t\t\tIsError: true,\n79: \t\t}\n80: \t}\n81: \n82: \tif info.IsDir() {\n83: \t\treturn provider.ToolResult{\n84: \t\t\tCallID:  call.ID,\n85: \t\t\tContent: \"path is a directory, not a file\",\n86: \t\t\tIsError: true,\n87: \t\t}\n88: \t}\n89: \n90: \tcontent, err := os.ReadFile(resolved)\n91: \tif err != nil {\n92: \t\treturn provider.ToolResult{\n93: \t\t\tCallID:  call.ID,\n94: \t\t\tContent: err.Error(),\n95: \t\t\tIsError: true,\n96: \t\t}\n97: \t}\n98: \n99: \t// Binary detection: scan first 512 bytes for NUL byte.\n100: \tpeek := content\n101: \tif len(peek) > 512 {\n102: \t\tpeek = peek[:512]\n103: \t}\n104: \tif bytes.ContainsRune(peek, '\\x00') {\n105: \t\treturn provider.ToolResult{\n106: \t\t\tCallID:  call.ID,\n107: \t\t\tContent: \"binary file detected\",\n108: \t\t\tIsError: true,\n109: \t\t}\n110: \t}\n111: \n112: \t// Parse offset (default 1).\n113: \toffset := 1\n114: \tif v := call.Arguments[\"offset\"]; v != \"\" {\n115: \t\toffset, err = strconv.Atoi(v)\n116: \t\tif err != nil {\n117: \t\t\treturn provider.ToolResult{\n118: \t\t\t\tCallID:  call.ID,\n119: \t\t\t\tContent: fmt.Sprintf(\"invalid offset %q: %s\", v, err.Error()),\n120: \t\t\t\tIsError: true,\n121: \t\t\t}\n122: \t\t}\n123: \t\tif offset < 1 {\n124: \t\t\treturn provider.ToolResult{\n125: \t\t\t\tCallID:  call.ID,\n126: \t\t\t\tContent: \"offset must be >= 1\",\n127: \t\t\t\tIsError: true,\n128: \t\t\t}\n129: \t\t}\n130: \t}\n131: \n132: \t// Parse limit (default 2000).\n133: \tlimit := 2000\n134: \tif v := call.Arguments[\"limit\"]; v != \"\" {\n135: \t\tlimit, err = strconv.Atoi(v)\n136: \t\tif err != nil {\n137: \t\t\treturn provider.ToolResult{\n138: \t\t\t\tCallID:  call.ID,\n139: \t\t\t\tContent: fmt.Sprintf(\"invalid limit %q: %s\", v, err.Error()),\n140: \t\t\t\tIsError: true,\n141: \t\t\t}\n142: \t\t}\n143: \t\tif limit < 1 {\n144: \t\t\treturn provider.ToolResult{\n145: \t\t\t\tCallID:  call.ID,\n146: \t\t\t\tContent: \"limit must be >= 1\",\n147: \t\t\t\tIsError: true,\n148: \t\t\t}\n149: \t\t}\n150: \t}\n151: \n152: \t// Empty file early return.\n153: \tif len(content) == 0 {\n154: \t\tif offset > 1 {\n155: \t\t\treturn provider.ToolResult{\n156: \t\t\t\tCallID:  call.ID,\n157: \t\t\t\tContent: fmt.Sprintf(\"offset %d exceeds file length of 0 lines\", offset),\n158: \t\t\t\tIsError: true,\n159: \t\t\t}\n160: \t\t}\n161: \t\treturn provider.ToolResult{\n162: \t\t\tCallID:  call.ID,\n163: \t\t\tContent: \"\",\n164: \t\t\tIsError: false,\n165: \t\t}\n166: \t}\n167: \n168: \t// Split into lines and handle trailing newline.\n169: \tlines := strings.Split(string(content), \"\\n\")\n170: \tif len(content) > 0 && content[len(content)-1] == '\\n' {\n171: \t\tlines = lines[:len(lines)-1]\n172: \t}\n173: \n174: \ttotalLines := len(lines)\n175: \n176: \t// Offset bounds check.\n177: \tif offset > totalLines {\n178: \t\treturn provider.ToolResult{\n179: \t\t\tCallID:  call.ID,\n180: \t\t\tContent: fmt.Sprintf(\"offset %d exceeds file length of %d lines\", offset, totalLines),\n181: \t\t\tIsError: true,\n182: \t\t}\n183: \t}\n184: \n185: \t// Line selection.\n186: \tstart := offset - 1\n187: \tend := start + limit\n188: \tif end > totalLines {\n189: \t\tend = totalLines\n190: \t}\n191: \tselected := lines[start:end]\n192: \n193: \t// Output formatting.\n194: \tvar b strings.Builder\n195: \tfor i, line := range selected {\n196: \t\tif i > 0 {\n197: \t\t\tb.WriteByte('\\n')\n198: \t\t}\n199: \t\tfmt.Fprintf(&b, \"%d: %s\", start+i+1, line)\n200: \t}\n201: \n202: \treturn provider.ToolResult{\n203: \t\tCallID:  call.ID,\n204: \t\tContent: b.String(),\n205: \t\tIsError: false,\n206: \t}\n207: }\n\n(End of file - total 207 lines)\n</content>",
+            "title": "internal/tool/read_file.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"fmt\"\n\t\"os\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// readFileEntry returns the ToolEntry for the read_file tool.\nfunc readFileEntry() ToolEntry {\n\treturn ToolEntry{\n\t\tDefinition: readFileDefinition,\n\t\tExecute:    readFileExecute,\n\t}",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761692730,
+              "end": 1772761692735
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_089dea60084a45490169aa325cae9c8190a54ebcd26245c8d4"
+            }
+          },
+          "id": "prt_cc0d4ba2d001wsImIPsgYgqUXK",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        },
+        {
+          "type": "tool",
+          "callID": "call_NWaJtyV03cwO3WZmBKBU2ziV",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \t\"path/filepath\"\n8: \n9: \t\"github.com/jrswab/axe/internal/provider\"\n10: \t\"github.com/jrswab/axe/internal/toolname\"\n11: )\n12: \n13: // writeFileEntry returns the ToolEntry for the write_file tool.\n14: func writeFileEntry() ToolEntry {\n15: \treturn ToolEntry{\n16: \t\tDefinition: writeFileDefinition,\n17: \t\tExecute:    writeFileExecute,\n18: \t}\n19: }\n20: \n21: func writeFileDefinition() provider.Tool {\n22: \treturn provider.Tool{\n23: \t\tName:        toolname.WriteFile,\n24: \t\tDescription: \"Create or overwrite a file relative to the working directory. Creates parent directories as needed. Overwrites the file if it already exists.\",\n25: \t\tParameters: map[string]provider.ToolParameter{\n26: \t\t\t\"path\": {\n27: \t\t\t\tType:        \"string\",\n28: \t\t\t\tDescription: \"Relative path to the file to write.\",\n29: \t\t\t\tRequired:    true,\n30: \t\t\t},\n31: \t\t\t\"content\": {\n32: \t\t\t\tType:        \"string\",\n33: \t\t\t\tDescription: \"The content to write to the file.\",\n34: \t\t\t\tRequired:    false,\n35: \t\t\t},\n36: \t\t},\n37: \t}\n38: }\n39: \n40: func writeFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n41: \tpath := call.Arguments[\"path\"]\n42: \n43: \tdefer func() {\n44: \t\tvar summary string\n45: \t\tif result.IsError {\n46: \t\t\tsummary = fmt.Sprintf(\"path %q: %s\", path, result.Content)\n47: \t\t} else {\n48: \t\t\tsummary = fmt.Sprintf(\"path %q (%d bytes)\", path, len(call.Arguments[\"content\"]))\n49: \t\t}\n50: \t\ttoolVerboseLog(ec, toolname.WriteFile, result, summary)\n51: \t}()\n52: \n53: \t// Empty path check.\n54: \tif path == \"\" {\n55: \t\treturn provider.ToolResult{\n56: \t\t\tCallID:  call.ID,\n57: \t\t\tContent: \"path is required\",\n58: \t\t\tIsError: true,\n59: \t\t}\n60: \t}\n61: \n62: \t// Absolute path check.\n63: \tif filepath.IsAbs(path) {\n64: \t\treturn provider.ToolResult{\n65: \t\t\tCallID:  call.ID,\n66: \t\t\tContent: \"absolute paths are not allowed\",\n67: \t\t\tIsError: true,\n68: \t\t}\n69: \t}\n70: \n71: \t// Traversal fast-path check.\n72: \tcleanWorkdir := filepath.Clean(ec.Workdir)\n73: \tresolved := filepath.Clean(filepath.Join(cleanWorkdir, path))\n74: \n75: \tif !isWithinDir(resolved, cleanWorkdir) {\n76: \t\treturn provider.ToolResult{\n77: \t\t\tCallID:  call.ID,\n78: \t\t\tContent: \"path escapes workdir\",\n79: \t\t\tIsError: true,\n80: \t\t}\n81: \t}\n82: \n83: \t// Create parent directories.\n84: \tparent := filepath.Dir(resolved)\n85: \tif err := os.MkdirAll(parent, 0o755); err != nil {\n86: \t\treturn provider.ToolResult{\n87: \t\t\tCallID:  call.ID,\n88: \t\t\tContent: err.Error(),\n89: \t\t\tIsError: true,\n90: \t\t}\n91: \t}\n92: \n93: \t// Symlink escape check on parent directory.\n94: \tevalParent, err := filepath.EvalSymlinks(parent)\n95: \tif err != nil {\n96: \t\treturn provider.ToolResult{\n97: \t\t\tCallID:  call.ID,\n98: \t\t\tContent: err.Error(),\n99: \t\t\tIsError: true,\n100: \t\t}\n101: \t}\n102: \n103: \tevalWorkdir, err := filepath.EvalSymlinks(cleanWorkdir)\n104: \tif err != nil {\n105: \t\treturn provider.ToolResult{\n106: \t\t\tCallID:  call.ID,\n107: \t\t\tContent: err.Error(),\n108: \t\t\tIsError: true,\n109: \t\t}\n110: \t}\n111: \n112: \tif !isWithinDir(evalParent, evalWorkdir) {\n113: \t\treturn provider.ToolResult{\n114: \t\t\tCallID:  call.ID,\n115: \t\t\tContent: \"path escapes workdir\",\n116: \t\t\tIsError: true,\n117: \t\t}\n118: \t}\n119: \n120: \t// Extract content (missing or empty key writes 0-byte file).\n121: \tcontent := call.Arguments[\"content\"]\n122: \n123: \t// Write file.\n124: \tdata := []byte(content)\n125: \tif err := os.WriteFile(resolved, data, 0o644); err != nil {\n126: \t\treturn provider.ToolResult{\n127: \t\t\tCallID:  call.ID,\n128: \t\t\tContent: err.Error(),\n129: \t\t\tIsError: true,\n130: \t\t}\n131: \t}\n132: \n133: \treturn provider.ToolResult{\n134: \t\tCallID:  call.ID,\n135: \t\tContent: fmt.Sprintf(\"wrote %d bytes to %s\", len(data), path),\n136: \t\tIsError: false,\n137: \t}\n138: }\n\n(End of file - total 138 lines)\n</content>",
+            "title": "internal/tool/write_file.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"os\"\n\t\"path/filepath\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// writeFileEntry returns the ToolEntry for the write_file tool.\nfunc writeFileEntry() ToolEntry {\n\treturn ToolEntry{\n\t\tDefinition: writeFileDefinition,\n\t\tExecute:    writeFileExecute,\n\t}\n}\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761692733,
+              "end": 1772761692737
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_089dea60084a45490169aa325caea4819086cf6b835a61ad5a"
+            }
+          },
+          "id": "prt_cc0d4ba3b001zfMCcIwPvzZu7l",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.01638245,
+          "tokens": {
+            "total": 11731,
+            "input": 7347,
+            "output": 160,
+            "reasoning": 39,
+            "cache": {
+              "read": 4224,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d4ba49001SPS0I7cmrpVYDa",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4a884001oQ7MFg2aW6c8nf"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761692831,
+          "completed": 1772761696640
+        },
+        "parentID": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "explore",
+        "agent": "explore",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0114499,
+        "tokens": {
+          "total": 15804,
+          "input": 4010,
+          "output": 146,
+          "reasoning": 25,
+          "cache": {
+            "read": 11648,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d4c0790011VGInxfgCaTj7e",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Noting remaining tool files**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_04f2396b786b90180169aa325ea7b48197a4969d8ef2897988",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761694747,
+            "end": 1772761696495
+          },
+          "id": "prt_cc0d4c21b001GkukZ9NRvJxNWd",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        },
+        {
+          "type": "tool",
+          "callID": "call_Plp3I1NjjyQQUXovDwbMJvi5",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \t\"strconv\"\n8: \t\"strings\"\n9: \n10: \t\"github.com/jrswab/axe/internal/provider\"\n11: \t\"github.com/jrswab/axe/internal/toolname\"\n12: )\n13: \n14: // editFileEntry returns the ToolEntry for the edit_file tool.\n15: func editFileEntry() ToolEntry {\n16: \treturn ToolEntry{\n17: \t\tDefinition: editFileDefinition,\n18: \t\tExecute:    editFileExecute,\n19: \t}\n20: }\n21: \n22: func editFileDefinition() provider.Tool {\n23: \treturn provider.Tool{\n24: \t\tName:        toolname.EditFile,\n25: \t\tDescription: \"Find and replace exact text in an existing file relative to the working directory. Supports single replacement (default) and replace-all mode.\",\n26: \t\tParameters: map[string]provider.ToolParameter{\n27: \t\t\t\"path\": {\n28: \t\t\t\tType:        \"string\",\n29: \t\t\t\tDescription: \"Relative path to the file to edit.\",\n30: \t\t\t\tRequired:    true,\n31: \t\t\t},\n32: \t\t\t\"old_string\": {\n33: \t\t\t\tType:        \"string\",\n34: \t\t\t\tDescription: \"The exact text to find in the file.\",\n35: \t\t\t\tRequired:    true,\n36: \t\t\t},\n37: \t\t\t\"new_string\": {\n38: \t\t\t\tType:        \"string\",\n39: \t\t\t\tDescription: \"The text to replace old_string with.\",\n40: \t\t\t\tRequired:    true,\n41: \t\t\t},\n42: \t\t\t\"replace_all\": {\n43: \t\t\t\tType:        \"string\",\n44: \t\t\t\tDescription: \"When set to \\\"true\\\", all occurrences are replaced. Defaults to false (single replacement).\",\n45: \t\t\t\tRequired:    false,\n46: \t\t\t},\n47: \t\t},\n48: \t}\n49: }\n50: \n51: func editFileExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n52: \tpath := call.Arguments[\"path\"]\n53: \treplacedCount := 0\n54: \n55: \tdefer func() {\n56: \t\tvar summary string\n57: \t\tif result.IsError {\n58: \t\t\tsummary = fmt.Sprintf(\"path %q: %s\", path, result.Content)\n59: \t\t} else {\n60: \t\t\tsummary = fmt.Sprintf(\"path %q (%d occurrence(s))\", path, replacedCount)\n61: \t\t}\n62: \t\ttoolVerboseLog(ec, toolname.EditFile, result, summary)\n63: \t}()\n64: \n65: \t// Path validation (handles empty, absolute, traversal, symlink escape, nonexistent).\n66: \tresolved, err := validatePath(ec.Workdir, path)\n67: \tif err != nil {\n68: \t\treturn provider.ToolResult{\n69: \t\t\tCallID:  call.ID,\n70: \t\t\tContent: err.Error(),\n71: \t\t\tIsError: true,\n72: \t\t}\n73: \t}\n74: \n75: \t// Directory rejection.\n76: \tinfo, err := os.Stat(resolved)\n77: \tif err != nil {\n78: \t\treturn provider.ToolResult{\n79: \t\t\tCallID:  call.ID,\n80: \t\t\tContent: err.Error(),\n81: \t\t\tIsError: true,\n82: \t\t}\n83: \t}\n84: \tif info.IsDir() {\n85: \t\treturn provider.ToolResult{\n86: \t\t\tCallID:  call.ID,\n87: \t\t\tContent: \"path is a directory, not a file\",\n88: \t\t\tIsError: true,\n89: \t\t}\n90: \t}\n91: \n92: \t// Extract old_string — empty is rejected.\n93: \toldString := call.Arguments[\"old_string\"]\n94: \tif oldString == \"\" {\n95: \t\treturn provider.ToolResult{\n96: \t\t\tCallID:  call.ID,\n97: \t\t\tContent: \"old_string is required\",\n98: \t\t\tIsError: true,\n99: \t\t}\n100: \t}\n101: \n102: \t// Extract new_string — empty is valid (deletion).\n103: \tnewString := call.Arguments[\"new_string\"]\n104: \n105: \t// Read file contents.\n106: \tdata, err := os.ReadFile(resolved)\n107: \tif err != nil {\n108: \t\treturn provider.ToolResult{\n109: \t\t\tCallID:  call.ID,\n110: \t\t\tContent: err.Error(),\n111: \t\t\tIsError: true,\n112: \t\t}\n113: \t}\n114: \tcontent := string(data)\n115: \n116: \t// Parse replace_all.\n117: \treplaceAll := false\n118: \tif v := call.Arguments[\"replace_all\"]; v != \"\" {\n119: \t\treplaceAll, err = strconv.ParseBool(v)\n120: \t\tif err != nil {\n121: \t\t\treturn provider.ToolResult{\n122: \t\t\t\tCallID:  call.ID,\n123: \t\t\t\tContent: fmt.Sprintf(\"invalid replace_all value %q: %s\", v, err.Error()),\n124: \t\t\t\tIsError: true,\n125: \t\t\t}\n126: \t\t}\n127: \t}\n128: \n129: \t// Count occurrences.\n130: \tcount := strings.Count(content, oldString)\n131: \n132: \tif count == 0 {\n133: \t\treturn provider.ToolResult{\n134: \t\t\tCallID:  call.ID,\n135: \t\t\tContent: \"old_string not found in file\",\n136: \t\t\tIsError: true,\n137: \t\t}\n138: \t}\n139: \n140: \tif count > 1 && !replaceAll {\n141: \t\treturn provider.ToolResult{\n142: \t\t\tCallID:  call.ID,\n143: \t\t\tContent: fmt.Sprintf(\"old_string found %d times; set replace_all to true or provide a more unique string\", count),\n144: \t\t\tIsError: true,\n145: \t\t}\n146: \t}\n147: \n148: \t// Perform replacement.\n149: \tvar newContent string\n150: \tvar replaced int\n151: \tif replaceAll {\n152: \t\tnewContent = strings.ReplaceAll(content, oldString, newString)\n153: \t\treplaced = count\n154: \t} else {\n155: \t\tnewContent = strings.Replace(content, oldString, newString, 1)\n156: \t\treplaced = 1\n157: \t}\n158: \n159: \t// Write file back.\n160: \tif err := os.WriteFile(resolved, []byte(newContent), 0o644); err != nil {\n161: \t\treturn provider.ToolResult{\n162: \t\t\tCallID:  call.ID,\n163: \t\t\tContent: err.Error(),\n164: \t\t\tIsError: true,\n165: \t\t}\n166: \t}\n167: \n168: \treplacedCount = replaced\n169: \n170: \treturn provider.ToolResult{\n171: \t\tCallID:  call.ID,\n172: \t\tContent: fmt.Sprintf(\"replaced %d occurrence(s) in %s\", replaced, path),\n173: \t\tIsError: false,\n174: \t}\n175: }\n\n(End of file - total 175 lines)\n</content>",
+            "title": "internal/tool/edit_file.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"os\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// editFileEntry returns the ToolEntry for the edit_file tool.\nfunc editFileEntry() ToolEntry {\n\treturn ToolEntry{\n\t\tDefinition: editFileDefinition,\n\t\tExecute:    editFileExecute,\n\t}\n}",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761696508,
+              "end": 1772761696512
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_04f2396b786b90180169aa326072f881978ad3624179aa3933"
+            }
+          },
+          "id": "prt_cc0d4c8f00019ymH4VWsTNbcif",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        },
+        {
+          "type": "tool",
+          "callID": "call_A9xGl9i1WyQ6VRqXgDDIgF8q",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"errors\"\n6: \t\"fmt\"\n7: \t\"os/exec\"\n8: \n9: \t\"github.com/jrswab/axe/internal/provider\"\n10: \t\"github.com/jrswab/axe/internal/toolname\"\n11: )\n12: \n13: // truncateCommand truncates a command string to maxLen chars, appending \"...\" if longer.\n14: func truncateCommand(cmd string, maxLen int) string {\n15: \tif len(cmd) <= maxLen {\n16: \t\treturn cmd\n17: \t}\n18: \treturn cmd[:maxLen] + \"...\"\n19: }\n20: \n21: const maxOutputBytes = 100 * 1024 // 102400 bytes\n22: \n23: // runCommandEntry returns the ToolEntry for the run_command tool.\n24: func runCommandEntry() ToolEntry {\n25: \treturn ToolEntry{\n26: \t\tDefinition: runCommandDefinition,\n27: \t\tExecute:    runCommandExecute,\n28: \t}\n29: }\n30: \n31: func runCommandDefinition() provider.Tool {\n32: \treturn provider.Tool{\n33: \t\tName:        toolname.RunCommand,\n34: \t\tDescription: \"Execute a shell command in the agent's working directory via sh -c and return the combined stdout/stderr output.\",\n35: \t\tParameters: map[string]provider.ToolParameter{\n36: \t\t\t\"command\": {\n37: \t\t\t\tType:        \"string\",\n38: \t\t\t\tDescription: \"The shell command to execute.\",\n39: \t\t\t\tRequired:    true,\n40: \t\t\t},\n41: \t\t},\n42: \t}\n43: }\n44: \n45: func runCommandExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n46: \tcommand := call.Arguments[\"command\"]\n47: \ttruncCmd := truncateCommand(command, 60)\n48: \tvar cmdErr error\n49: \n50: \tdefer func() {\n51: \t\tvar summary string\n52: \t\tif result.IsError {\n53: \t\t\tvar exitErr *exec.ExitError\n54: \t\t\tif errors.As(cmdErr, &exitErr) {\n55: \t\t\t\tsummary = fmt.Sprintf(\"%q (exit %d)\", truncCmd, exitErr.ExitCode())\n56: \t\t\t} else if cmdErr != nil {\n57: \t\t\t\tsummary = fmt.Sprintf(\"%q (%s)\", truncCmd, cmdErr.Error())\n58: \t\t\t} else {\n59: \t\t\t\tsummary = fmt.Sprintf(\"%q (%s)\", truncCmd, result.Content)\n60: \t\t\t}\n61: \t\t} else {\n62: \t\t\tsummary = fmt.Sprintf(\"%q (exit 0)\", truncCmd)\n63: \t\t}\n64: \t\ttoolVerboseLog(ec, toolname.RunCommand, result, summary)\n65: \t}()\n66: \n67: \tif command == \"\" {\n68: \t\treturn provider.ToolResult{\n69: \t\t\tCallID:  call.ID,\n70: \t\t\tContent: \"command is required\",\n71: \t\t\tIsError: true,\n72: \t\t}\n73: \t}\n74: \n75: \tcmd := exec.CommandContext(ctx, \"sh\", \"-c\", command)\n76: \tcmd.Dir = ec.Workdir\n77: \n78: \toutput, err := cmd.CombinedOutput()\n79: \n80: \t// Truncate output if it exceeds 100KB.\n81: \toutStr := string(output)\n82: \tif len(output) > maxOutputBytes {\n83: \t\toutStr = string(output[:maxOutputBytes]) + \"\\n... [output truncated, exceeded 100KB]\"\n84: \t}\n85: \n86: \tif err == nil {\n87: \t\treturn provider.ToolResult{\n88: \t\t\tCallID:  call.ID,\n89: \t\t\tContent: outStr,\n90: \t\t\tIsError: false,\n91: \t\t}\n92: \t}\n93: \n94: \tcmdErr = err\n95: \n96: \tvar exitErr *exec.ExitError\n97: \tif errors.As(err, &exitErr) {\n98: \t\treturn provider.ToolResult{\n99: \t\t\tCallID:  call.ID,\n100: \t\t\tContent: fmt.Sprintf(\"exit code %d\\n%s\", exitErr.ExitCode(), outStr),\n101: \t\t\tIsError: true,\n102: \t\t}\n103: \t}\n104: \n105: \treturn provider.ToolResult{\n106: \t\tCallID:  call.ID,\n107: \t\tContent: err.Error(),\n108: \t\tIsError: true,\n109: \t}\n110: }\n\n(End of file - total 110 lines)\n</content>",
+            "title": "internal/tool/run_command.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"errors\"\n\t\"fmt\"\n\t\"os/exec\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\n// truncateCommand truncates a command string to maxLen chars, appending \"...\" if longer.\nfunc truncateCommand(cmd string, maxLen int) string {\n\tif len(cmd) <= maxLen {\n\t\treturn cmd\n\t}\n\treturn cmd[:maxLen] + \"...\"\n}\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761696528,
+              "end": 1772761696533
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_04f2396b786b90180169aa326073008197807037516f19cdfc"
+            }
+          },
+          "id": "prt_cc0d4c8fd001XGHrd7HxTG6l8C",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        },
+        {
+          "type": "tool",
+          "callID": "call_hxcNWTTzGnlqkwSJpjrNCYm9",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"net/http\"\n8: \t\"net/url\"\n9: \n10: \t\"github.com/jrswab/axe/internal/provider\"\n11: \t\"github.com/jrswab/axe/internal/toolname\"\n12: )\n13: \n14: const maxReadBytes = 10000\n15: \n16: func truncateURL(urlStr string, maxLen int) string {\n17: \tif len(urlStr) <= maxLen {\n18: \t\treturn urlStr\n19: \t}\n20: \treturn urlStr[:maxLen] + \"...\"\n21: }\n22: \n23: func sanitizeURL(urlStr string) string {\n24: \tparsedURL, err := url.Parse(urlStr)\n25: \tif err != nil {\n26: \t\treturn \"invalid-url\"\n27: \t}\n28: \n29: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n30: \t\treturn \"invalid-url\"\n31: \t}\n32: \n33: \tpath := parsedURL.EscapedPath()\n34: \tif path == \"\" {\n35: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n36: \t}\n37: \n38: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n39: }\n40: \n41: func urlFetchEntry() ToolEntry {\n42: \treturn ToolEntry{\n43: \t\tDefinition: urlFetchDefinition,\n44: \t\tExecute:    urlFetchExecute,\n45: \t}\n46: }\n47: \n48: func urlFetchDefinition() provider.Tool {\n49: \treturn provider.Tool{\n50: \t\tName:        toolname.URLFetch,\n51: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n52: \t\tParameters: map[string]provider.ToolParameter{\n53: \t\t\t\"url\": {\n54: \t\t\t\tType:        \"string\",\n55: \t\t\t\tDescription: \"The URL to fetch.\",\n56: \t\t\t\tRequired:    true,\n57: \t\t\t},\n58: \t\t},\n59: \t}\n60: }\n61: \n62: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n63: \turlStr := call.Arguments[\"url\"]\n64: \tstatusCode := 0\n65: \n66: \tdefer func() {\n67: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n68: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n69: \t\tif statusCode != 0 {\n70: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n71: \t\t} else if result.IsError {\n72: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n73: \t\t}\n74: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n75: \t}()\n76: \n77: \tif urlStr == \"\" {\n78: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n79: \t}\n80: \n81: \tparsedURL, err := url.Parse(urlStr)\n82: \tif err != nil {\n83: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n84: \t}\n85: \n86: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n87: \t\treturn provider.ToolResult{\n88: \t\t\tCallID:  call.ID,\n89: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n90: \t\t\tIsError: true,\n91: \t\t}\n92: \t}\n93: \n94: \treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n95: \tif err != nil {\n96: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n97: \t}\n98: \n99: \tresp, err := http.DefaultClient.Do(req)\n100: \tif err != nil {\n101: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n102: \t}\n103: \tdefer func() {\n104: \t\t_ = resp.Body.Close()\n105: \t}()\n106: \tstatusCode = resp.StatusCode\n107: \n108: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n109: \tif err != nil {\n110: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n111: \t}\n112: \n113: \tbodyStr := string(body)\n114: \tif len(body) > maxReadBytes {\n115: \t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n116: \t}\n117: \n118: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n119: \t\treturn provider.ToolResult{\n120: \t\t\tCallID:  call.ID,\n121: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n122: \t\t\tIsError: true,\n123: \t\t}\n124: \t}\n125: \n126: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n127: }\n\n(End of file - total 127 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"net/url\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst maxReadBytes = 10000\n\nfunc truncateURL(urlStr string, maxLen int) string {\n\tif len(urlStr) <= maxLen {\n\t\treturn urlStr\n\t}\n\treturn urlStr[:maxLen] + \"...\"",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1772761696531,
+              "end": 1772761696534
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_04f2396b786b90180169aa326073088197a0b1d059106d244c"
+            }
+          },
+          "id": "prt_cc0d4c912001yN4sS7qnTLTScm",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.0114499,
+          "tokens": {
+            "total": 15804,
+            "input": 4010,
+            "output": 146,
+            "reasoning": 25,
+            "cache": {
+              "read": 11648,
+              "write": 0
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4ba9f001Z97UoAzdKpn6mQ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761696640,
+          "completed": 1772761712758
+        },
+        "parentID": "msg_cc0d47b58001JLhL88KuBeI5nu",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "explore",
+        "agent": "explore",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0297108,
+        "tokens": {
+          "total": 20856,
+          "input": 4128,
+          "output": 1112,
+          "reasoning": 299,
+          "cache": {
+            "read": 15616,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc0d4c980001ZilTBo4OoVeTQd",
+        "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "id": "prt_cc0d4cbb4001oGQSJtRokkIaUG",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4c980001ZilTBo4OoVeTQd"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Summarizing canonical internal/tool pattern**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0343578fd721ff490169aa326187148194a9f0ec9aec4c7093",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761697551,
+            "end": 1772761702743
+          },
+          "id": "prt_cc0d4cd0f0014I2qb94HT0hcrR",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4c980001ZilTBo4OoVeTQd"
+        },
+        {
+          "type": "text",
+          "text": "Canonical pattern in `internal/tool` (from current implementations):\n\n- **Entry function structure (top of file):**  \n  `func <toolCamel>Entry() ToolEntry { return ToolEntry{ Definition: <toolCamel>Definition, Execute: <toolCamel>Execute } }`  \n  References:  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go` (lines 13–19)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go` (lines 15–21)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go` (lines 23–29)\n\n- **Definition shape (`provider.Tool`):**  \n  `func <toolCamel>Definition() provider.Tool { return provider.Tool{ Name: toolname.<Const>, Description: \"...\", Parameters: map[string]provider.ToolParameter{ \"<arg>\": { Type: \"string\", Description: \"...\", Required: true|false }, ... } } }`  \n  References:  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file.go` (lines 22–49)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go` (lines 48–60)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go` (lines 21–38)\n\n- **Execute function placement/signature (same file, after definition):**  \n  `func <toolCamel>Execute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult)`  \n  - Uses named return `result` to support deferred verbose logging.  \n  - Returns `provider.ToolResult{ CallID: call.ID, Content: ..., IsError: ... }` on all paths (no `(result, error)` return).  \n  References:  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory.go` (lines 35–90)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go` (lines 47–207)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go` (lines 62–127)\n\n- **Verbose logging pattern (canonical):**  \n  - Inside `Execute`, define `defer func(){ ... toolVerboseLog(ec, toolname.<Const>, result, summary) }()` near top.  \n  - Build `summary` with success/error variants; include key identifier (path/url/command), and often count/size/status.  \n  - Shared logger format is centralized in `toolVerboseLog`: `[tool] <toolName>: <summary> (success|error)`.  \n  References:  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go` (lines 9–22)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go` (lines 43–51)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command.go` (lines 50–65)  \n  - `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go` (lines 66–75)\n\n- **Where new tool is wired in:**  \n  Add `r.Register(toolname.<Const>, <toolCamel>Entry())` in `RegisterAll`.  \n  Reference: `/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go` (lines 92–99).",
+          "time": {
+            "start": 1772761712671,
+            "end": 1772761712671
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_0343578fd721ff490169aa3266b68c8194b6c8e19ebfb1ca92"
+            }
+          },
+          "id": "prt_cc0d4e158001p1x8MgyarEaRPw",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4c980001ZilTBo4OoVeTQd"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "33fe7dd30ba75b677b922950eb248d749499f253",
+          "cost": 0.0297108,
+          "tokens": {
+            "total": 20856,
+            "input": 4128,
+            "output": 1112,
+            "reasoning": 299,
+            "cache": {
+              "read": 15616,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d50822001iBaa5pgJD2LNfb",
+          "sessionID": "ses_33f2b84adffeAq9nevqC8bqvET",
+          "messageID": "msg_cc0d4c980001ZilTBo4OoVeTQd"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Single task: inspect existing tool files and return the canonical pattern for a new tool file in internal/tool (entry function structure, Definition shape, Execute function placement, verbose logging pattern). Include concrete file references and minimal code-shape bullets only. Thoroughness medium.
+
