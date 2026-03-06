@@ -1,0 +1,5 @@
+Let's make a new release based on the changes since v1.0.0
+
+---
+
+go ahead and make the annotated tag
