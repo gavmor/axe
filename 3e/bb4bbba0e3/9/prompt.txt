@@ -1,0 +1,107 @@
+Verify each finding against the current code and only fix it if needed.
+
+Inline comments:
+In `@cmd/run.go`:
+- Around line 298-316: The MCP client is left open when Register succeeds but
+returns zero routed tools (filtered is empty); after calling
+mcpRouter.Register(client, mcpTools, builtinNames) and before appending filtered
+to req.Tools, detect if len(filtered) == 0 and close the client (call
+client.Close()) to avoid the leak—do this in the same block where you currently
+handle verbose logging and tool registration (referencing mcpRouter.Register,
+filtered, client, builtinNames, req.Tools) so clients that register no tools are
+explicitly closed.
+- Around line 314-315: The loop that sets builtinNames[t.Name] = true is
+incorrectly promoting MCP tool names to builtinNames; change the logic in the
+loop that iterates over filtered so it skips tools that are MCP (e.g., check a
+boolean like t.IsMCP or a kind/type field such as t.Kind == "mcp") and only add
+true for genuine built-ins, so that internal/mcpclient.Router.Register can
+detect and raise MCP/MCP collisions instead of them being treated as built-ins.
+- Around line 210-211: The current code creates a single run-level timeout using
+ctx, cancel := context.WithTimeout(context.Background(),
+time.Duration(timeout)*time.Second) which bypasses Cobra's cmd.Context() and
+makes --timeout apply to the whole run; change to derive per-request deadlines
+from cmd.Context() instead: remove the long-lived context.WithTimeout call based
+on context.Background() and, at each network/request call site, wrap
+cmd.Context() with context.WithTimeout(cmd.Context(),
+time.Duration(timeout)*time.Second) and defer the returned cancel immediately
+after the request scope so each round-trip gets its own deadline while
+preserving Cobra cancellation propagation (update any references to ctx/cancel
+accordingly).
+
+In `@internal/envinterp/envinterp.go`:
+- Around line 18-21: Wrap the error returned by expandValue with the header key
+so callers (like Connect) get actionable feedback; inside the headers loop where
+you call expandValue(value) change the return of err to a wrapped error that
+includes the header name (e.g., using fmt.Errorf or errors.Wrapf) so the error
+message identifies which header key caused the expansion failure.
+
+In `@internal/mcpclient/mcpclient.go`:
+- Around line 85-90: The request spotlights that CallTool currently forwards all
+arguments as strings (producing e.g. "3" instead of 3) because schemas parsed in
+ListTools aren't cached; fix by caching tool schemas on the Client (add a field
+like Client.toolSchemas map[string]Schema populated in ListTools when calling
+convertTool) and perform schema-aware coercion in Client.CallTool before
+invoking session.CallTool: look up the stored schema for call.Name, coerce each
+entry in the args map to the declared type (integer/number/boolean/string) using
+the same conversion logic as convertTool, and then pass the coerced args into
+mcp.CallToolParams; alternatively, if you prefer deferring coercion, ensure the
+code path that has schema access (e.g., wherever convertTool is called) performs
+the coercion and hands CallTool a typed args map rather than raw strings.
+
+In `@internal/mcpclient/router.go`:
+- Around line 11-17: Router.Close only iterates r.tools which omits clients that
+registered zero routed tools, leaking MCP sessions; modify registration logic so
+every Client is recorded for shutdown regardless of tool filtering (e.g., add
+the Client to r.tools or a new r.clients map at the start of Register or
+maintain a separate allClients set keyed by client ID) and ensure
+Deregister/Close iterate that complete collection to call Client.Close/cleanup;
+update Register, Close (and any Deregister/remove paths) to use the chosen
+collection so clients that reported no routed tools are still closed.
+
+---
+
+Nitpick comments:
+In `@cmd/run_mcp_integration_test.go`:
+- Around line 21-33: The test MCP tool currently returns a fixed response
+("hello axe") without inspecting the incoming request, which hides regressions
+in argument marshaling; update the s.AddTool handler (the func registered for
+mcp.Tool in cmd/run_mcp_integration_test.go that takes context.Context and
+*mcp.CallToolRequest and returns *mcp.CallToolResult, error) to parse the
+incoming *mcp.CallToolRequest (inspect/marshal/unmarshal the request.Arguments
+or payload to extract the "name" field), validate or assert the value, and then
+return a response that echoes that extracted name in the mcp.CallToolResult
+Content instead of always returning "hello axe" so the test verifies end-to-end
+argument forwarding.
+
+In `@internal/envinterp/envinterp_test.go`:
+- Around line 8-163: Combine the many TestExpandHeaders_* functions into a
+single table-driven test TestExpandHeaders that iterates a slice of cases (each
+with fields: name, env map[string]string, input map[string]string or nil, want
+map[string]string or nil, wantErr bool, wantErrMsg string) and uses
+t.Run(case.name, func(t *testing.T){...}) to set env vars via t.Setenv, call
+ExpandHeaders, assert error vs expected and compare results (including
+preserving the original input for the "InputNotModified" case and handling nil
+vs empty maps for "NilMap" and "EmptyMap"), and include specific cases from the
+originals (StaticValues, SingleVar, MultipleVarsInOneValue, MultipleHeaders,
+MissingVar, EmptyVar, NilMap, EmptyMap, NoPattern, DollarWithoutBrace,
+InputNotModified) so behavior and assertions remain identical but condensed into
+subtests.
+
+In `@internal/mcpclient/mcpclient_test.go`:
+- Around line 16-249: Convert the many similar tests in
+internal/mcpclient/mcpclient_test.go (Connect, ListTools, CallTool, Header
+injection and env-var failure cases) into table-driven tests: create tables of
+test cases with fields like name, serverSetup (use newMCPStreamableServer /
+newMCPComplexSchemaServer / inline mcp.NewServer setups), cfg
+(agent.MCPServerConfig), prepare (e.g., t.Setenv for TOKEN),
+expectErr/expectResult, and expected assertions; iterate with for _, tc := range
+tests { t.Run(tc.name, func(t *testing.T) { setup server via tc.serverSetup,
+defer ts.Close(), client := Connect/mustConnectTestClient using tc.cfg, defer
+client.Close(); perform ListTools or CallTool and assert tc.expectErr or compare
+results }) } and keep unique checks such as Authorization header inspection and
+complex-schema assertions in their case entries; preserve cleanup and error
+messages and use subtests to make each case independent.
+
+---
+
+go fo rit
