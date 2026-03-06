@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "3ebb4bbba0e3",
+  "session_id": "ses_33ca47dacffeRz34nSoic55Fnz",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T13:37:11.462323Z",
+  "branch": "iss-009/mcp-tool-support",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/run.go",
+    "cmd/run_mcp_integration_test.go",
+    "internal/envinterp/envinterp.go",
+    "internal/envinterp/envinterp_test.go",
+    "internal/mcpclient/mcpclient.go",
+    "internal/mcpclient/mcpclient_test.go",
+    "internal/mcpclient/router.go",
+    "internal/mcpclient/router_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "790562273e21",
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 601,
+    "cache_read_tokens": 19252,
+    "output_tokens": 198,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T13:37:11.458998Z",
+    "agent_lines": 174,
+    "human_added": 7,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 183,
+    "agent_percentage": 95.08196721311475
+  }
+}
