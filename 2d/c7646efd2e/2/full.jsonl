@@ -13,7 +13,7 @@
     },
     "time": {
       "created": 1772807994677,
-      "updated": 1772808289921
+      "updated": 1772808301653
     }
   },
   "messages": [
@@ -1966,7 +1966,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1772808289823
+          "created": 1772808289823,
+          "completed": 1772808298780
         },
         "parentID": "msg_cc39ba585001yri7DwiF4aYZZ7",
         "modelID": "claude-opus-4-6",
@@ -1977,16 +1978,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.03316375,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 36576,
+          "input": 1,
+          "output": 166,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 34530,
+            "write": 1879
           }
         },
+        "finish": "tool-calls",
         "id": "REDACTED",
         "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d"
       },
@@ -2014,18 +2017,204 @@
           "callID": "REDACTED",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add internal/agent/agent.go internal/agent/agent_test.go && git commit -m \"Validate MCP server URL shape, scheme, and host in agent config\n\nReject malformed URLs, non-http/https schemes, and missing hosts at\nconfig validation time so users get actionable errors before connection\nattempts fail with opaque messages.\"",
               "description": "Stage and commit URL validation changes"
             },
+            "output": "[iss-009/mcp-tool-support b930435] Validate MCP server URL shape, scheme, and host in agent config\n 2 files changed, 79 insertions(+)\n",
+            "title": "Stage and commit URL validation changes",
+            "metadata": {
+              "output": "[iss-009/mcp-tool-support b930435] Validate MCP server URL shape, scheme, and host in agent config\n 2 files changed, 79 insertions(+)\n",
+              "exit": 0,
+              "description": "Stage and commit URL validation changes",
+              "truncated": false
+            },
             "time": {
-              "start": 1772808294997
+              "start": 1772808294997,
+              "end": 1772808298692
             }
           },
           "id": "prt_cc39bc91a001tq3ovli99FAhoN",
           "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
           "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "eee9f9eb468691d1a6b065714476b5c3b390f5e6",
+          "cost": 0.03316375,
+          "tokens": {
+            "total": 36576,
+            "input": 1,
+            "output": 166,
+            "reasoning": 0,
+            "cache": {
+              "read": 34530,
+              "write": 1879
+            }
+          },
+          "id": "prt_cc39be0c5001gh2gg2Zyt0Kfdy",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772808298782,
+          "completed": 1772808301543
+        },
+        "parentID": "msg_cc39ba585001yri7DwiF4aYZZ7",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0214345,
+        "tokens": {
+          "total": 36707,
+          "input": 1,
+          "output": 73,
+          "reasoning": 0,
+          "cache": {
+            "read": 36409,
+            "write": 224
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "eee9f9eb468691d1a6b065714476b5c3b390f5e6",
+          "id": "REDACTED",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git status",
+              "description": "Verify clean working tree"
+            },
+            "output": "On branch iss-009/mcp-tool-support\nYour branch is ahead of 'origin/iss-009/mcp-tool-support' by 1 commit.\n  (use \"git push\" to publish your local commits)\n\nnothing to commit, working tree clean\n",
+            "title": "Verify clean working tree",
+            "metadata": {
+              "output": "On branch iss-009/mcp-tool-support\nYour branch is ahead of 'origin/iss-009/mcp-tool-support' by 1 commit.\n  (use \"git push\" to publish your local commits)\n\nnothing to commit, working tree clean\n",
+              "exit": 0,
+              "description": "Verify clean working tree",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772808301385,
+              "end": 1772808301447
+            }
+          },
+          "id": "prt_cc39be9820011aTWqrULXQgUew",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "eee9f9eb468691d1a6b065714476b5c3b390f5e6",
+          "cost": 0.0214345,
+          "tokens": {
+            "total": 36707,
+            "input": 1,
+            "output": 73,
+            "reasoning": 0,
+            "cache": {
+              "read": 36409,
+              "write": 224
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772808301545,
+          "completed": 1772808307419
+        },
+        "parentID": "msg_cc39ba585001yri7DwiF4aYZZ7",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.019396,
+        "tokens": {
+          "total": 36823,
+          "input": 1,
+          "output": 40,
+          "reasoning": 0,
+          "cache": {
+            "read": 36782,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc39bebe9002KH2pNwsJ26h3ky",
+        "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "eee9f9eb468691d1a6b065714476b5c3b390f5e6",
+          "id": "prt_cc39c01360010rnnvV59g5qmXh",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "msg_cc39bebe9002KH2pNwsJ26h3ky"
+        },
+        {
+          "type": "text",
+          "text": "Committed as `b930435` on `iss-009/mcp-tool-support`. Working tree is clean, branch is 1 commit ahead of origin.",
+          "time": {
+            "start": 1772808307278,
+            "end": 1772808307278
+          },
+          "id": "prt_cc39c0136002SkrZKsKZ73YOge",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "msg_cc39bebe9002KH2pNwsJ26h3ky"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "eee9f9eb468691d1a6b065714476b5c3b390f5e6",
+          "cost": 0.019396,
+          "tokens": {
+            "total": 36823,
+            "input": 1,
+            "output": 40,
+            "reasoning": 0,
+            "cache": {
+              "read": 36782,
+              "write": 0
+            }
+          },
+          "id": "prt_cc39c0251001SM7tObr8g7N6xJ",
+          "sessionID": "ses_33c68c2caffetTjUoiT1qxL73d",
+          "messageID": "msg_cc39bebe9002KH2pNwsJ26h3ky"
         }
       ]
     }
