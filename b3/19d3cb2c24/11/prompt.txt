@@ -1,0 +1,1 @@
+Single task: run `go test ./internal/agent ./internal/envinterp ./internal/mcpclient ./internal/tool ./cmd` in /Users/jaronswab/go/src/github.com/jrswab/axe and return only failing tests/errors.
