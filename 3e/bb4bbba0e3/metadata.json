@@ -3,7 +3,7 @@
   "checkpoint_id": "3ebb4bbba0e3",
   "strategy": "manual-commit",
   "branch": "iss-009/mcp-tool-support",
-  "checkpoints_count": 3,
+  "checkpoints_count": 4,
   "files_touched": [
     "cmd/run.go",
     "cmd/run_mcp_integration_test.go",
@@ -35,13 +35,20 @@
       "context": "/3e/bb4bbba0e3/2/context.md",
       "content_hash": "/3e/bb4bbba0e3/2/content_hash.txt",
       "prompt": "/3e/bb4bbba0e3/2/prompt.txt"
+    },
+    {
+      "metadata": "/3e/bb4bbba0e3/3/metadata.json",
+      "transcript": "/3e/bb4bbba0e3/3/full.jsonl",
+      "context": "/3e/bb4bbba0e3/3/context.md",
+      "content_hash": "/3e/bb4bbba0e3/3/content_hash.txt",
+      "prompt": "/3e/bb4bbba0e3/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12,
-    "cache_creation_tokens": 2325,
-    "cache_read_tokens": 57736,
-    "output_tokens": 1166,
-    "api_call_count": 6
+    "input_tokens": 16,
+    "cache_creation_tokens": 3042,
+    "cache_read_tokens": 76996,
+    "output_tokens": 1534,
+    "api_call_count": 8
   }
 }
