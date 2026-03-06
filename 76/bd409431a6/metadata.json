@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "76bd409431a6",
+  "strategy": "manual-commit",
+  "branch": "iss-009/mcp-tool-support",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/run.go",
+    "cmd/run_mcp_integration_test.go",
+    "cmd/run_test.go",
+    "cmd/testdata/golden/dry-run/basic.txt",
+    "cmd/testdata/golden/dry-run/with_files.txt",
+    "cmd/testdata/golden/dry-run/with_memory.txt",
+    "cmd/testdata/golden/dry-run/with_skill.txt",
+    "cmd/testdata/golden/dry-run/with_subagents.txt",
+    "cmd/testdata/golden/dry-run/with_tools.txt",
+    "docs/plans/027_mcp_tool_support_implement.md",
+    "docs/plans/027_mcp_tool_support_spec.md",
+    "go.mod",
+    "go.sum",
+    "internal/agent/agent.go",
+    "internal/agent/agent_test.go",
+    "internal/envinterp/envinterp.go",
+    "internal/envinterp/envinterp_test.go",
+    "internal/mcpclient/mcpclient.go",
+    "internal/mcpclient/mcpclient_test.go",
+    "internal/mcpclient/router.go",
+    "internal/mcpclient/router_test.go",
+    "internal/tool/tool.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/76/bd409431a6/0/metadata.json",
+      "transcript": "/76/bd409431a6/0/full.jsonl",
+      "context": "/76/bd409431a6/0/context.md",
+      "content_hash": "/76/bd409431a6/0/content_hash.txt",
+      "prompt": "/76/bd409431a6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 307,
+    "cache_creation_tokens": 24367,
+    "cache_read_tokens": 1464921,
+    "output_tokens": 1822,
+    "api_call_count": 15
+  }
+}
