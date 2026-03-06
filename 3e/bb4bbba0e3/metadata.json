@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "3ebb4bbba0e3",
+  "strategy": "manual-commit",
+  "branch": "iss-009/mcp-tool-support",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/run.go",
+    "cmd/run_mcp_integration_test.go",
+    "internal/envinterp/envinterp.go",
+    "internal/envinterp/envinterp_test.go",
+    "internal/mcpclient/mcpclient.go",
+    "internal/mcpclient/mcpclient_test.go",
+    "internal/mcpclient/router.go",
+    "internal/mcpclient/router_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3e/bb4bbba0e3/0/metadata.json",
+      "transcript": "/3e/bb4bbba0e3/0/full.jsonl",
+      "context": "/3e/bb4bbba0e3/0/context.md",
+      "content_hash": "/3e/bb4bbba0e3/0/content_hash.txt",
+      "prompt": "/3e/bb4bbba0e3/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 846,
+    "cache_read_tokens": 19244,
+    "output_tokens": 473,
+    "api_call_count": 2
+  }
+}

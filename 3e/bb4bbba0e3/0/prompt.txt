@@ -1,0 +1,5 @@
+Run the following command and return only the output:
+```
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./... -count=1 2>&1
+```
+Return the full output. If any tests fail, include the full failure details.
