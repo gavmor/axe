@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "3ebb4bbba0e3",
+  "session_id": "ses_33cac1fe5ffe4q4OAp580Wy8aX",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T13:37:11.600249Z",
+  "branch": "iss-009/mcp-tool-support",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "internal/mcpclient/router.go",
+    "internal/mcpclient/router_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "f698984bedfb",
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 868,
+    "cache_read_tokens": 19244,
+    "output_tokens": 483,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T13:37:11.596818Z",
+    "agent_lines": 16,
+    "human_added": 157,
+    "human_modified": 6,
+    "human_removed": 0,
+    "total_committed": 179,
+    "agent_percentage": 8.938547486033519
+  }
+}
