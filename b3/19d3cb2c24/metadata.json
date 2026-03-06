@@ -15,10 +15,17 @@
     "cmd/testdata/golden/dry-run/with_subagents.txt",
     "cmd/testdata/golden/dry-run/with_tools.txt",
     "docs/plans/027_mcp_tool_support_implement.md",
+    "docs/plans/027_mcp_tool_support_spec.md",
     "go.mod",
     "go.sum",
     "internal/agent/agent.go",
     "internal/agent/agent_test.go",
+    "internal/envinterp/envinterp.go",
+    "internal/envinterp/envinterp_test.go",
+    "internal/mcpclient/mcpclient.go",
+    "internal/mcpclient/mcpclient_test.go",
+    "internal/mcpclient/router.go",
+    "internal/mcpclient/router_test.go",
     "internal/tool/tool.go"
   ],
   "sessions": [
@@ -182,13 +189,20 @@
       "context": "/b3/19d3cb2c24/22/context.md",
       "content_hash": "/b3/19d3cb2c24/22/content_hash.txt",
       "prompt": "/b3/19d3cb2c24/22/prompt.txt"
+    },
+    {
+      "metadata": "/b3/19d3cb2c24/23/metadata.json",
+      "transcript": "/b3/19d3cb2c24/23/full.jsonl",
+      "context": "/b3/19d3cb2c24/23/context.md",
+      "content_hash": "/b3/19d3cb2c24/23/content_hash.txt",
+      "prompt": "/b3/19d3cb2c24/23/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 618929,
+    "input_tokens": 743506,
     "cache_creation_tokens": 92115,
-    "cache_read_tokens": 2414040,
-    "output_tokens": 22306,
-    "api_call_count": 102
+    "cache_read_tokens": 9293912,
+    "output_tokens": 60228,
+    "api_call_count": 197
   }
 }
