@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Locate the implementation plan markdown file in ./docs/plans/ that starts with 027 and report its path and whether it is empty. If not found or empty, report the newest file matching xxx_topic_implement.md and its path.
+
