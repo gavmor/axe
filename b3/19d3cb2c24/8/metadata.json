@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b319d3cb2c24",
+  "session_id": "ses_33ea833dbffe2E3sNlAyqnCVPm",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T04:24:24.4912Z",
+  "branch": "iss-6/web-search-tool",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/run.go",
+    "cmd/run_test.go",
+    "cmd/testdata/golden/dry-run/basic.txt",
+    "cmd/testdata/golden/dry-run/with_files.txt",
+    "cmd/testdata/golden/dry-run/with_memory.txt",
+    "cmd/testdata/golden/dry-run/with_skill.txt",
+    "cmd/testdata/golden/dry-run/with_subagents.txt",
+    "cmd/testdata/golden/dry-run/with_tools.txt",
+    "go.mod",
+    "go.sum",
+    "internal/agent/agent.go",
+    "internal/agent/agent_test.go",
+    "internal/tool/tool.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "243f78664fe9",
+  "token_usage": {
+    "input_tokens": 98917,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 245376,
+    "output_tokens": 3840,
+    "api_call_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T04:24:24.414846Z",
+    "agent_lines": 484,
+    "human_added": 2219,
+    "human_modified": 27,
+    "human_removed": 0,
+    "total_committed": 2730,
+    "agent_percentage": 17.72893772893773
+  }
+}
