@@ -1,0 +1,1 @@
+Find existing files/utilities in this repo that can be used to run an end-to-end MCP smoke test for the run command (e.g., test MCP servers, fixtures, integration tests, helper binaries). Return concise list with file paths and what each provides.
