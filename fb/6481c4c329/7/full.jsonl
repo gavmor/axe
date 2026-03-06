@@ -1,0 +1,257 @@
+{
+  "info": {
+    "id": "ses_33f27f27dffe66MpK6l5JgtdZp",
+    "slug": "eager-tiger",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_33f2dd6b0ffejnG7KO74wOarbx",
+    "title": "Run registry websearch tests red (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1772761910658,
+      "updated": 1772761913675
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1772761910662
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "openai",
+          "modelID": "gpt-5.3-codex"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cc0d80d85001G4nIFI7OmgGa6o",
+        "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Single task: run `go test ./internal/tool -run 'RegisterAll_.*WebSearch'` and return only failing results.",
+          "id": "prt_cc0d80d86001G0OfcKwLPIdSpw",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d80d85001G4nIFI7OmgGa6o"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761910665,
+          "completed": 1772761913647
+        },
+        "parentID": "msg_cc0d80d85001G4nIFI7OmgGa6o",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0139825,
+        "tokens": {
+          "total": 7287,
+          "input": 7206,
+          "output": 81,
+          "reasoning": 17,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cc0d80d89001Azw9rie1gNnSkR",
+        "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "b5f74ad695e6ad9c3234dfa9f9cf4165649804b3",
+          "id": "prt_cc0d80eb70016PCekv0CF5QtqC",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d80d89001Azw9rie1gNnSkR"
+        },
+        {
+          "type": "reasoning",
+          "text": "",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_06e486c699b265b80169aa333734508190b3ec2477943f53b9",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1772761911228,
+            "end": 1772761911783
+          },
+          "id": "prt_cc0d80fbc001Er6CHhM201636F",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d80d89001Azw9rie1gNnSkR"
+        },
+        {
+          "type": "tool",
+          "callID": "call_DvohV38Q33cQBXFBeqw05lgL",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/tool -run 'RegisterAll_.*WebSearch'",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+              "description": "Runs targeted Go tests for WebSearch registration"
+            },
+            "output": "--- FAIL: TestRegisterAll_RegistersWebSearch (0.00s)\n    registry_test.go:442: Has(\"web_search\") returned false after RegisterAll\n--- FAIL: TestRegisterAll_ResolvesWebSearch (0.00s)\n    registry_test.go:452: Resolve returned error: unknown tool \"web_search\"\nFAIL\nFAIL\tgithub.com/jrswab/axe/internal/tool\t0.542s\nFAIL\n",
+            "title": "Runs targeted Go tests for WebSearch registration",
+            "metadata": {
+              "output": "--- FAIL: TestRegisterAll_RegistersWebSearch (0.00s)\n    registry_test.go:442: Has(\"web_search\") returned false after RegisterAll\n--- FAIL: TestRegisterAll_ResolvesWebSearch (0.00s)\n    registry_test.go:452: Resolve returned error: unknown tool \"web_search\"\nFAIL\nFAIL\tgithub.com/jrswab/axe/internal/tool\t0.542s\nFAIL\n",
+              "exit": 1,
+              "description": "Runs targeted Go tests for WebSearch registration",
+              "truncated": false
+            },
+            "time": {
+              "start": 1772761912269,
+              "end": 1772761913585
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_06e486c699b265b80169aa3337c1788190acbdc2b40902b234"
+            }
+          },
+          "id": "prt_cc0d811e7001L5p5vYUTxe5JWJ",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d80d89001Azw9rie1gNnSkR"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "b5f74ad695e6ad9c3234dfa9f9cf4165649804b3",
+          "cost": 0.0139825,
+          "tokens": {
+            "total": 7287,
+            "input": 7206,
+            "output": 81,
+            "reasoning": 17,
+            "cache": {
+              "read": 0,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d818f20010J54TM5Pfzfwpd",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d80d89001Azw9rie1gNnSkR"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1772761913648,
+          "completed": 1772761918619
+        },
+        "parentID": "msg_cc0d80d85001G4nIFI7OmgGa6o",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00263165,
+        "tokens": {
+          "total": 7458,
+          "input": 219,
+          "output": 71,
+          "reasoning": 0,
+          "cache": {
+            "read": 7168,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cc0d81930001j4jXTMT5vComPl",
+        "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "b5f74ad695e6ad9c3234dfa9f9cf4165649804b3",
+          "id": "prt_cc0d81a7a001YKL0Q63s1cHiaT",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d81930001j4jXTMT5vComPl"
+        },
+        {
+          "type": "text",
+          "text": "--- FAIL: `TestRegisterAll_RegistersWebSearch`  \n`registry_test.go:442`: `Has(\"web_search\")` returned false after `RegisterAll`\n\n--- FAIL: `TestRegisterAll_ResolvesWebSearch`  \n`registry_test.go:452`: `Resolve` returned error: unknown tool `\"web_search\"`",
+          "time": {
+            "start": 1772761918454,
+            "end": 1772761918454
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_01ab58e037d88d0c0169aa333d650081968c1180ea50b9dee9"
+            }
+          },
+          "id": "prt_cc0d827e8001dmLsyfYj7kXrSZ",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d81930001j4jXTMT5vComPl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "b5f74ad695e6ad9c3234dfa9f9cf4165649804b3",
+          "cost": 0.00263165,
+          "tokens": {
+            "total": 7458,
+            "input": 219,
+            "output": 71,
+            "reasoning": 0,
+            "cache": {
+              "read": 7168,
+              "write": 0
+            }
+          },
+          "id": "prt_cc0d82c22001apSNdmgLEYWHmC",
+          "sessionID": "ses_33f27f27dffe66MpK6l5JgtdZp",
+          "messageID": "msg_cc0d81930001j4jXTMT5vComPl"
+        }
+      ]
+    }
+  ]
+}
