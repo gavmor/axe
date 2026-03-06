@@ -3,7 +3,7 @@
   "checkpoint_id": "b319d3cb2c24",
   "strategy": "manual-commit",
   "branch": "iss-6/web-search-tool",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
     "cmd/run.go",
     "cmd/run_mcp_integration_test.go",
@@ -70,13 +70,20 @@
       "context": "/b3/19d3cb2c24/6/context.md",
       "content_hash": "/b3/19d3cb2c24/6/content_hash.txt",
       "prompt": "/b3/19d3cb2c24/6/prompt.txt"
+    },
+    {
+      "metadata": "/b3/19d3cb2c24/7/metadata.json",
+      "transcript": "/b3/19d3cb2c24/7/full.jsonl",
+      "context": "/b3/19d3cb2c24/7/context.md",
+      "content_hash": "/b3/19d3cb2c24/7/content_hash.txt",
+      "prompt": "/b3/19d3cb2c24/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 431608,
+    "input_tokens": 432194,
     "cache_creation_tokens": 92115,
-    "cache_read_tokens": 1990104,
-    "output_tokens": 14754,
-    "api_call_count": 58
+    "cache_read_tokens": 2004184,
+    "output_tokens": 14857,
+    "api_call_count": 60
   }
 }
