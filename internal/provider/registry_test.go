@@ -57,7 +57,7 @@ func TestNew_UnsupportedProvider(t *testing.T) {
 	if !strings.Contains(err.Error(), `unsupported provider "groq"`) {
 		t.Errorf("expected error to mention 'unsupported provider \"groq\"', got %q", err.Error())
 	}
-	if !strings.Contains(err.Error(), "anthropic, openai, ollama") {
+	if !strings.Contains(err.Error(), "anthropic, openai, ollama, opencode") {
 		t.Errorf("expected error to list supported providers, got %q", err.Error())
 	}
 }
@@ -116,5 +116,53 @@ func TestSupported_UnknownProvider(t *testing.T) {
 	}
 	if Supported("Anthropic") {
 		t.Error("expected 'Anthropic' (mixed case) to not be supported")
+	}
+}
+
+func TestNew_OpenCode(t *testing.T) {
+	p, err := New("opencode", "test-key", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p == nil {
+		t.Fatal("expected non-nil provider")
+	}
+}
+
+func TestNew_OpenCodeWithBaseURL(t *testing.T) {
+	p, err := New("opencode", "test-key", "http://custom:8080")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p == nil {
+		t.Fatal("expected non-nil provider")
+	}
+}
+
+func TestNew_OpenCodeMissingAPIKey(t *testing.T) {
+	_, err := New("opencode", "", "")
+	if err == nil {
+		t.Fatal("expected error for missing API key")
+	}
+	if !strings.Contains(err.Error(), "API key is required") {
+		t.Errorf("expected 'API key is required', got %q", err.Error())
+	}
+}
+
+func TestSupported_OpenCode(t *testing.T) {
+	if !Supported("opencode") {
+		t.Error("expected 'opencode' to be supported")
+	}
+}
+
+func TestNew_UnsupportedProvider_ErrorMessage(t *testing.T) {
+	_, err := New("groq", "key", "")
+	if err == nil {
+		t.Fatal("expected error for unsupported provider")
+	}
+	for _, name := range []string{"anthropic", "openai", "ollama", "opencode"} {
+		if !strings.Contains(err.Error(), name) {
+			t.Errorf("expected error to mention %q, got %q", name, err.Error())
+		}
 	}
 }

@@ -7,6 +7,7 @@ var supportedProviders = map[string]bool{
 	"anthropic": true,
 	"openai":    true,
 	"ollama":    true,
+	"opencode":  true,
 }
 
 // Supported reports whether providerName is a known provider.
@@ -38,7 +39,14 @@ func New(providerName, apiKey, baseURL string) (Provider, error) {
 		}
 		return NewOllama(opts...)
 
+	case "opencode":
+		var opts []OpenCodeOption
+		if baseURL != "" {
+			opts = append(opts, WithOpenCodeBaseURL(baseURL))
+		}
+		return NewOpenCode(apiKey, opts...)
+
 	default:
-		return nil, fmt.Errorf("unsupported provider %q: supported providers are anthropic, openai, ollama", providerName)
+		return nil, fmt.Errorf("unsupported provider %q: supported providers are anthropic, openai, ollama, opencode", providerName)
 	}
 }

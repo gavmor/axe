@@ -253,3 +253,28 @@ func TestAPIKeyEnvVar_UnknownProvider(t *testing.T) {
 		t.Errorf("expected GROQ_API_KEY, got %q", got)
 	}
 }
+
+func TestResolveAPIKey_OpenCode(t *testing.T) {
+	// Env var takes precedence over config file.
+	t.Setenv("OPENCODE_API_KEY", "zen-key-from-env")
+	cfg := &GlobalConfig{
+		Providers: map[string]ProviderConfig{
+			"opencode": {APIKey: "zen-key-from-config"},
+		},
+	}
+	if got := cfg.ResolveAPIKey("opencode"); got != "zen-key-from-env" {
+		t.Errorf("expected 'zen-key-from-env', got %q", got)
+	}
+
+	// Config file value used when env var is empty.
+	t.Setenv("OPENCODE_API_KEY", "")
+	if got := cfg.ResolveAPIKey("opencode"); got != "zen-key-from-config" {
+		t.Errorf("expected 'zen-key-from-config', got %q", got)
+	}
+}
+
+func TestAPIKeyEnvVar_OpenCode(t *testing.T) {
+	if got := APIKeyEnvVar("opencode"); got != "OPENCODE_API_KEY" {
+		t.Errorf("expected OPENCODE_API_KEY, got %q", got)
+	}
+}

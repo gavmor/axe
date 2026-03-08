@@ -55,6 +55,7 @@ func Load() (*GlobalConfig, error) {
 var knownAPIKeyEnvVars = map[string]string{
 	"anthropic": "ANTHROPIC_API_KEY",
 	"openai":    "OPENAI_API_KEY",
+	"opencode":  "OPENCODE_API_KEY",
 }
 
 // APIKeyEnvVar returns the environment variable name used to resolve the API key
