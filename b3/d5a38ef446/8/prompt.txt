@@ -1,0 +1,33 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe, investigate the `TestURLFetch_MissingContentTypeNotStripped` test.
+
+The concern is that Go's `net/http` server may auto-detect Content-Type even when we set it to empty string.
+
+Run this test with verbose output:
+```bash
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestURLFetch_MissingContentTypeNotStripped -v -count=1
+```
+
+Also, temporarily add a debug test that checks what Content-Type the server actually sends when we set it to "":
+
+```go
+func TestURLFetch_DebugContentType(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "")
+        _, _ = w.Write([]byte("<p>No header</p>"))
+    }))
+    defer ts.Close()
+
+    resp, err := http.Get(ts.URL)
+    if err != nil {
+        t.Fatal(err)
+    }
+    defer resp.Body.Close()
+    t.Logf("Content-Type header: %q", resp.Header.Get("Content-Type"))
+}
+```
+
+Add this test, run it, report what Content-Type the server actually sends, then REMOVE the debug test.
+
+Return:
+1. Does `TestURLFetch_MissingContentTypeNotStripped` currently pass?
+2. What Content-Type does the server actually send when we set it to ""?
