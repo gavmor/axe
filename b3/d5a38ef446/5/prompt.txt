@@ -1,0 +1,7 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run:
+
+```bash
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && git diff --shortstat
+```
+
+Return the exact output showing files changed, insertions, and deletions.
