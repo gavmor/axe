@@ -1,0 +1,8 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run these commands and return their output:
+
+1. `go test ./internal/tool/ -run TestURLFetch -v -count=1 2>&1 | grep -E "^(=== RUN|--- PASS|--- FAIL|FAIL|ok)" | head -40`
+2. `go test ./internal/tool/ -run TestStripHTML -v -count=1 2>&1 | grep -E "^(=== RUN|--- PASS|--- FAIL|FAIL|ok)" | head -20`
+3. `go vet ./internal/tool/`
+4. `go test ./... 2>&1 | tail -20` (run all tests across the entire project)
+
+Return the output of all 4 commands. Report any failures or vet findings.
