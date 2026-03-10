@@ -1,0 +1,432 @@
+{
+  "info": {
+    "id": "ses_32782e041ffeFZ10F4FcS58Yej",
+    "slug": "clever-tiger",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_32787b37fffe99biMg057dtdLz",
+    "title": "Mark milestone 001 complete (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 1,
+      "deletions": 1,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773158604734,
+      "updated": 1773158621205
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773158604748
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "before": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+              "after": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+              "additions": 1,
+              "deletions": 1,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd87d1fca001bARNskRFtrmevH",
+        "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are working in the Go project at /Users/jaronswab/go/src/github.com/jrswab/axe.\n\nYour task: In the file `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`, change line 75 from:\n```\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n```\nto:\n```\n- [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n```\n\nOnly change that one line. Do not modify anything else.\n\nThen stage all changes and commit with the message:\n```\nfeat(url_fetch): add 15-second per-request HTTP timeout\n\nAdd context.WithTimeout wrapping the request context so each HTTP\nrequest is governed by a 15-second deadline independent of the parent\nagent-runner context. The shorter of the two deadlines wins\nautomatically via nested Go contexts.\n\nCloses milestone 001 of issue #17.\n```\n\nReturn confirmation of the commit including the short SHA.\n",
+          "id": "prt_cd87d1fcc001ZF9EwWLcaJUU5m",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d1fca001bARNskRFtrmevH"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158604755,
+          "completed": 1773158607590
+        },
+        "parentID": "msg_cd87d1fca001bARNskRFtrmevH",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0070026,
+        "tokens": {
+          "total": 10203,
+          "input": 2,
+          "output": 134,
+          "reasoning": 0,
+          "cache": {
+            "read": 9497,
+            "write": 570
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87d1fd3001e713KIE41MK37W",
+        "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "id": "prt_cd87d26f7001UMKxJ427K7UQ09",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d1fd3001e713KIE41MK37W"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01QFGs4tt5sNmaMC7daQszd5",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "offset": 70,
+              "limit": 10
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>\n<type>file</type>\n<content>70: \n71: ---\n72: \n73: ## Section 2: Milestones\n74: \n75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n\n(End of file - total 77 lines)\n</content>",
+            "title": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "metadata": {
+              "preview": "\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773158607471,
+              "end": 1773158607478
+            }
+          },
+          "id": "prt_cd87d26f80019rvnBbNVp8bU1O",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d1fd3001e713KIE41MK37W"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "cost": 0.0070026,
+          "tokens": {
+            "total": 10203,
+            "input": 2,
+            "output": 134,
+            "reasoning": 0,
+            "cache": {
+              "read": 9497,
+              "write": 570
+            }
+          },
+          "id": "prt_cd87d2a870017q5p50CmYtHIGx",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d1fd3001e713KIE41MK37W"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158607591,
+          "completed": 1773158611516
+        },
+        "parentID": "msg_cd87d1fca001bARNskRFtrmevH",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00697935,
+        "tokens": {
+          "total": 10583,
+          "input": 1,
+          "output": 180,
+          "reasoning": 0,
+          "cache": {
+            "read": 10067,
+            "write": 335
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87d2ae7001THJDUIPDtP25cD",
+        "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "id": "prt_cd87d33240019z6TcW2aQO7vC4",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d2ae7001THJDUIPDtP25cD"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Rw1ww2UNktTQYMd6jr3oza",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "oldString": "- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool",
+              "newString": "- [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n@@ -71,7 +71,7 @@\n ---\n \n ## Section 2: Milestones\n \n-- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n+- [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+                "before": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+                "after": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158611363,
+              "end": 1773158611399
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d2ae7001THJDUIPDtP25cD"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "584d20ed94e5eafd308950171eb619f31c1f670d",
+          "cost": 0.00697935,
+          "tokens": {
+            "total": 10583,
+            "input": 1,
+            "output": 180,
+            "reasoning": 0,
+            "cache": {
+              "read": 10067,
+              "write": 335
+            }
+          },
+          "id": "prt_cd87d39cc001i3Y6nhf1c227lv",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d2ae7001THJDUIPDtP25cD"
+        },
+        {
+          "type": "patch",
+          "hash": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+          ],
+          "id": "prt_cd87d3a3a001uf9E7cpmwIioXW",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d2ae7001THJDUIPDtP25cD"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158611516,
+          "completed": 1773158621146
+        },
+        "parentID": "msg_cd87d1fca001bARNskRFtrmevH",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00658485,
+        "tokens": {
+          "total": 10780,
+          "input": 1,
+          "output": 182,
+          "reasoning": 0,
+          "cache": {
+            "read": 10402,
+            "write": 195
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87d3a3c001WAezz5Q1rvoekZ",
+        "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "584d20ed94e5eafd308950171eb619f31c1f670d",
+          "id": "prt_cd87d420b001dZ0AeQb4pytG9D",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d3a3c001WAezz5Q1rvoekZ"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git add docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md && git commit -m \"feat(url_fetch): add 15-second per-request HTTP timeout\n\nAdd context.WithTimeout wrapping the request context so each HTTP\nrequest is governed by a 15-second deadline independent of the parent\nagent-runner context. The shorter of the two deadlines wins\nautomatically via nested Go contexts.\n\nCloses milestone 001 of issue #17.\"",
+              "description": "Stage and commit the milestone update"
+            },
+            "output": "[master 49979bb] feat(url_fetch): add 15-second per-request HTTP timeout\n 1 file changed, 77 insertions(+)\n create mode 100644 docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n",
+            "title": "Stage and commit the milestone update",
+            "metadata": {
+              "output": "[master 49979bb] feat(url_fetch): add 15-second per-request HTTP timeout\n 1 file changed, 77 insertions(+)\n create mode 100644 docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n",
+              "exit": 0,
+              "description": "Stage and commit the milestone update",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158615418,
+              "end": 1773158621082
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d3a3c001WAezz5Q1rvoekZ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "584d20ed94e5eafd308950171eb619f31c1f670d",
+          "cost": 0.00658485,
+          "tokens": {
+            "total": 10780,
+            "input": 1,
+            "output": 182,
+            "reasoning": 0,
+            "cache": {
+              "read": 10402,
+              "write": 195
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d3a3c001WAezz5Q1rvoekZ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158621147,
+          "completed": 1773158623299
+        },
+        "parentID": "msg_cd87d1fca001bARNskRFtrmevH",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0043971,
+        "tokens": {
+          "total": 10877,
+          "input": 1,
+          "output": 15,
+          "reasoning": 0,
+          "cache": {
+            "read": 10597,
+            "write": 264
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd87d5fdb0016s1CZstYGl1e0A",
+        "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "584d20ed94e5eafd308950171eb619f31c1f670d",
+          "id": "REDACTED",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d5fdb0016s1CZstYGl1e0A"
+        },
+        {
+          "type": "text",
+          "text": "Committed successfully. Short SHA: `49979bb`",
+          "time": {
+            "start": 1773158623176,
+            "end": 1773158623176
+          },
+          "id": "prt_cd87d66ad002m9W3OG314X4DAc",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d5fdb0016s1CZstYGl1e0A"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "584d20ed94e5eafd308950171eb619f31c1f670d",
+          "cost": 0.0043971,
+          "tokens": {
+            "total": 10877,
+            "input": 1,
+            "output": 15,
+            "reasoning": 0,
+            "cache": {
+              "read": 10597,
+              "write": 264
+            }
+          },
+          "id": "prt_cd87d67d1001kcpC0nWGkVUpa1",
+          "sessionID": "ses_32782e041ffeFZ10F4FcS58Yej",
+          "messageID": "msg_cd87d5fdb0016s1CZstYGl1e0A"
+        }
+      ]
+    }
+  ]
+}
