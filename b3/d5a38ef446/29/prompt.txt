@@ -1,0 +1,106 @@
+You are working in the Go project at /Users/jaronswab/go/src/github.com/jrswab/axe.
+
+Your task: Add 3 new test functions to `internal/tool/url_fetch_test.go`. These tests are the RED phase of TDD — they should FAIL right now because the production code doesn't have the timeout yet.
+
+The production code in `internal/tool/url_fetch.go` currently has NO per-request timeout. It uses `ctx` directly in `http.NewRequestWithContext`. We are about to add a `context.WithTimeout` wrapper with a package-level variable `urlFetchTimeout` (defaulting to `15 * time.Second`). The tests need to reference this variable to override it for fast tests.
+
+**IMPORTANT**: The variable `urlFetchTimeout` does NOT exist yet in the production code. The tests will reference it to override the timeout for speed. Since the tests are in the same package (`package tool`), they can access unexported package-level variables. The tests will fail to compile until Phase 2 adds the variable and the `context.WithTimeout` call. That's expected — this is the RED phase.
+
+Append the following 3 test functions to the END of `internal/tool/url_fetch_test.go` (after line 315):
+
+### Test 1: `TestURLFetch_PerRequestTimeout`
+```go
+func TestURLFetch_PerRequestTimeout(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Block longer than the per-request timeout
+		timer := time.NewTimer(2 * time.Second)
+		defer timer.Stop()
+		select {
+		case <-r.Context().Done():
+			return
+		case <-timer.C:
+			_, _ = w.Write([]byte("too late"))
+		}
+	}))
+	defer ts.Close()
+
+	// Override the per-request timeout to keep the test fast
+	orig := urlFetchTimeout
+	urlFetchTimeout = 100 * time.Millisecond
+	defer func() { urlFetchTimeout = orig }()
+
+	entry := urlFetchEntry()
+	call := provider.ToolCall{ID: "uf-per-req-timeout", Arguments: map[string]string{"url": ts.URL}}
+	result := entry.Execute(context.Background(), call, ExecContext{})
+
+	if !result.IsError {
+		t.Fatal("expected IsError true when per-request timeout fires")
+	}
+	if result.CallID != call.ID {
+		t.Errorf("CallID = %q, want %q", result.CallID, call.ID)
+	}
+	if result.Content == "" {
+		t.Error("expected non-empty error content")
+	}
+}
+```
+
+### Test 2: `TestURLFetch_ParentContextWinsOverPerRequestTimeout`
+```go
+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		timer := time.NewTimer(2 * time.Second)
+		defer timer.Stop()
+		select {
+		case <-r.Context().Done():
+			return
+		case <-timer.C:
+			_, _ = w.Write([]byte("too late"))
+		}
+	}))
+	defer ts.Close()
+
+	// Set per-request timeout to something long so the parent wins
+	orig := urlFetchTimeout
+	urlFetchTimeout = 10 * time.Second
+	defer func() { urlFetchTimeout = orig }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	entry := urlFetchEntry()
+	call := provider.ToolCall{ID: "uf-parent-wins", Arguments: map[string]string{"url": ts.URL}}
+	result := entry.Execute(ctx, call, ExecContext{})
+
+	if !result.IsError {
+		t.Fatal("expected IsError true when parent context fires first")
+	}
+}
+```
+
+### Test 3: `TestURLFetch_FastResponseUnaffectedByTimeout`
+```go
+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("fast response"))
+	}))
+	defer ts.Close()
+
+	entry := urlFetchEntry()
+	call := provider.ToolCall{ID: "uf-fast", Arguments: map[string]string{"url": ts.URL}}
+	result := entry.Execute(context.Background(), call, ExecContext{})
+
+	if result.IsError {
+		t.Fatalf("expected IsError false, got true with content %q", result.Content)
+	}
+	if result.Content != "fast response" {
+		t.Errorf("Content = %q, want %q", result.Content, "fast response")
+	}
+}
+```
+
+After adding the tests, run `go test ./internal/tool/ -run "TestURLFetch_PerRequestTimeout|TestURLFetch_ParentContextWinsOverPerRequestTimeout|TestURLFetch_FastResponseUnaffectedByTimeout" -v -count=1` and confirm they FAIL (compilation error because `urlFetchTimeout` doesn't exist yet is expected and correct).
+
+Return:
+1. Confirmation that the 3 tests were added
+2. The exact error output from running the tests (should be a compile error referencing `urlFetchTimeout`)
