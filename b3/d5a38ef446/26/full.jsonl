@@ -1,0 +1,460 @@
+{
+  "info": {
+    "id": "ses_32784f82dffe90V2XNx8XqZVwv",
+    "slug": "crisp-meadow",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_32787b37fffe99biMg057dtdLz",
+    "title": "Auto-review code changes (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773158467538,
+      "updated": 1773158478885
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773158467541
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "REDACTED",
+        "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are working in the Go project at /Users/jaronswab/go/src/github.com/jrswab/axe.\n\nYour task is to do a comprehensive code review of the current changes.\n\n## Steps\n\n1. Run `git diff HEAD` to get the current changes.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it's intended to do.\n    - Prioritize clear variable and function names, simple logic, and minimal complexity.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.\n    - Avoid nitpicks that block progress unless they are critical.\n3. Your review output MUST be a markdown list of issues found. Each item must include:\n    - A prompt for an LLM coding agent to fix the code, mentioning the file name prepended with `@`.\n    - Mark non-blocking feedback clearly with \"nit:\" prefix.\n4. After the review, run `golangci-lint run ./internal/tool/` and include any linter findings.\n\nReturn:\n- The full `git diff HEAD` output\n- Your review as a markdown list\n- The golangci-lint output\n- If there are NO issues to fix, explicitly say \"No issues found.\"\n",
+          "id": "prt_cd87b07d5002SlRnQnP03cmbkh",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158467544,
+          "completed": 1773158470243
+        },
+        "parentID": "REDACTED",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0062676,
+        "tokens": {
+          "total": 10193,
+          "input": 2,
+          "output": 72,
+          "reasoning": 0,
+          "cache": {
+            "read": 9497,
+            "write": 622
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87b07d8001HzSVZn95qFvGuv",
+        "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "id": "prt_cd87b0f8e001cFHL5l0zKNLyLp",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b07d8001HzSVZn95qFvGuv"
+        },
+        {
+          "type": "text",
+          "text": "I'll start by loading the auto-review skill to ensure I follow the correct workflow.",
+          "time": {
+            "start": 1773158469853,
+            "end": 1773158469853
+          },
+          "id": "prt_cd87b0f8f001Lgc40hSEwSE2J8",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b07d8001HzSVZn95qFvGuv"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_016GuVuGsZ6MmNvsJckqw3mj",
+          "tool": "skill",
+          "state": {
+            "status": "completed",
+            "input": {
+              "name": "auto-review"
+            },
+            "output": "<skill_content name=\"auto-review\">\n# Skill: auto-review\n\nYour job is to provide a comprehesive review of current code changes.\n\nThis includes surfacing: \n- potential bugs\n- security issues\n- code drift.\n- security issues\n- performance bottlenecks\n- poor maintainability.\n\n## Rules\n\n- Always use the Context7 MCP for library/API documentation, code generation, setup, or configuration steps.\n\n## Steps\n\nWith a @general subagent:\n1. Use `git diff HEAD` to get the changes.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it’s intended to do, especially for user-facing or critical paths.\n    - Prioritize clear variable and function names, simple logic, and minimal complexity.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks. Tests should be as maintainable as production code.\n    - Avoid nitpicks that block progress unless they are critical. Use “nit” labels for minor style issues and mark non-blocking feedback clearly.\n3. Your review output MUST be a markdown list and include:\n    - A prompt for an LLM coding agent to fix the code. This prompt MUST be a specific and only address the fix needed.\n    - Make sure to mention the file name prepend with `@` in the prompt.\n4. Once the review is complete, run each of the listed bug fixes with a sub-agent (`@general`) to fix a specific bug.\n    - The agent started for each task in the review list MUST run in parallel with the others.\n    - The `@general` agent must call the `@explore` sub-agent to find releveant information to fix the specific bug.\n\n### For Go Projects\n- Run `golangci-lint` after all changes are implemented\n- If linter errors exist, fix the linting errors and run `golangci-lint` again to verify.\n\nBase directory for this skill: file:///Users/jaronswab/.config/opencode/skills/auto-review\nRelative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.\nNote: file list is sampled.\n\n<skill_files>\n\n</skill_files>\n</skill_content>",
+            "title": "Loaded skill: auto-review",
+            "metadata": {
+              "name": "auto-review",
+              "dir": "/Users/jaronswab/.config/opencode/skills/auto-review",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158470098,
+              "end": 1773158470121
+            }
+          },
+          "id": "prt_cd87b10df001tbC2Reo9Gc3CcS",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b07d8001HzSVZn95qFvGuv"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "cost": 0.0062676,
+          "tokens": {
+            "total": 10193,
+            "input": 2,
+            "output": 72,
+            "reasoning": 0,
+            "cache": {
+              "read": 9497,
+              "write": 622
+            }
+          },
+          "id": "prt_cd87b11eb001GruFQhUV1LFvZf",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b07d8001HzSVZn95qFvGuv"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158470244,
+          "completed": 1773158475864
+        },
+        "parentID": "REDACTED",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00800745,
+        "tokens": {
+          "total": 10914,
+          "input": 1,
+          "output": 177,
+          "reasoning": 0,
+          "cache": {
+            "read": 10119,
+            "write": 617
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "id": "prt_cd87b17fa0015Jwa0zTs54x1K5",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Now let me run the git diff and golangci-lint in parallel.",
+          "time": {
+            "start": 1773158472556,
+            "end": 1773158472556
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_018GUSY4goSrhgEX4pegMFj3",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get current uncommitted changes"
+            },
+            "output": "diff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 83b0dbd..e0ae4c2 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -6,6 +6,7 @@ import (\n \t\"io\"\n \t\"net/http\"\n \t\"net/url\"\n+\t\"time\"\n \n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n@@ -13,6 +14,8 @@ import (\n \n const maxReadBytes = 10000\n \n+var urlFetchTimeout = 15 * time.Second\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -91,7 +94,10 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n-\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n+\treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex 37698bb..8866f47 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -313,3 +313,85 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n \t}\n }\n+\n+func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t// Block longer than the per-request timeout\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Override the per-request timeout to keep the test fast\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 100 * time.Millisecond\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+\tif result.Content == \"\" {\n+\t\tt.Error(\"expected non-empty error content\")\n+\t}\n+}\n+\n+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Set per-request timeout to something long so the parent wins\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 10 * time.Second\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n+\tdefer cancel()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(ctx, call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n+\t}\n+}\n+\n+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t_, _ = w.Write([]byte(\"fast response\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"fast response\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n+\t}\n+}\n",
+            "title": "Get current uncommitted changes",
+            "metadata": {
+              "output": "diff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 83b0dbd..e0ae4c2 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -6,6 +6,7 @@ import (\n \t\"io\"\n \t\"net/http\"\n \t\"net/url\"\n+\t\"time\"\n \n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n@@ -13,6 +14,8 @@ import (\n \n const maxReadBytes = 10000\n \n+var urlFetchTimeout = 15 * time.Second\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -91,7 +94,10 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n-\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n+\treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex 37698bb..8866f47 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -313,3 +313,85 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n \t}\n }\n+\n+func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t// Block longer than the per-request timeout\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Override the per-request timeout to keep the test fast\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 100 * time.Millisecond\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+\tif result.Content == \"\" {\n+\t\tt.Error(\"expected non-empty error content\")\n+\t}\n+}\n+\n+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Set per-request timeout to something long so the parent wins\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 10 * time.Second\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n+\tdefer cancel()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(ctx, call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n+\t}\n+}\n+\n+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t_, _ = w.Write([]byte(\"fast response\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"fast response\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n+\t}\n+}\n",
+              "exit": 0,
+              "description": "Get current uncommitted changes",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158473070,
+              "end": 1773158473121
+            }
+          },
+          "id": "prt_cd87b1b6d001I7Bkfh0yq7SFGR",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01UzUTxHoyBJtzUPnAfK1cpq",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "golangci-lint run ./internal/tool/",
+              "description": "Run linter on internal/tool package",
+              "timeout": 60000
+            },
+            "output": "0 issues.\n",
+            "title": "Run linter on internal/tool package",
+            "metadata": {
+              "output": "0 issues.\n",
+              "exit": 0,
+              "description": "Run linter on internal/tool package",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158474709,
+              "end": 1773158475802
+            }
+          },
+          "id": "prt_cd87b1d73001Uj2d6R3M35PUgR",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "cost": 0.00800745,
+          "tokens": {
+            "total": 10914,
+            "input": 1,
+            "output": 177,
+            "reasoning": 0,
+            "cache": {
+              "read": 10119,
+              "write": 617
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158475865,
+          "completed": 1773158478853
+        },
+        "parentID": "REDACTED",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01132005,
+        "tokens": {
+          "total": 12605,
+          "input": 1,
+          "output": 97,
+          "reasoning": 0,
+          "cache": {
+            "read": 10736,
+            "write": 1771
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "id": "prt_cd87b3041001bSM3Sjs5nGPsZJ",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Now let me read the full implementation file for additional context.",
+          "time": {
+            "start": 1773158478293,
+            "end": 1773158478293
+          },
+          "id": "prt_cd87b3042001sIrXXdSdoHg0j6",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01VXAEA1oZBjAhCFgun5CxPU",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"net/http\"\n8: \t\"net/url\"\n9: \t\"time\"\n10: \n11: \t\"github.com/jrswab/axe/internal/provider\"\n12: \t\"github.com/jrswab/axe/internal/toolname\"\n13: )\n14: \n15: const maxReadBytes = 10000\n16: \n17: var urlFetchTimeout = 15 * time.Second\n18: \n19: func truncateURL(urlStr string, maxLen int) string {\n20: \tif len(urlStr) <= maxLen {\n21: \t\treturn urlStr\n22: \t}\n23: \treturn urlStr[:maxLen] + \"...\"\n24: }\n25: \n26: func sanitizeURL(urlStr string) string {\n27: \tparsedURL, err := url.Parse(urlStr)\n28: \tif err != nil {\n29: \t\treturn \"invalid-url\"\n30: \t}\n31: \n32: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n33: \t\treturn \"invalid-url\"\n34: \t}\n35: \n36: \tpath := parsedURL.EscapedPath()\n37: \tif path == \"\" {\n38: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n39: \t}\n40: \n41: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n42: }\n43: \n44: func urlFetchEntry() ToolEntry {\n45: \treturn ToolEntry{\n46: \t\tDefinition: urlFetchDefinition,\n47: \t\tExecute:    urlFetchExecute,\n48: \t}\n49: }\n50: \n51: func urlFetchDefinition() provider.Tool {\n52: \treturn provider.Tool{\n53: \t\tName:        toolname.URLFetch,\n54: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n55: \t\tParameters: map[string]provider.ToolParameter{\n56: \t\t\t\"url\": {\n57: \t\t\t\tType:        \"string\",\n58: \t\t\t\tDescription: \"The URL to fetch.\",\n59: \t\t\t\tRequired:    true,\n60: \t\t\t},\n61: \t\t},\n62: \t}\n63: }\n64: \n65: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n66: \turlStr := call.Arguments[\"url\"]\n67: \tstatusCode := 0\n68: \n69: \tdefer func() {\n70: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n71: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n72: \t\tif statusCode != 0 {\n73: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n74: \t\t} else if result.IsError {\n75: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n76: \t\t}\n77: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n78: \t}()\n79: \n80: \tif urlStr == \"\" {\n81: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n82: \t}\n83: \n84: \tparsedURL, err := url.Parse(urlStr)\n85: \tif err != nil {\n86: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n87: \t}\n88: \n89: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n90: \t\treturn provider.ToolResult{\n91: \t\t\tCallID:  call.ID,\n92: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n93: \t\t\tIsError: true,\n94: \t\t}\n95: \t}\n96: \n97: \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n98: \tdefer cancel()\n99: \n100: \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n101: \tif err != nil {\n102: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n103: \t}\n104: \n105: \tresp, err := http.DefaultClient.Do(req)\n106: \tif err != nil {\n107: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n108: \t}\n109: \tdefer func() {\n110: \t\t_ = resp.Body.Close()\n111: \t}()\n112: \tstatusCode = resp.StatusCode\n113: \n114: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n115: \tif err != nil {\n116: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n117: \t}\n118: \n119: \tbodyStr := string(body)\n120: \tif len(body) > maxReadBytes {\n121: \t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n122: \t}\n123: \n124: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n125: \t\treturn provider.ToolResult{\n126: \t\t\tCallID:  call.ID,\n127: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n128: \t\t\tIsError: true,\n129: \t\t}\n130: \t}\n131: \n132: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n133: }\n\n(End of file - total 133 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"net/url\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst maxReadBytes = 10000\n\nvar urlFetchTimeout = 15 * time.Second\n\nfunc truncateURL(urlStr string, maxLen int) string {\n\tif len(urlStr) <= maxLen {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773158478707,
+              "end": 1773158478718
+            }
+          },
+          "id": "prt_cd87b31d8001z1PyJhCiHenI6d",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "cost": 0.01132005,
+          "tokens": {
+            "total": 12605,
+            "input": 1,
+            "output": 97,
+            "reasoning": 0,
+            "cache": {
+              "read": 10736,
+              "write": 1771
+            }
+          },
+          "id": "prt_cd87b338c001zdwaHxFUQECf31",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158478854,
+          "completed": 1773158500272
+        },
+        "parentID": "REDACTED",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0278526,
+        "tokens": {
+          "total": 15460,
+          "input": 1,
+          "output": 1158,
+          "reasoning": 0,
+          "cache": {
+            "read": 12507,
+            "write": 1794
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd87b3406001PcRL5STdc6kqWF",
+        "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "id": "prt_cd87b3bcc001vbSUmEuDH8BsFc",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b3406001PcRL5STdc6kqWF"
+        },
+        {
+          "type": "text",
+          "text": "---\n\n## Full `git diff HEAD` Output\n\n```diff\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 83b0dbd..e0ae4c2 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -6,6 +6,7 @@ import (\n \t\"io\"\n \t\"net/http\"\n \t\"net/url\"\n+\t\"time\"\n \n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n@@ -13,6 +14,8 @@ import (\n \n const maxReadBytes = 10000\n \n+var urlFetchTimeout = 15 * time.Second\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -91,7 +94,10 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n-\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n+\treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -313,3 +313,85 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n...\n+func TestURLFetch_PerRequestTimeout(t *testing.T) { ... }\n+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) { ... }\n+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) { ... }\n```\n\n---\n\n## Code Review\n\n- **`@internal/tool/url_fetch.go` — mutable package-level var used only for test injection:** `urlFetchTimeout` is a `var` whose sole purpose is to allow tests to override it. This pattern is a code smell: it introduces global mutable state that is not safe for concurrent tests and leaks test infrastructure into production code. Consider passing the timeout as a parameter through `ExecContext` or a config struct, or accept it as a functional option on `ToolEntry`. The var approach also means a test that forgets to restore the value will silently corrupt other tests.\n\n- **`@internal/tool/url_fetch.go` — `http.DefaultClient` is used with a per-request timeout context:** The `context.WithTimeout` correctly cancels the request, but `http.DefaultClient` has no `Timeout` field set. Using `DefaultClient` is generally discouraged in production code because it has no global timeout and can leak goroutines if the context is never cancelled externally. Prefer creating a package-level `*http.Client` with `Timeout` set, and use the request context for per-request control. This also makes the client injectable for testing without needing a live server.\n\n- **`@internal/tool/url_fetch_test.go` — `TestURLFetch_ParentContextWinsOverPerRequestTimeout` is flaky at 50 ms:** The test sets a 50 ms parent timeout against a server that blocks for 2 s on a real TCP loopback connection. On a loaded CI machine this margin is very thin. The test behaviour is correct in principle, but the assertion only checks `IsError` — it does not verify that the error is actually a context cancellation (vs. some other transient error), which weakens the signal. nit: consider asserting `strings.Contains(result.Content, \"context\")` to confirm the right failure mode.\n\n- **nit: `@internal/tool/url_fetch_test.go` — `TestURLFetch_FastResponseUnaffectedByTimeout` does not assert `result.CallID`:** The other new tests check `result.CallID`; for consistency this one should too.\n\n---\n\n## `golangci-lint run ./internal/tool/` Output\n\n```\n0 issues.\n```\n\n---\n\nNo blocking bugs, but the two non-nit items above (global mutable test var and use of `http.DefaultClient`) are worth addressing before this merges.",
+          "time": {
+            "start": 1773158500112,
+            "end": 1773158500112
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b3406001PcRL5STdc6kqWF"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "0b7f29adba8f69338f37aff5be5699a6af407574",
+          "cost": 0.0278526,
+          "tokens": {
+            "total": 15460,
+            "input": 1,
+            "output": 1158,
+            "reasoning": 0,
+            "cache": {
+              "read": 12507,
+              "write": 1794
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32784f82dffe90V2XNx8XqZVwv",
+          "messageID": "msg_cd87b3406001PcRL5STdc6kqWF"
+        }
+      ]
+    }
+  ]
+}
