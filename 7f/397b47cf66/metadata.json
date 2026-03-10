@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "7f397b47cf66",
+  "strategy": "manual-commit",
+  "branch": "master",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7f/397b47cf66/0/metadata.json",
+      "transcript": "/7f/397b47cf66/0/full.jsonl",
+      "context": "/7f/397b47cf66/0/context.md",
+      "content_hash": "/7f/397b47cf66/0/content_hash.txt",
+      "prompt": "/7f/397b47cf66/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 33854,
+    "cache_read_tokens": 469438,
+    "output_tokens": 6782,
+    "api_call_count": 21
+  }
+}
