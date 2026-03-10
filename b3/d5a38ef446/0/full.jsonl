@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1773161408277,
-      "updated": 1773161411896
+      "updated": 1773161422173
     }
   },
   "messages": [
@@ -158,7 +158,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1773161411867
+          "created": 1773161411867,
+          "completed": 1773161422144
         },
         "parentID": "msg_cd8a7e71c0011YvxBspGK3QSjQ",
         "modelID": "claude-sonnet-4-6",
@@ -169,16 +170,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0055338,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 10315,
+          "input": 1,
+          "output": 93,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 9911,
+            "write": 310
           }
         },
+        "finish": "tool-calls",
         "id": "msg_cd8a7f51b001oPYOSv7dyfOQa9",
         "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5"
       },
@@ -195,18 +198,117 @@
           "callID": "toolu_01R5nVGC1n5f1byLEJvwzDzk",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git commit -m \"feat: add HTTP request timeout and HTML stripping for url_fetch\"",
               "description": "Commit staged changes with provided message"
             },
+            "output": "[master 71ff3ce] feat: add HTTP request timeout and HTML stripping for url_fetch\n 9 files changed, 821 insertions(+), 9 deletions(-)\n create mode 100644 docs/plans/029_http_request_timeout_implement.md\n create mode 100644 docs/plans/029_http_request_timeout_spec.md\n create mode 100644 docs/plans/030_html_stripping_implement.md\n create mode 100644 docs/plans/030_html_stripping_spec.md\n",
+            "title": "Commit staged changes with provided message",
+            "metadata": {
+              "output": "[master 71ff3ce] feat: add HTTP request timeout and HTML stripping for url_fetch\n 9 files changed, 821 insertions(+), 9 deletions(-)\n create mode 100644 docs/plans/029_http_request_timeout_implement.md\n create mode 100644 docs/plans/029_http_request_timeout_spec.md\n create mode 100644 docs/plans/030_html_stripping_implement.md\n create mode 100644 docs/plans/030_html_stripping_spec.md\n",
+              "exit": 0,
+              "description": "Commit staged changes with provided message",
+              "truncated": false
+            },
             "time": {
-              "start": 1773161414832
+              "start": 1773161414832,
+              "end": 1773161422076
             }
           },
           "id": "prt_cd8a7fbcf0016by5Uzp2RGYUwR",
           "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5",
           "messageID": "msg_cd8a7f51b001oPYOSv7dyfOQa9"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "cost": 0.0055338,
+          "tokens": {
+            "total": 10315,
+            "input": 1,
+            "output": 93,
+            "reasoning": 0,
+            "cache": {
+              "read": 9911,
+              "write": 310
+            }
+          },
+          "id": "prt_cd8a81cfd001atqzPJPpOsbzjR",
+          "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5",
+          "messageID": "msg_cd8a7f51b001oPYOSv7dyfOQa9"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773161422145,
+          "completed": 1773161426565
+        },
+        "parentID": "msg_cd8a7e71c0011YvxBspGK3QSjQ",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00644055,
+        "tokens": {
+          "total": 10626,
+          "input": 1,
+          "output": 165,
+          "reasoning": 0,
+          "cache": {
+            "read": 10221,
+            "write": 239
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd8a81d4100154X14N5OdNIw2l",
+        "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "id": "prt_cd8a8259d001ydb3cHqT8SHBq5",
+          "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5",
+          "messageID": "msg_cd8a81d4100154X14N5OdNIw2l"
+        },
+        {
+          "type": "text",
+          "text": "Commit output:\n\n```\n[master 71ff3ce] feat: add HTTP request timeout and HTML stripping for url_fetch\n 9 files changed, 821 insertions(+), 9 deletions(-)\n create mode 100644 docs/plans/029_http_request_timeout_implement.md\n create mode 100644 docs/plans/029_http_request_timeout_spec.md\n create mode 100644 docs/plans/030_html_stripping_implement.md\n create mode 100644 docs/plans/030_html_stripping_spec.md\n```\n\n9 files committed on `master` at `71ff3ce`. Not pushed.",
+          "time": {
+            "start": 1773161426399,
+            "end": 1773161426399
+          },
+          "id": "prt_cd8a8259d0020emdz39da6IgVO",
+          "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5",
+          "messageID": "msg_cd8a81d4100154X14N5OdNIw2l"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "cost": 0.00644055,
+          "tokens": {
+            "total": 10626,
+            "input": 1,
+            "output": 165,
+            "reasoning": 0,
+            "cache": {
+              "read": 10221,
+              "write": 239
+            }
+          },
+          "id": "prt_cd8a82de3001lazeksrb8m92LE",
+          "sessionID": "ses_3275818eaffeSfJU3JInrAcqL5",
+          "messageID": "msg_cd8a81d4100154X14N5OdNIw2l"
         }
       ]
     }
