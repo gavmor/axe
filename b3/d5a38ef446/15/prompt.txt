@@ -1,0 +1,317 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe. This is a Go project.
+
+Your task is to write ALL the new tests for HTML stripping in `internal/tool/url_fetch_test.go` AND add a minimal stub function in `internal/tool/url_fetch.go` so the tests compile but FAIL (red phase of TDD).
+
+## IMPORTANT: The existing test file has 400 lines. You must APPEND to it, not replace it. Read the file first to understand its structure.
+
+## Current state of url_fetch.go (133 lines):
+- Package `tool`
+- Has `urlFetchExecute` function that reads body, converts to string, truncates if needed
+- Has `maxReadBytes = 10000` constant
+- Has `urlFetchEntry()` returning a `ToolEntry`
+
+## What to add to url_fetch_test.go (APPEND after line 400):
+
+### Phase 1A: stripHTML unit tests (9 test functions)
+
+```go
+func TestStripHTML_BasicExtraction(t *testing.T) {
+    got := stripHTML("<html><body><p>Hello</p><p>World</p></body></html>")
+    want := "Hello World"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_RemovesScriptAndStyle(t *testing.T) {
+    got := stripHTML("<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>")
+    want := "Keep this"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_PreservesNoscript(t *testing.T) {
+    got := stripHTML("<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>")
+    want := "Enable JS Main content"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_NestedScriptInDiv(t *testing.T) {
+    got := stripHTML("<div>Before<script>alert('x')</script>After</div>")
+    want := "Before After"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_WhitespaceCollapsing(t *testing.T) {
+    got := stripHTML("<p>  Hello   \n\n  World  </p>")
+    want := "Hello World"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_EmptyInput(t *testing.T) {
+    got := stripHTML("")
+    want := ""
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {
+    got := stripHTML("<html><body><script>code</script><style>css</style></body></html>")
+    want := ""
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_HTMLEntities(t *testing.T) {
+    got := stripHTML("<p>Tom &amp; Jerry &#x27;s</p>")
+    want := "Tom & Jerry 's"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+
+func TestStripHTML_NoHTMLTags(t *testing.T) {
+    got := stripHTML("Just plain text")
+    want := "Just plain text"
+    if got != want {
+        t.Errorf("stripHTML() = %q, want %q", got, want)
+    }
+}
+```
+
+### Phase 1B: urlFetchExecute integration tests (9 test functions)
+
+```go
+func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/html")
+        _, _ = w.Write([]byte("<html><body><script>x</script><p>Visible</p></body></html>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-html-strip", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    if result.Content != "Visible" {
+        t.Errorf("Content = %q, want %q", result.Content, "Visible")
+    }
+}
+
+func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        _, _ = w.Write([]byte("<p>Hello charset</p>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-html-charset", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    if result.Content != "Hello charset" {
+        t.Errorf("Content = %q, want %q", result.Content, "Hello charset")
+    }
+}
+
+func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "TEXT/HTML")
+        _, _ = w.Write([]byte("<p>Case test</p>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-html-case", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    if result.Content != "Case test" {
+        t.Errorf("Content = %q, want %q", result.Content, "Case test")
+    }
+}
+
+func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        _, _ = w.Write([]byte(`{"key": "<b>value</b>"}`))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-json-no-strip", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    want := `{"key": "<b>value</b>"}`
+    if result.Content != want {
+        t.Errorf("Content = %q, want %q", result.Content, want)
+    }
+}
+
+func TestURLFetch_PlainTextNotStripped(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/plain")
+        _, _ = w.Write([]byte("<p>Not HTML</p>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-plain-no-strip", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    if result.Content != "<p>Not HTML</p>" {
+        t.Errorf("Content = %q, want %q", result.Content, "<p>Not HTML</p>")
+    }
+}
+
+func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {
+    // Note: Go's http.DetectContentType may auto-set Content-Type.
+    // We explicitly set it to empty to test the missing header case.
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "")
+        _, _ = w.Write([]byte("<p>No header</p>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-no-ct", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    // With empty Content-Type, body should be returned verbatim (no stripping)
+    if result.Content != "<p>No header</p>" {
+        t.Errorf("Content = %q, want %q", result.Content, "<p>No header</p>")
+    }
+}
+
+func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/html")
+        w.WriteHeader(http.StatusNotFound)
+        _, _ = w.Write([]byte("<html><body><script>x</script><p>Not Found</p></body></html>"))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-404-html", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if !result.IsError {
+        t.Fatal("expected IsError true")
+    }
+    if !strings.Contains(result.Content, "HTTP 404") {
+        t.Errorf("Content = %q, want contains %q", result.Content, "HTTP 404")
+    }
+    if !strings.Contains(result.Content, "Not Found") {
+        t.Errorf("Content = %q, want contains %q", result.Content, "Not Found")
+    }
+    if strings.Contains(result.Content, "<script>") {
+        t.Errorf("Content = %q, should not contain <script>", result.Content)
+    }
+}
+
+func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusInternalServerError)
+        _, _ = w.Write([]byte(`{"error": "bad"}`))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-500-json", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if !result.IsError {
+        t.Fatal("expected IsError true")
+    }
+    if !strings.Contains(result.Content, "HTTP 500") {
+        t.Errorf("Content = %q, want contains %q", result.Content, "HTTP 500")
+    }
+    if !strings.Contains(result.Content, "bad") {
+        t.Errorf("Content = %q, want contains %q", result.Content, "bad")
+    }
+}
+
+func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {
+    // Build HTML where raw size exceeds maxReadBytes but stripped text is small.
+    // 9000 bytes of CSS in a <style> tag + small visible text.
+    bigCSS := strings.Repeat("x", 9000)
+    htmlBody := "<html><body><style>" + bigCSS + "</style><p>Short text</p></body></html>"
+
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/html")
+        _, _ = w.Write([]byte(htmlBody))
+    }))
+    defer ts.Close()
+
+    entry := urlFetchEntry()
+    call := provider.ToolCall{ID: "uf-strip-before-trunc", Arguments: map[string]string{"url": ts.URL}}
+    result := entry.Execute(context.Background(), call, ExecContext{})
+
+    if result.IsError {
+        t.Fatalf("expected IsError false, got true with content %q", result.Content)
+    }
+    if strings.Contains(result.Content, "truncated") {
+        t.Errorf("Content should not contain truncation notice after stripping: %q", result.Content)
+    }
+    if !strings.Contains(result.Content, "Short text") {
+        t.Errorf("Content = %q, want contains %q", result.Content, "Short text")
+    }
+}
+```
+
+## What to add to url_fetch.go:
+
+Add a minimal stub function `stripHTML` that compiles but returns the raw input unchanged (so the stripHTML unit tests will FAIL). Add it right before the `urlFetchExecute` function. Also add the necessary imports (`"mime"`, `"strings"` if not present, `"golang.org/x/net/html"`).
+
+The stub should be:
+```go
+func stripHTML(raw string) string {
+    // TODO: implement HTML stripping
+    return raw
+}
+```
+
+Do NOT add the `"golang.org/x/net/html"` import yet since the stub doesn't use it — that would cause a compile error. Just add `"mime"` to the imports (it will be needed by the integration code later, but for now just the stub).
+
+Actually, don't add any new imports to url_fetch.go yet — the stub doesn't need them. Just add the stub function.
+
+## Steps:
+1. Read the current `internal/tool/url_fetch_test.go` to confirm its current state
+2. Append ALL 18 new test functions to the end of `internal/tool/url_fetch_test.go`
+3. Add the `stripHTML` stub function to `internal/tool/url_fetch.go` (insert it before `urlFetchExecute`, around line 64)
+4. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./internal/tool/` to verify compilation
+5. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run "TestStripHTML|TestURLFetch_HTML|TestURLFetch_NonHTML|TestURLFetch_PlainText|TestURLFetch_Missing|TestURLFetch_Non2xxHTML|TestURLFetch_Non2xxNonHTML|TestURLFetch_HTMLStripped" -v -count=1 2>&1 | head -100` to verify tests compile and FAIL (red phase)
+6. Also run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run "TestURLFetch_Success|TestURLFetch_Empty|TestURLFetch_Missing|TestURLFetch_Unsupported|TestURLFetch_NoScheme|TestURLFetch_Non2xxStatus|TestURLFetch_Large|TestURLFetch_Exact|TestURLFetch_Context|TestURLFetch_Connection|TestURLFetch_CallID|TestURLFetch_EmptyResponse|TestURLFetch_Non2xxWith|TestURLFetch_Verbose|TestURLFetch_PerRequest|TestURLFetch_Parent|TestURLFetch_Fast" -v -count=1 2>&1 | tail -5` to verify existing 19 tests still pass
+
+Return:
+- Confirmation that all 18 new tests were added
+- The compilation result
+- Which new tests FAIL (expected — red phase) and which PASS
+- Whether all 19 existing tests still PASS
