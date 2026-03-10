@@ -1,0 +1,22 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run this Go test to check if `<title>` text from `<head>` leaks into stripHTML output:
+
+```bash
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestStripHTML_BasicExtraction -v -count=1
+```
+
+Also, write and run a quick ad-hoc test. Create a temporary test file or just use `go test -run` to check: what does `stripHTML("<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>")` return?
+
+You can do this by temporarily adding a test:
+```go
+func TestStripHTML_HeadContentCheck(t *testing.T) {
+    got := stripHTML("<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>")
+    t.Logf("stripHTML output: %q", got)
+    if strings.Contains(got, "Page Title") {
+        t.Errorf("stripHTML leaked <title> content: %q", got)
+    }
+}
+```
+
+Add this test to url_fetch_test.go, run it, and report the result. Then REMOVE the test afterward (it was just for investigation).
+
+Return what the output was — does `<title>` content leak into the stripped text?

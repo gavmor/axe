@@ -1,0 +1,936 @@
+{
+  "info": {
+    "id": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+    "slug": "clever-panda",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_3277bad71ffeueJa7cmk6cDVEp",
+    "title": "Check head content leaking (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773159959515,
+      "updated": 1773159993897
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773159959528
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "In /Users/jaronswab/go/src/github.com/jrswab/axe, run this Go test to check if `<title>` text from `<head>` leaks into stripHTML output:\n\n```bash\ncd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestStripHTML_BasicExtraction -v -count=1\n```\n\nAlso, write and run a quick ad-hoc test. Create a temporary test file or just use `go test -run` to check: what does `stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")` return?\n\nYou can do this by temporarily adding a test:\n```go\nfunc TestStripHTML_HeadContentCheck(t *testing.T) {\n    got := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n    t.Logf(\"stripHTML output: %q\", got)\n    if strings.Contains(got, \"Page Title\") {\n        t.Errorf(\"stripHTML leaked <title> content: %q\", got)\n    }\n}\n```\n\nAdd this test to url_fetch_test.go, run it, and report the result. Then REMOVE the test afterward (it was just for investigation).\n\nReturn what the output was — does `<title>` content leak into the stripped text?",
+          "id": "prt_cd891cbe8001AGeWqSnjJ1c0Zb",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbe5001vK9kvY95nKGxuz"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159959535,
+          "completed": 1773159963407
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00777435,
+        "tokens": {
+          "total": 10331,
+          "input": 3,
+          "output": 160,
+          "reasoning": 0,
+          "cache": {
+            "read": 9497,
+            "write": 671
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd891cbef001DlsBpNUuqs1Zp6",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "REDACTED",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbef001DlsBpNUuqs1Zp6"
+        },
+        {
+          "type": "text",
+          "text": "I'll run the existing test and add a temporary investigation test in parallel.",
+          "time": {
+            "start": 1773159961919,
+            "end": 1773159961919
+          },
+          "id": "prt_cd891d3c6001GDoOoaTVl1lF2M",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbef001DlsBpNUuqs1Zp6"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_013hxLxNw8boRCxrn6mVwme6",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/tool/ -run TestStripHTML_BasicExtraction -v -count=1",
+              "description": "Run existing TestStripHTML_BasicExtraction test"
+            },
+            "output": "=== RUN   TestStripHTML_BasicExtraction\n--- PASS: TestStripHTML_BasicExtraction (0.00s)\nPASS\nok  \tgithub.com/jrswab/axe/internal/tool\t0.248s\n",
+            "title": "Run existing TestStripHTML_BasicExtraction test",
+            "metadata": {
+              "output": "=== RUN   TestStripHTML_BasicExtraction\n--- PASS: TestStripHTML_BasicExtraction (0.00s)\nPASS\nok  \tgithub.com/jrswab/axe/internal/tool\t0.248s\n",
+              "exit": 0,
+              "description": "Run existing TestStripHTML_BasicExtraction test",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159962756,
+              "end": 1773159963346
+            }
+          },
+          "id": "prt_cd891d540001oUkUEwdjgHjuq1",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbef001DlsBpNUuqs1Zp6"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/url_fetch_test.go"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+            "title": "",
+            "metadata": {
+              "count": 1,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159962861,
+              "end": 1773159962871
+            }
+          },
+          "id": "prt_cd891d887001AaM3YY9xBlAOiM",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbef001DlsBpNUuqs1Zp6"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.00777435,
+          "tokens": {
+            "total": 10331,
+            "input": 3,
+            "output": 160,
+            "reasoning": 0,
+            "cache": {
+              "read": 9497,
+              "write": 671
+            }
+          },
+          "id": "prt_cd891dad2001P8VHLTP8mhQkcD",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891cbef001DlsBpNUuqs1Zp6"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159963408,
+          "completed": 1773159967473
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0057759,
+        "tokens": {
+          "total": 10586,
+          "input": 1,
+          "output": 103,
+          "reasoning": 0,
+          "cache": {
+            "read": 10168,
+            "write": 314
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd891db10001TNwcixPi5lTiFB",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd891e4e4001z0MlLA6wwkI6qG",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891db10001TNwcixPi5lTiFB"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01UoQuA1LRLLcwvHEddwjZLa",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"net\"\n7: \t\"net/http\"\n8: \t\"net/http/httptest\"\n9: \t\"strings\"\n10: \t\"testing\"\n11: \t\"time\"\n12: \n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: )\n15: \n16: func TestURLFetch_Success(t *testing.T) {\n17: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n18: \t\t_, _ = w.Write([]byte(\"hello world\"))\n19: \t}))\n20: \tdefer ts.Close()\n21: \n22: \tentry := urlFetchEntry()\n23: \tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n24: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n25: \n26: \tif result.IsError {\n27: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n28: \t}\n29: \tif result.Content != \"hello world\" {\n30: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n\n(Showing lines 1-30 of 670. Use offset=31 to continue.)\n</content>",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773159967281,
+              "end": 1773159967286
+            }
+          },
+          "id": "prt_cd891e4e4002ye0skhrdlekQ0C",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891db10001TNwcixPi5lTiFB"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0057759,
+          "tokens": {
+            "total": 10586,
+            "input": 1,
+            "output": 103,
+            "reasoning": 0,
+            "cache": {
+              "read": 10168,
+              "write": 314
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891db10001TNwcixPi5lTiFB"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159967473,
+          "completed": 1773159970907
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0070476,
+        "tokens": {
+          "total": 11163,
+          "input": 1,
+          "output": 120,
+          "reasoning": 0,
+          "cache": {
+            "read": 10482,
+            "write": 560
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd891eaf1001HVYD0f2fr4wfHV",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd891f302001LoMlNlryDqrGAv",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891eaf1001HVYD0f2fr4wfHV"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_0147K2fxwuyr3ff3wy6zTkKr",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "grep -n \"TestStripHTML_BasicExtraction\" /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+              "description": "Find line number of existing test"
+            },
+            "output": "404:func TestStripHTML_BasicExtraction(t *testing.T) {\n",
+            "title": "Find line number of existing test",
+            "metadata": {
+              "output": "404:func TestStripHTML_BasicExtraction(t *testing.T) {\n",
+              "exit": 0,
+              "description": "Find line number of existing test",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159970759,
+              "end": 1773159970788
+            }
+          },
+          "id": "prt_cd891f303001G9NwUwhYBPtZ0s",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891eaf1001HVYD0f2fr4wfHV"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0070476,
+          "tokens": {
+            "total": 11163,
+            "input": 1,
+            "output": 120,
+            "reasoning": 0,
+            "cache": {
+              "read": 10482,
+              "write": 560
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd891eaf1001HVYD0f2fr4wfHV"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159970908,
+          "completed": 1773159975098
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0056856,
+        "tokens": {
+          "total": 11315,
+          "input": 1,
+          "output": 120,
+          "reasoning": 0,
+          "cache": {
+            "read": 11042,
+            "write": 152
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd892038f001lXCjFbu3xp8qiK",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+              "offset": 660,
+              "limit": 15
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go</path>\n<type>file</type>\n<content>660: \n661: \tif result.IsError {\n662: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n663: \t}\n664: \tif strings.Contains(result.Content, \"truncated\") {\n665: \t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n666: \t}\n667: \tif !strings.Contains(result.Content, \"Short text\") {\n668: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n669: \t}\n670: }\n\n(End of file - total 670 lines)\n</content>",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "preview": "\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773159974966,
+              "end": 1773159974973
+            }
+          },
+          "id": "prt_cd892038f002VUgNT3GQSjkQi2",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0056856,
+          "tokens": {
+            "total": 11315,
+            "input": 1,
+            "output": 120,
+            "reasoning": 0,
+            "cache": {
+              "read": 11042,
+              "write": 152
+            }
+          },
+          "id": "prt_cd8920848001cBrHl91Tp41ls0",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159975099,
+          "completed": 1773159980691
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0097587,
+        "tokens": {
+          "total": 11890,
+          "input": 1,
+          "output": 337,
+          "reasoning": 0,
+          "cache": {
+            "read": 11194,
+            "write": 358
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd89208bb001JyJ5CojJWzfm3b",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd89211b8001SkKX6G8StPp7e7",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89208bb001JyJ5CojJWzfm3b"
+        },
+        {
+          "type": "text",
+          "text": "Now I'll add the temporary test at the end of the file:",
+          "time": {
+            "start": 1773159977770,
+            "end": 1773159977770
+          },
+          "id": "prt_cd89211b8002sRYMsKtdZK2Mho",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89208bb001JyJ5CojJWzfm3b"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+              "oldString": "\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}",
+              "newString": "\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}\n\nfunc TestStripHTML_HeadContentCheck(t *testing.T) {\n\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n\tt.Logf(\"stripHTML output: %q\", got)\n\tif strings.Contains(got, \"Page Title\") {\n\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n\t}\n}"
+            },
+            "output": "Edit applied successfully.",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n@@ -667,4 +667,12 @@\n \tif !strings.Contains(result.Content, \"Short text\") {\n \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n \t}\n }\n+\n+func TestStripHTML_HeadContentCheck(t *testing.T) {\n+\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n+\tt.Logf(\"stripHTML output: %q\", got)\n+\tif strings.Contains(got, \"Page Title\") {\n+\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n+\t}\n+}\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+                "before": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"hello world\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\nfunc TestURLFetch_EmptyURL(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_MissingURLArgument(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"file\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"ftp\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n\t}\n}\n\nfunc TestURLFetch_NoScheme(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_404(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"not found\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"not found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_500(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(\"internal error\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"internal error\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n\t}\n}\n\nfunc TestURLFetch_LargeResponseTruncation(t *testing.T) {\n\tlargeBody := strings.Repeat(\"A\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n\tif len(result.Content) <= 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n\t}\n\tif len(result.Content) >= 20000 {\n\t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n\texactBody := strings.Repeat(\"B\", 10000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(exactBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n\t}\n\tif len(result.Content) != 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ContextCancellation(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(10 * time.Second)\n\t\tdefer timer.Stop()\n\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n}\n\nfunc TestURLFetch_ConnectionRefused(t *testing.T) {\n\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n\tif err != nil {\n\t\tt.Fatalf(\"net.Listen error: %v\", err)\n\t}\n\taddr := listener.Addr().String()\n\tif err := listener.Close(); err != nil {\n\t\tt.Fatalf(\"listener.Close error: %v\", err)\n\t}\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif result.Content == \"\" {\n\t\tt.Fatal(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_CallIDPassthrough(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.CallID != \"uf-unique-42\" {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n\t}\n}\n\nfunc TestURLFetch_EmptyResponseBody(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusOK)\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"\" {\n\t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n\tlargeBody := strings.Repeat(\"C\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n\n\tvar stderr bytes.Buffer\n\tentry := urlFetchEntry()\n\t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n\n\tlogOutput := stderr.String()\n\tif strings.Contains(logOutput, \"user:pass\") {\n\t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"token=abc\") {\n\t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"#frag\") {\n\t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n\t}\n\tif !strings.Contains(logOutput, \"/secret/path\") {\n\t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n\t}\n}\n\nfunc TestURLFetch_PerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t// Block longer than the per-request timeout\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Override the per-request timeout to keep the test fast\n\torig := urlFetchTimeout\n\turlFetchTimeout = 100 * time.Millisecond\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n\tif result.Content == \"\" {\n\t\tt.Error(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Set per-request timeout to something long so the parent wins\n\torig := urlFetchTimeout\n\turlFetchTimeout = 10 * time.Second\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(ctx, call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n\t}\n}\n\nfunc TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"fast response\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"fast response\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\n// Phase 1A: stripHTML unit tests\n\nfunc TestStripHTML_BasicExtraction(t *testing.T) {\n\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n\twant := \"Keep this\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_PreservesNoscript(t *testing.T) {\n\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n\twant := \"Enable JS Main content\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NestedScriptInDiv(t *testing.T) {\n\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n\twant := \"Before After\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_EmptyInput(t *testing.T) {\n\tgot := stripHTML(\"\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_HTMLEntities(t *testing.T) {\n\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n\twant := \"Tom & Jerry 's\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NoHTMLTags(t *testing.T) {\n\tgot := stripHTML(\"Just plain text\")\n\twant := \"Just plain text\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\n// Phase 1B: urlFetchExecute integration tests\n\nfunc TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Visible\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Hello charset\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Case test\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n\t}\n}\n\nfunc TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\twant := `{\"key\": \"<b>value</b>\"}`\n\tif result.Content != want {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n\t}\n}\n\nfunc TestURLFetch_PlainTextNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"<p>Not HTML</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n\t}\n}\n\nfunc TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n\t// We explicitly set it to empty to test the missing header case.\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"\")\n\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\t// With empty Content-Type, body should be returned verbatim (no stripping)\n\tif result.Content != \"<p>No header</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"Not Found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n\t}\n\tif strings.Contains(result.Content, \"<script>\") {\n\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"bad\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n\t}\n}\n\nfunc TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n\t// 9950 bytes of CSS in a <style> tag + small visible text.\n\tbigCSS := strings.Repeat(\"x\", 9950)\n\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(htmlBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}\n",
+                "after": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"hello world\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\nfunc TestURLFetch_EmptyURL(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_MissingURLArgument(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"file\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"ftp\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n\t}\n}\n\nfunc TestURLFetch_NoScheme(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_404(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"not found\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"not found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_500(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(\"internal error\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"internal error\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n\t}\n}\n\nfunc TestURLFetch_LargeResponseTruncation(t *testing.T) {\n\tlargeBody := strings.Repeat(\"A\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n\tif len(result.Content) <= 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n\t}\n\tif len(result.Content) >= 20000 {\n\t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n\texactBody := strings.Repeat(\"B\", 10000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(exactBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n\t}\n\tif len(result.Content) != 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ContextCancellation(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(10 * time.Second)\n\t\tdefer timer.Stop()\n\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n}\n\nfunc TestURLFetch_ConnectionRefused(t *testing.T) {\n\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n\tif err != nil {\n\t\tt.Fatalf(\"net.Listen error: %v\", err)\n\t}\n\taddr := listener.Addr().String()\n\tif err := listener.Close(); err != nil {\n\t\tt.Fatalf(\"listener.Close error: %v\", err)\n\t}\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif result.Content == \"\" {\n\t\tt.Fatal(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_CallIDPassthrough(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.CallID != \"uf-unique-42\" {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n\t}\n}\n\nfunc TestURLFetch_EmptyResponseBody(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusOK)\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"\" {\n\t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n\tlargeBody := strings.Repeat(\"C\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n\n\tvar stderr bytes.Buffer\n\tentry := urlFetchEntry()\n\t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n\n\tlogOutput := stderr.String()\n\tif strings.Contains(logOutput, \"user:pass\") {\n\t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"token=abc\") {\n\t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"#frag\") {\n\t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n\t}\n\tif !strings.Contains(logOutput, \"/secret/path\") {\n\t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n\t}\n}\n\nfunc TestURLFetch_PerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t// Block longer than the per-request timeout\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Override the per-request timeout to keep the test fast\n\torig := urlFetchTimeout\n\turlFetchTimeout = 100 * time.Millisecond\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n\tif result.Content == \"\" {\n\t\tt.Error(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Set per-request timeout to something long so the parent wins\n\torig := urlFetchTimeout\n\turlFetchTimeout = 10 * time.Second\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(ctx, call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n\t}\n}\n\nfunc TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"fast response\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"fast response\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\n// Phase 1A: stripHTML unit tests\n\nfunc TestStripHTML_BasicExtraction(t *testing.T) {\n\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n\twant := \"Keep this\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_PreservesNoscript(t *testing.T) {\n\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n\twant := \"Enable JS Main content\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NestedScriptInDiv(t *testing.T) {\n\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n\twant := \"Before After\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_EmptyInput(t *testing.T) {\n\tgot := stripHTML(\"\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_HTMLEntities(t *testing.T) {\n\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n\twant := \"Tom & Jerry 's\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NoHTMLTags(t *testing.T) {\n\tgot := stripHTML(\"Just plain text\")\n\twant := \"Just plain text\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\n// Phase 1B: urlFetchExecute integration tests\n\nfunc TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Visible\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Hello charset\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Case test\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n\t}\n}\n\nfunc TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\twant := `{\"key\": \"<b>value</b>\"}`\n\tif result.Content != want {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n\t}\n}\n\nfunc TestURLFetch_PlainTextNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"<p>Not HTML</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n\t}\n}\n\nfunc TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n\t// We explicitly set it to empty to test the missing header case.\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"\")\n\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\t// With empty Content-Type, body should be returned verbatim (no stripping)\n\tif result.Content != \"<p>No header</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"Not Found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n\t}\n\tif strings.Contains(result.Content, \"<script>\") {\n\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"bad\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n\t}\n}\n\nfunc TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n\t// 9950 bytes of CSS in a <style> tag + small visible text.\n\tbigCSS := strings.Repeat(\"x\", 9950)\n\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(htmlBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}\n\nfunc TestStripHTML_HeadContentCheck(t *testing.T) {\n\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n\tt.Logf(\"stripHTML output: %q\", got)\n\tif strings.Contains(got, \"Page Title\") {\n\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n\t}\n}\n",
+                "additions": 8,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159980344,
+              "end": 1773159980569
+            }
+          },
+          "id": "prt_cd892132d0010uTk3dMHYSI71M",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89208bb001JyJ5CojJWzfm3b"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "118f9794fd4dd7c4eeedddd20367e98be062cb02",
+          "cost": 0.0097587,
+          "tokens": {
+            "total": 11890,
+            "input": 1,
+            "output": 337,
+            "reasoning": 0,
+            "cache": {
+              "read": 11194,
+              "write": 358
+            }
+          },
+          "id": "prt_cd8921e1d001ZcmBP4p04KKrVq",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89208bb001JyJ5CojJWzfm3b"
+        },
+        {
+          "type": "patch",
+          "hash": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go"
+          ],
+          "id": "prt_cd8921e91001R1a97dI69j7iwr",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89208bb001JyJ5CojJWzfm3b"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159980692,
+          "completed": 1773159984792
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0062286,
+        "tokens": {
+          "total": 12001,
+          "input": 1,
+          "output": 96,
+          "reasoning": 0,
+          "cache": {
+            "read": 11552,
+            "write": 352
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8921e94001G9Huz5J07UpzUf",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "118f9794fd4dd7c4eeedddd20367e98be062cb02",
+          "id": "REDACTED",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8921e94001G9Huz5J07UpzUf"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01VHMfDzqCLQhQGM6bZuysuf",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/tool/ -run TestStripHTML_HeadContentCheck -v -count=1",
+              "description": "Run temporary head content leak test"
+            },
+            "output": "=== RUN   TestStripHTML_HeadContentCheck\n    url_fetch_test.go:674: stripHTML output: \"Page Title Body text\"\n    url_fetch_test.go:676: stripHTML leaked <title> content: \"Page Title Body text\"\n--- FAIL: TestStripHTML_HeadContentCheck (0.00s)\nFAIL\nFAIL\tgithub.com/jrswab/axe/internal/tool\t0.413s\nFAIL\n",
+            "title": "Run temporary head content leak test",
+            "metadata": {
+              "output": "=== RUN   TestStripHTML_HeadContentCheck\n    url_fetch_test.go:674: stripHTML output: \"Page Title Body text\"\n    url_fetch_test.go:676: stripHTML leaked <title> content: \"Page Title Body text\"\n--- FAIL: TestStripHTML_HeadContentCheck (0.00s)\nFAIL\nFAIL\tgithub.com/jrswab/axe/internal/tool\t0.413s\nFAIL\n",
+              "exit": 1,
+              "description": "Run temporary head content leak test",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159983818,
+              "end": 1773159984729
+            }
+          },
+          "id": "prt_cd89226e3002hEdK0p9NIfR5sC",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8921e94001G9Huz5J07UpzUf"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "118f9794fd4dd7c4eeedddd20367e98be062cb02",
+          "cost": 0.0062286,
+          "tokens": {
+            "total": 12001,
+            "input": 1,
+            "output": 96,
+            "reasoning": 0,
+            "cache": {
+              "read": 11552,
+              "write": 352
+            }
+          },
+          "id": "prt_cd8922e59001n8s7CW5TcL73SB",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8921e94001G9Huz5J07UpzUf"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159984794,
+          "completed": 1773159990446
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0079992,
+        "tokens": {
+          "total": 12365,
+          "input": 1,
+          "output": 240,
+          "reasoning": 0,
+          "cache": {
+            "read": 11904,
+            "write": 220
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8922e9a001bv4Ds32fobryX7",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "118f9794fd4dd7c4eeedddd20367e98be062cb02",
+          "id": "prt_cd8923a010012Kq0UdSrVC4AD0",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8922e9a001bv4Ds32fobryX7"
+        },
+        {
+          "type": "text",
+          "text": "Confirmed the leak. Now remove the temporary test:",
+          "time": {
+            "start": 1773159988521,
+            "end": 1773159988521
+          },
+          "id": "prt_cd8923a02001oQOfZlretb39Ez",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8922e9a001bv4Ds32fobryX7"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_019JNp6vtKyLyWX4tdgjKgMF",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+              "oldString": "\nfunc TestStripHTML_HeadContentCheck(t *testing.T) {\n\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n\tt.Logf(\"stripHTML output: %q\", got)\n\tif strings.Contains(got, \"Page Title\") {\n\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n\t}\n}",
+              "newString": ""
+            },
+            "output": "Edit applied successfully.",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n@@ -667,12 +667,4 @@\n \tif !strings.Contains(result.Content, \"Short text\") {\n \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n \t}\n }\n-\n-func TestStripHTML_HeadContentCheck(t *testing.T) {\n-\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n-\tt.Logf(\"stripHTML output: %q\", got)\n-\tif strings.Contains(got, \"Page Title\") {\n-\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n-\t}\n-}\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go",
+                "before": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"hello world\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\nfunc TestURLFetch_EmptyURL(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_MissingURLArgument(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"file\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"ftp\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n\t}\n}\n\nfunc TestURLFetch_NoScheme(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_404(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"not found\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"not found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_500(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(\"internal error\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"internal error\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n\t}\n}\n\nfunc TestURLFetch_LargeResponseTruncation(t *testing.T) {\n\tlargeBody := strings.Repeat(\"A\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n\tif len(result.Content) <= 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n\t}\n\tif len(result.Content) >= 20000 {\n\t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n\texactBody := strings.Repeat(\"B\", 10000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(exactBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n\t}\n\tif len(result.Content) != 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ContextCancellation(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(10 * time.Second)\n\t\tdefer timer.Stop()\n\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n}\n\nfunc TestURLFetch_ConnectionRefused(t *testing.T) {\n\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n\tif err != nil {\n\t\tt.Fatalf(\"net.Listen error: %v\", err)\n\t}\n\taddr := listener.Addr().String()\n\tif err := listener.Close(); err != nil {\n\t\tt.Fatalf(\"listener.Close error: %v\", err)\n\t}\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif result.Content == \"\" {\n\t\tt.Fatal(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_CallIDPassthrough(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.CallID != \"uf-unique-42\" {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n\t}\n}\n\nfunc TestURLFetch_EmptyResponseBody(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusOK)\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"\" {\n\t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n\tlargeBody := strings.Repeat(\"C\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n\n\tvar stderr bytes.Buffer\n\tentry := urlFetchEntry()\n\t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n\n\tlogOutput := stderr.String()\n\tif strings.Contains(logOutput, \"user:pass\") {\n\t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"token=abc\") {\n\t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"#frag\") {\n\t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n\t}\n\tif !strings.Contains(logOutput, \"/secret/path\") {\n\t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n\t}\n}\n\nfunc TestURLFetch_PerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t// Block longer than the per-request timeout\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Override the per-request timeout to keep the test fast\n\torig := urlFetchTimeout\n\turlFetchTimeout = 100 * time.Millisecond\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n\tif result.Content == \"\" {\n\t\tt.Error(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Set per-request timeout to something long so the parent wins\n\torig := urlFetchTimeout\n\turlFetchTimeout = 10 * time.Second\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(ctx, call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n\t}\n}\n\nfunc TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"fast response\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"fast response\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\n// Phase 1A: stripHTML unit tests\n\nfunc TestStripHTML_BasicExtraction(t *testing.T) {\n\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n\twant := \"Keep this\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_PreservesNoscript(t *testing.T) {\n\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n\twant := \"Enable JS Main content\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NestedScriptInDiv(t *testing.T) {\n\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n\twant := \"Before After\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_EmptyInput(t *testing.T) {\n\tgot := stripHTML(\"\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_HTMLEntities(t *testing.T) {\n\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n\twant := \"Tom & Jerry 's\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NoHTMLTags(t *testing.T) {\n\tgot := stripHTML(\"Just plain text\")\n\twant := \"Just plain text\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\n// Phase 1B: urlFetchExecute integration tests\n\nfunc TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Visible\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Hello charset\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Case test\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n\t}\n}\n\nfunc TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\twant := `{\"key\": \"<b>value</b>\"}`\n\tif result.Content != want {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n\t}\n}\n\nfunc TestURLFetch_PlainTextNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"<p>Not HTML</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n\t}\n}\n\nfunc TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n\t// We explicitly set it to empty to test the missing header case.\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"\")\n\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\t// With empty Content-Type, body should be returned verbatim (no stripping)\n\tif result.Content != \"<p>No header</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"Not Found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n\t}\n\tif strings.Contains(result.Content, \"<script>\") {\n\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"bad\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n\t}\n}\n\nfunc TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n\t// 9950 bytes of CSS in a <style> tag + small visible text.\n\tbigCSS := strings.Repeat(\"x\", 9950)\n\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(htmlBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}\n\nfunc TestStripHTML_HeadContentCheck(t *testing.T) {\n\tgot := stripHTML(\"<html><head><title>Page Title</title></head><body><p>Body text</p></body></html>\")\n\tt.Logf(\"stripHTML output: %q\", got)\n\tif strings.Contains(got, \"Page Title\") {\n\t\tt.Errorf(\"stripHTML leaked <title> content: %q\", got)\n\t}\n}\n",
+                "after": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"hello world\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\nfunc TestURLFetch_EmptyURL(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_MissingURLArgument(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"url is required\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"file\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n\t}\n}\n\nfunc TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n\tif !strings.Contains(result.Content, \"ftp\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n\t}\n}\n\nfunc TestURLFetch_NoScheme(t *testing.T) {\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"unsupported scheme\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_404(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"not found\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"not found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxStatus_500(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(\"internal error\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"internal error\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n\t}\n}\n\nfunc TestURLFetch_LargeResponseTruncation(t *testing.T) {\n\tlargeBody := strings.Repeat(\"A\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n\tif len(result.Content) <= 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n\t}\n\tif len(result.Content) >= 20000 {\n\t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n\texactBody := strings.Repeat(\"B\", 10000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(exactBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n\t}\n\tif len(result.Content) != 10000 {\n\t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n\t}\n}\n\nfunc TestURLFetch_ContextCancellation(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(10 * time.Second)\n\t\tdefer timer.Stop()\n\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n}\n\nfunc TestURLFetch_ConnectionRefused(t *testing.T) {\n\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n\tif err != nil {\n\t\tt.Fatalf(\"net.Listen error: %v\", err)\n\t}\n\taddr := listener.Addr().String()\n\tif err := listener.Close(); err != nil {\n\t\tt.Fatalf(\"listener.Close error: %v\", err)\n\t}\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif result.Content == \"\" {\n\t\tt.Fatal(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_CallIDPassthrough(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.CallID != \"uf-unique-42\" {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n\t}\n}\n\nfunc TestURLFetch_EmptyResponseBody(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusOK)\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"\" {\n\t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n\tlargeBody := strings.Repeat(\"C\", 20000)\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(largeBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n\t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"ok\"))\n\t}))\n\tdefer ts.Close()\n\n\ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n\n\tvar stderr bytes.Buffer\n\tentry := urlFetchEntry()\n\t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n\n\tlogOutput := stderr.String()\n\tif strings.Contains(logOutput, \"user:pass\") {\n\t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"token=abc\") {\n\t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n\t}\n\tif strings.Contains(logOutput, \"#frag\") {\n\t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n\t}\n\tif !strings.Contains(logOutput, \"/secret/path\") {\n\t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n\t}\n}\n\nfunc TestURLFetch_PerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t// Block longer than the per-request timeout\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Override the per-request timeout to keep the test fast\n\torig := urlFetchTimeout\n\turlFetchTimeout = 100 * time.Millisecond\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n\tif result.Content == \"\" {\n\t\tt.Error(\"expected non-empty error content\")\n\t}\n}\n\nfunc TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\ttimer := time.NewTimer(2 * time.Second)\n\t\tdefer timer.Stop()\n\t\tselect {\n\t\tcase <-r.Context().Done():\n\t\t\treturn\n\t\tcase <-timer.C:\n\t\t\t_, _ = w.Write([]byte(\"too late\"))\n\t\t}\n\t}))\n\tdefer ts.Close()\n\n\t// Set per-request timeout to something long so the parent wins\n\torig := urlFetchTimeout\n\turlFetchTimeout = 10 * time.Second\n\tdefer func() { urlFetchTimeout = orig }()\n\n\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n\tdefer cancel()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(ctx, call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n\t}\n}\n\nfunc TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"fast response\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"fast response\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n\t}\n\tif result.CallID != call.ID {\n\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n\t}\n}\n\n// Phase 1A: stripHTML unit tests\n\nfunc TestStripHTML_BasicExtraction(t *testing.T) {\n\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n\twant := \"Keep this\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_PreservesNoscript(t *testing.T) {\n\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n\twant := \"Enable JS Main content\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NestedScriptInDiv(t *testing.T) {\n\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n\twant := \"Before After\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n\twant := \"Hello World\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_EmptyInput(t *testing.T) {\n\tgot := stripHTML(\"\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n\twant := \"\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_HTMLEntities(t *testing.T) {\n\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n\twant := \"Tom & Jerry 's\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestStripHTML_NoHTMLTags(t *testing.T) {\n\tgot := stripHTML(\"Just plain text\")\n\twant := \"Just plain text\"\n\tif got != want {\n\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n\t}\n}\n\n// Phase 1B: urlFetchExecute integration tests\n\nfunc TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Visible\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Hello charset\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n\t}\n}\n\nfunc TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"Case test\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n\t}\n}\n\nfunc TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\twant := `{\"key\": \"<b>value</b>\"}`\n\tif result.Content != want {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n\t}\n}\n\nfunc TestURLFetch_PlainTextNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif result.Content != \"<p>Not HTML</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n\t}\n}\n\nfunc TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n\t// We explicitly set it to empty to test the missing header case.\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"\")\n\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\t// With empty Content-Type, body should be returned verbatim (no stripping)\n\tif result.Content != \"<p>No header</p>\" {\n\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n\t}\n}\n\nfunc TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\tw.WriteHeader(http.StatusNotFound)\n\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 404\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n\t}\n\tif !strings.Contains(result.Content, \"Not Found\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n\t}\n\tif strings.Contains(result.Content, \"<script>\") {\n\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n\t}\n}\n\nfunc TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif !result.IsError {\n\t\tt.Fatal(\"expected IsError true\")\n\t}\n\tif !strings.Contains(result.Content, \"HTTP 500\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n\t}\n\tif !strings.Contains(result.Content, \"bad\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n\t}\n}\n\nfunc TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n\t// 9950 bytes of CSS in a <style> tag + small visible text.\n\tbigCSS := strings.Repeat(\"x\", 9950)\n\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n\t\t_, _ = w.Write([]byte(htmlBody))\n\t}))\n\tdefer ts.Close()\n\n\tentry := urlFetchEntry()\n\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n\tresult := entry.Execute(context.Background(), call, ExecContext{})\n\n\tif result.IsError {\n\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n\t}\n\tif strings.Contains(result.Content, \"truncated\") {\n\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n\t}\n\tif !strings.Contains(result.Content, \"Short text\") {\n\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n\t}\n}\n",
+                "additions": 0,
+                "deletions": 8
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159990108,
+              "end": 1773159990317
+            }
+          },
+          "id": "prt_cd8923d2d001w8L3rVmUzmrdN3",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8922e9a001bv4Ds32fobryX7"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0079992,
+          "tokens": {
+            "total": 12365,
+            "input": 1,
+            "output": 240,
+            "reasoning": 0,
+            "cache": {
+              "read": 11904,
+              "write": 220
+            }
+          },
+          "id": "prt_cd8924431001S2bJgwt8ypIhxO",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8922e9a001bv4Ds32fobryX7"
+        },
+        {
+          "type": "patch",
+          "hash": "118f9794fd4dd7c4eeedddd20367e98be062cb02",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go"
+          ],
+          "id": "prt_cd89244ad001tUYtLfIA1812v4",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd8922e9a001bv4Ds32fobryX7"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159990449,
+          "completed": 1773159993865
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00602145,
+        "tokens": {
+          "total": 12475,
+          "input": 1,
+          "output": 95,
+          "reasoning": 0,
+          "cache": {
+            "read": 12124,
+            "write": 255
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd89244b0001ZXpFvlnlgZ3dqF",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd8924c4b0015sVQgY99yZLtMO",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89244b0001ZXpFvlnlgZ3dqF"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01R5wZFoY8DoUyM8e3S6uj3g",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/tool/ -run TestStripHTML -v -count=1",
+              "description": "Verify file is clean and existing tests still pass"
+            },
+            "output": "=== RUN   TestStripHTML_BasicExtraction\n--- PASS: TestStripHTML_BasicExtraction (0.00s)\n=== RUN   TestStripHTML_RemovesScriptAndStyle\n--- PASS: TestStripHTML_RemovesScriptAndStyle (0.00s)\n=== RUN   TestStripHTML_PreservesNoscript\n--- PASS: TestStripHTML_PreservesNoscript (0.00s)\n=== RUN   TestStripHTML_NestedScriptInDiv\n--- PASS: TestStripHTML_NestedScriptInDiv (0.00s)\n=== RUN   TestStripHTML_WhitespaceCollapsing\n--- PASS: TestStripHTML_WhitespaceCollapsing (0.00s)\n=== RUN   TestStripHTML_EmptyInput\n--- PASS: TestStripHTML_EmptyInput (0.00s)\n=== RUN   TestStripHTML_OnlyScriptsAndStyles\n--- PASS: TestStripHTML_OnlyScriptsAndStyles (0.00s)\n=== RUN   TestStripHTML_HTMLEntities\n--- PASS: TestStripHTML_HTMLEntities (0.00s)\n=== RUN   TestStripHTML_NoHTMLTags\n--- PASS: TestStripHTML_NoHTMLTags (0.00s)\nPASS\nok  \tgithub.com/jrswab/axe/internal/tool\t0.250s\n",
+            "title": "Verify file is clean and existing tests still pass",
+            "metadata": {
+              "output": "=== RUN   TestStripHTML_BasicExtraction\n--- PASS: TestStripHTML_BasicExtraction (0.00s)\n=== RUN   TestStripHTML_RemovesScriptAndStyle\n--- PASS: TestStripHTML_RemovesScriptAndStyle (0.00s)\n=== RUN   TestStripHTML_PreservesNoscript\n--- PASS: TestStripHTML_PreservesNoscript (0.00s)\n=== RUN   TestStripHTML_NestedScriptInDiv\n--- PASS: TestStripHTML_NestedScriptInDiv (0.00s)\n=== RUN   TestStripHTML_WhitespaceCollapsing\n--- PASS: TestStripHTML_WhitespaceCollapsing (0.00s)\n=== RUN   TestStripHTML_EmptyInput\n--- PASS: TestStripHTML_EmptyInput (0.00s)\n=== RUN   TestStripHTML_OnlyScriptsAndStyles\n--- PASS: TestStripHTML_OnlyScriptsAndStyles (0.00s)\n=== RUN   TestStripHTML_HTMLEntities\n--- PASS: TestStripHTML_HTMLEntities (0.00s)\n=== RUN   TestStripHTML_NoHTMLTags\n--- PASS: TestStripHTML_NoHTMLTags (0.00s)\nPASS\nok  \tgithub.com/jrswab/axe/internal/tool\t0.250s\n",
+              "exit": 0,
+              "description": "Verify file is clean and existing tests still pass",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159993191,
+              "end": 1773159993800
+            }
+          },
+          "id": "prt_cd8924c4b0029NuYidQ0f6GUJd",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89244b0001ZXpFvlnlgZ3dqF"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.00602145,
+          "tokens": {
+            "total": 12475,
+            "input": 1,
+            "output": 95,
+            "reasoning": 0,
+            "cache": {
+              "read": 12124,
+              "write": 255
+            }
+          },
+          "id": "prt_cd89251c9001PzgYgHC2I0yUqL",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd89244b0001ZXpFvlnlgZ3dqF"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159993867,
+          "completed": 1773159999736
+        },
+        "parentID": "msg_cd891cbe5001vK9kvY95nKGxuz",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0081567,
+        "tokens": {
+          "total": 13030,
+          "input": 1,
+          "output": 178,
+          "reasoning": 0,
+          "cache": {
+            "read": 12379,
+            "write": 472
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd892520b001NiLt9ORqiGWaRx",
+        "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd892581e001Y6nPuX9WeMZA1V",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd892520b001NiLt9ORqiGWaRx"
+        },
+        {
+          "type": "text",
+          "text": "**Yes, `<title>` content leaks into `stripHTML` output.**\n\nThe raw output was:\n```\n\"Page Title Body text\"\n```\n\n`stripHTML` does **not** suppress `<head>` content — it strips HTML tags but treats all text nodes equally regardless of which element they're in. The text inside `<title>` (\"Page Title\") is emitted just like body text, separated by a space.\n\nThe existing `TestStripHTML_BasicExtraction` passes because its test cases don't include a `<head>/<title>` scenario, so the bug was untested. The function would need to explicitly skip text nodes that are descendants of `<head>` (or at minimum `<title>`, `<script>`, `<style>`) to fix this.",
+          "time": {
+            "start": 1773159999596,
+            "end": 1773159999596
+          },
+          "id": "prt_cd892581f001vjtBuo2e0O58gf",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd892520b001NiLt9ORqiGWaRx"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0081567,
+          "tokens": {
+            "total": 13030,
+            "input": 1,
+            "output": 178,
+            "reasoning": 0,
+            "cache": {
+              "read": 12379,
+              "write": 472
+            }
+          },
+          "id": "prt_cd892687f001nJ9B5iTDcJd0aQ",
+          "sessionID": "ses_3276e3424ffeBX6ukGVVhkvdoW",
+          "messageID": "msg_cd892520b001NiLt9ORqiGWaRx"
+        }
+      ]
+    }
+  ]
+}
