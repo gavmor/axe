@@ -1,0 +1,47 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go, modify the `urlFetchExecute` function to integrate HTML stripping. Also add the `"mime"` import.
+
+First, read the current file to see its exact state.
+
+The changes needed are:
+
+1. **Add `"mime"` to the import block** (between `"io"` and `"net/http"` alphabetically)
+
+2. **In `urlFetchExecute`, after line 150 (`bodyStr := string(body)`) and BEFORE the truncation check**, add Content-Type detection and conditional stripping:
+
+```go
+	bodyStr := string(body)
+
+	// Strip HTML if Content-Type is text/html
+	mediaType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if mediaType == "text/html" {
+		bodyStr = stripHTML(bodyStr)
+	}
+```
+
+3. **Change the truncation check** from operating on `len(body)` to `len(bodyStr)`, and from `body[:maxReadBytes]` to `bodyStr[:maxReadBytes]`:
+
+The current code (lines 151-153):
+```go
+	if len(body) > maxReadBytes {
+		bodyStr = string(body[:maxReadBytes]) + "\n... [response truncated, exceeded 10000 characters]"
+	}
+```
+
+Must become:
+```go
+	if len(bodyStr) > maxReadBytes {
+		bodyStr = bodyStr[:maxReadBytes] + "\n... [response truncated, exceeded 10000 characters]"
+	}
+```
+
+This ensures the pipeline is: read → strip (if HTML) → truncate.
+
+After making these changes:
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./internal/tool/` to verify compilation
+2. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run "TestURLFetch_HTML|TestURLFetch_NonHTML|TestURLFetch_PlainText|TestURLFetch_Missing|TestURLFetch_Non2xxHTML|TestURLFetch_Non2xxNonHTML|TestURLFetch_HTMLStripped" -v -count=1` to verify all 9 integration tests pass
+3. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -v -count=1 2>&1 | tail -40` to verify ALL tests pass (existing 19 + new 18 = 37 total)
+
+Return:
+- Compilation result
+- Integration test results
+- Full test suite results (pass/fail count)
