@@ -1,0 +1,14 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run:
+
+```bash
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && golangci-lint run ./internal/tool/
+```
+
+Return the full output. If there are any errors or warnings, report them. If clean, say so.
+
