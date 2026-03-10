@@ -1,0 +1,10 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+You are working in the Go project at /Users/jaronswab/go/src/github.com/jrswab/axe.
+
+Run `git diff --shortstat` and return the EXACT output. Do not edit any files.
+
