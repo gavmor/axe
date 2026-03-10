@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b3d5a38ef446",
+  "session_id": "ses_3276c589effezWIqSPUeUe78mw",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-10T16:50:18.467499Z",
+  "branch": "master",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/030_html_stripping_implement.md",
+    "go.mod",
+    "go.sum",
+    "internal/tool/url_fetch.go",
+    "internal/tool/url_fetch_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "b90ff0c64c77",
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 8363,
+    "cache_read_tokens": 396483,
+    "output_tokens": 3967,
+    "api_call_count": 26
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-10T16:50:18.322795Z",
+    "agent_lines": 499,
+    "human_added": 322,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 821,
+    "agent_percentage": 60.7795371498173
+  }
+}
