@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b3d5a38ef446",
+  "strategy": "manual-commit",
+  "branch": "master",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+    "docs/plans/029_http_request_timeout_implement.md",
+    "docs/plans/029_http_request_timeout_spec.md",
+    "docs/plans/030_html_stripping_implement.md",
+    "docs/plans/030_html_stripping_spec.md",
+    "go.mod",
+    "go.sum",
+    "internal/tool/url_fetch.go",
+    "internal/tool/url_fetch_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b3/d5a38ef446/0/metadata.json",
+      "transcript": "/b3/d5a38ef446/0/full.jsonl",
+      "context": "/b3/d5a38ef446/0/context.md",
+      "content_hash": "/b3/d5a38ef446/0/content_hash.txt",
+      "prompt": "/b3/d5a38ef446/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 414,
+    "cache_read_tokens": 9497,
+    "output_tokens": 80,
+    "api_call_count": 2
+  }
+}
