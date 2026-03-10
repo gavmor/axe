@@ -1,0 +1,1199 @@
+{
+  "info": {
+    "id": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+    "slug": "quick-squid",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "title": "GitHub issue #17 addressing",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 77,
+      "deletions": 0,
+      "files": 1
+    },
+    "time": {
+      "created": 1773150794554,
+      "updated": 1773151224136
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773150794562
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "plan",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "id": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "We need to address this Github Issue: https://github.com/jrswab/axe/issues/17",
+          "id": "REDACTED",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd805f33d001f2oiEp2dYno8eT"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773150794569,
+          "completed": 1773150941137
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.09821625,
+        "tokens": {
+          "total": 14539,
+          "input": 2,
+          "output": 392,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 14145
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd805fe44001NY0WoyQKibQzGG",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "\n\nLet me fetch the GitHub issue and explore the codebase to understand the context before planning.",
+          "time": {
+            "start": 1773150798367,
+            "end": 1773150798367
+          },
+          "id": "prt_cd805fe45001FQGZ2UrvkV70O4",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01R81uXNkfjtjUFXt9q8rvix",
+          "tool": "webfetch",
+          "state": {
+            "status": "completed",
+            "input": {
+              "url": "https://github.com/jrswab/axe/issues/17",
+              "format": "markdown"
+            },
+            "output": "                            url\\_fetch tool: add per-request timeout and HTML stripping · Issue #17 · jrswab/axe · GitHub                                              \n\n[Skip to content](#start-of-content)  \n\n## Navigation Menu\n\nToggle navigation\n\n[](/)\n\n[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fjrswab%2Faxe%2Fissues%2F17)\n\nAppearance settings\n\n \n\n-   Platform\n    \n    -   AI CODE CREATION\n        \n        -   [\n            \n            GitHub CopilotWrite better code with AI\n            \n            ](https://github.com/features/copilot)\n        -   [\n            \n            GitHub SparkBuild and deploy intelligent apps\n            \n            ](https://github.com/features/spark)\n        -   [\n            \n            GitHub ModelsManage and compare prompts\n            \n            ](https://github.com/features/models)\n        -   [\n            \n            MCP RegistryNewIntegrate external tools\n            \n            ](https://github.com/mcp)\n        \n    -   DEVELOPER WORKFLOWS\n        \n        -   [\n            \n            ActionsAutomate any workflow\n            \n            ](https://github.com/features/actions)\n        -   [\n            \n            CodespacesInstant dev environments\n            \n            ](https://github.com/features/codespaces)\n        -   [\n            \n            IssuesPlan and track work\n            \n            ](https://github.com/features/issues)\n        -   [\n            \n            Code ReviewManage code changes\n            \n            ](https://github.com/features/code-review)\n        \n    -   APPLICATION SECURITY\n        \n        -   [\n            \n            GitHub Advanced SecurityFind and fix vulnerabilities\n            \n            ](https://github.com/security/advanced-security)\n        -   [\n            \n            Code securitySecure your code as you build\n            \n            ](https://github.com/security/advanced-security/code-security)\n        -   [\n            \n            Secret protectionStop leaks before they start\n            \n            ](https://github.com/security/advanced-security/secret-protection)\n        \n    -   EXPLORE\n        \n        -   [Why GitHub](https://github.com/why-github)\n        -   [Documentation](https://docs.github.com)\n        -   [Blog](https://github.blog)\n        -   [Changelog](https://github.blog/changelog)\n        -   [Marketplace](https://github.com/marketplace)\n        \n    \n    [View all features](https://github.com/features)\n    \n-   Solutions\n    \n    -   BY COMPANY SIZE\n        \n        -   [Enterprises](https://github.com/enterprise)\n        -   [Small and medium teams](https://github.com/team)\n        -   [Startups](https://github.com/enterprise/startups)\n        -   [Nonprofits](https://github.com/solutions/industry/nonprofits)\n        \n    -   BY USE CASE\n        \n        -   [App Modernization](https://github.com/solutions/use-case/app-modernization)\n        -   [DevSecOps](https://github.com/solutions/use-case/devsecops)\n        -   [DevOps](https://github.com/solutions/use-case/devops)\n        -   [CI/CD](https://github.com/solutions/use-case/ci-cd)\n        -   [View all use cases](https://github.com/solutions/use-case)\n        \n    -   BY INDUSTRY\n        \n        -   [Healthcare](https://github.com/solutions/industry/healthcare)\n        -   [Financial services](https://github.com/solutions/industry/financial-services)\n        -   [Manufacturing](https://github.com/solutions/industry/manufacturing)\n        -   [Government](https://github.com/solutions/industry/government)\n        -   [View all industries](https://github.com/solutions/industry)\n        \n    \n    [View all solutions](https://github.com/solutions)\n    \n-   Resources\n    \n    -   EXPLORE BY TOPIC\n        \n        -   [AI](https://github.com/resources/articles?topic=ai)\n        -   [Software Development](https://github.com/resources/articles?topic=software-development)\n        -   [DevOps](https://github.com/resources/articles?topic=devops)\n        -   [Security](https://github.com/resources/articles?topic=security)\n        -   [View all topics](https://github.com/resources/articles)\n        \n    -   EXPLORE BY TYPE\n        \n        -   [Customer stories](https://github.com/customer-stories)\n        -   [Events & webinars](https://github.com/resources/events)\n        -   [Ebooks & reports](https://github.com/resources/whitepapers)\n        -   [Business insights](https://github.com/solutions/executive-insights)\n        -   [GitHub Skills](https://skills.github.com)\n        \n    -   SUPPORT & SERVICES\n        \n        -   [Documentation](https://docs.github.com)\n        -   [Customer support](https://support.github.com)\n        -   [Community forum](https://github.com/orgs/community/discussions)\n        -   [Trust center](https://github.com/trust-center)\n        -   [Partners](https://github.com/partners)\n        \n    \n    [View all resources](https://github.com/resources)\n    \n-   Open Source\n    \n    -   COMMUNITY\n        \n        -   [\n            \n            GitHub SponsorsFund open source developers\n            \n            ](https://github.com/sponsors)\n        \n    -   PROGRAMS\n        \n        -   [Security Lab](https://securitylab.github.com)\n        -   [Maintainer Community](https://maintainers.github.com)\n        -   [Accelerator](https://github.com/accelerator)\n        -   [Archive Program](https://archiveprogram.github.com)\n        \n    -   REPOSITORIES\n        \n        -   [Topics](https://github.com/topics)\n        -   [Trending](https://github.com/trending)\n        -   [Collections](https://github.com/collections)\n        \n    \n-   Enterprise\n    \n    -   ENTERPRISE SOLUTIONS\n        \n        -   [\n            \n            Enterprise platformAI-powered developer platform\n            \n            ](https://github.com/enterprise)\n        \n    -   AVAILABLE ADD-ONS\n        \n        -   [\n            \n            GitHub Advanced SecurityEnterprise-grade security features\n            \n            ](https://github.com/security/advanced-security)\n        -   [\n            \n            Copilot for BusinessEnterprise-grade AI features\n            \n            ](https://github.com/features/copilot/copilot-business)\n        -   [\n            \n            Premium SupportEnterprise-grade 24/7 support\n            \n            ](https://github.com/premium-support)\n        \n    \n-   [Pricing](https://github.com/pricing)\n\nSearch or jump to...\n\n# Search code, repositories, users, issues, pull requests...\n\nSearch\n\nClear\n\n[Search syntax tips](https://docs.github.com/search-github/github-code-search/understanding-github-code-search-syntax)\n\n# Provide feedback\n\nWe read every piece of feedback, and take your input very seriously.\n\n Include my email address so I can be contacted\n\nCancel Submit feedback\n\n# Saved searches\n\n## Use saved searches to filter your results more quickly\n\nName  \n\nQuery \n\nTo see all available qualifiers, see our [documentation](https://docs.github.com/search-github/github-code-search/understanding-github-code-search-syntax).\n\nCancel Create saved search\n\n[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fjrswab%2Faxe%2Fissues%2F17)\n\n[Sign up](/signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Fvoltron%2Fissues_fragments%2Fissue_layout&source=header-repo&source_repo=jrswab%2Faxe)\n\nAppearance settings\n\nResetting focus\n\nYou signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert\n\n[jrswab](/jrswab) / **[axe](/jrswab/axe)** Public\n\n-   [Notifications](/login?return_to=%2Fjrswab%2Faxe) You must be signed in to change notification settings\n-   [Fork 0](/login?return_to=%2Fjrswab%2Faxe)\n-   [Star 11](/login?return_to=%2Fjrswab%2Faxe)\n    \n\n-   [Code](/jrswab/axe)\n-   [Issues 1](/jrswab/axe/issues)\n-   [Pull requests 0](/jrswab/axe/pulls)\n-   [Actions](/jrswab/axe/actions)\n-   [Projects](/jrswab/axe/projects)\n-   [Security 0](/jrswab/axe/security)\n-   [Insights](/jrswab/axe/pulse)\n\nAdditional navigation options\n\n-   [Code](/jrswab/axe)\n-   [Issues](/jrswab/axe/issues)\n-   [Pull requests](/jrswab/axe/pulls)\n-   [Actions](/jrswab/axe/actions)\n-   [Projects](/jrswab/axe/projects)\n-   [Security](/jrswab/axe/security)\n-   [Insights](/jrswab/axe/pulse)\n\n \n\n# url\\_fetch tool: add per-request timeout and HTML stripping #17\n\n[New issue](/login?return_to=https://github.com/jrswab/axe/issues/17)\n\nCopy link\n\n[New issue](/login?return_to=https://github.com/jrswab/axe/issues/17)\n\nCopy link\n\nOpen\n\nOpen\n\n[url\\_fetch tool: add per-request timeout and HTML stripping](#top)#17\n\nCopy link\n\n[![@jrswab](https://avatars.githubusercontent.com/u/1689426?u=13a6523aff0f7ae68d14fb9fa708542b9bafd25a&v=4&size=80)](https://github.com/jrswab)\n\n## Description\n\n[![@jrswab](https://avatars.githubusercontent.com/u/1689426?u=13a6523aff0f7ae68d14fb9fa708542b9bafd25a&v=4&size=48)](https://github.com/jrswab)\n\n[jrswab](https://github.com/jrswab)\n\nopened [on Mar 10, 2026](https://github.com/jrswab/axe/issues/17#issue-4051885222)\n\nIssue body actions\n\n## Summary\n\nThe `url_fetch` tool in axe has two significant issues that make it unreliable for production agent runs. The Go implementation is missing functionality that the TypeScript counterpart in agent-engine already handles correctly.\n\n## Issues\n\n### 1\\. No per-request HTTP timeout (High)\n\n**File:** `internal/tool/url_fetch.go` (~line 99)\n\n`url_fetch` uses `http.DefaultClient.Do(req)` which has **no timeout configured**. If a target URL hangs without closing the connection, the fetch silently blocks for the entire agent timeout (default 120s) before context cancellation kicks in.\n\nThe TypeScript implementation in agent-engine uses `AbortSignal.timeout(15000)` (15 seconds) as a per-request guard.\n\n**Fix:** Add a 15-second per-request timeout using a derived context:\n\nfetchCtx, cancel := context.WithTimeout(ctx, 15\\*time.Second)\ndefer cancel()\nreq, err := http.NewRequestWithContext(fetchCtx, http.MethodGet, urlStr, nil)\n\n### 2\\. No HTML stripping for `text/html` responses (High)\n\n**File:** `internal/tool/url_fetch.go` (~lines 113–126)\n\nThe Go implementation returns the raw response body verbatim. For `text/html` responses, this means full HTML markup (including `<script>`, `<style>`, navigation, etc.) is sent to the LLM, wasting tokens and producing noisy, often unusable results.\n\nThe TypeScript implementation strips `<script>` blocks, `<style>` blocks, and all remaining HTML tags, returning clean text content.\n\n**Fix:** When the response `Content-Type` is `text/html`, strip:\n\n1.  `<script>...</script>` blocks\n2.  `<style>...</style>` blocks\n3.  All remaining HTML tags\n\nThen truncate to 10,000 characters (matching the TypeScript implementation's limit).\n\n## Context\n\nAll top-level agent runs go through the axe-worker Docker path, so this Go implementation is the production code path. The TypeScript implementation in agent-engine is only used for delegated child agent runs. This means the majority of `url_fetch` invocations hit the Go code with these deficiencies.\n\nReactions are currently unavailable\n\n## Metadata\n\n## Metadata\n\n### Assignees\n\nNo one assigned\n\n### Labels\n\nNo labels\n\nNo labels\n\n### Projects\n\nNo projects\n\n### Milestone\n\nNo milestone\n\n### Relationships\n\nNone yet\n\n### Development\n\nNo branches or pull requests\n\n## Issue actions\n\n## Footer\n\n[](https://github.com)© 2026 GitHub, Inc.\n\n### Footer navigation\n\n-   [Terms](https://docs.github.com/site-policy/github-terms/github-terms-of-service)\n-   [Privacy](https://docs.github.com/site-policy/privacy-policies/github-privacy-statement)\n-   [Security](https://github.com/security)\n-   [Status](https://www.githubstatus.com/)\n-   [Community](https://github.community/)\n-   [Docs](https://docs.github.com/)\n-   [Contact](https://support.github.com?tags=dotcom-footer)\n-   Manage cookies\n-   Do not share my personal information\n\nYou can’t perform that action at this time.",
+            "title": "https://github.com/jrswab/axe/issues/17 (text/html; charset=utf-8)",
+            "metadata": {
+              "truncated": false
+            },
+            "time": {
+              "start": 1773150798905,
+              "end": 1773150799342
+            }
+          },
+          "id": "prt_cd8060231001fvBujyQfQuld27",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01BGQdUM1qQ9t2dPzEJvrQCn",
+          "tool": "task",
+          "state": {
+            "status": "completed",
+            "input": {
+              "description": "Explore axe codebase structure",
+              "subagent_type": "explore",
+              "prompt": "Explore the codebase at /Users/jaronswab/go/src/github.com/jrswab/axe and provide a comprehensive overview:\n\n1. Read the top-level directory listing\n2. Read the go.mod file to understand dependencies\n3. Read the main.go or cmd/ entry point\n4. Read any docs/ directory contents\n5. Read the internal/ or pkg/ directories structure\n6. Look at how agents are currently defined and run (TOML config files, agent runner code)\n7. Look at how the CLI is structured (cobra commands, flags, etc.)\n8. Find any existing test files and patterns used\n\nReturn a detailed summary of:\n- Project structure (all directories and key files)\n- How agents are configured and executed\n- How the CLI handles commands, flags, and arguments\n- Key interfaces and types\n- Testing patterns used\n- Any existing logging/output mechanisms (stdout vs stderr)\n"
+            },
+            "output": "task_id: ses_327f9e9c7ffeuxuN2d3kuG0uy1 (for resuming to continue this task if needed)\n\n<task_result>\nHere is the comprehensive overview of the `axe` codebase:\n\n---\n\n## Project Structure\n\n```\n/Users/jaronswab/go/src/github.com/jrswab/axe/\n├── main.go                        # Entry point: embeds SKILL.md, calls cmd.Execute()\n├── go.mod                         # Module: github.com/jrswab/axe, Go 1.24.4\n├── cmd/                           # All CLI commands (package cmd)\n│   ├── root.go                    # Root cobra command, Execute(), exitCodeFromError()\n│   ├── run.go                     # \"axe run <agent>\" — the core execution path\n│   ├── agents.go                  # \"axe agents list|show|init|edit\"\n│   ├── config.go                  # \"axe config path|init\"\n│   ├── gc.go                      # \"axe gc\" — memory GC with LLM analysis\n│   ├── version.go                 # \"axe version\"\n│   ├── exit.go                    # ExitError type\n│   ├── args.go                    # exactArgs() validator helper\n│   ├── *_test.go                  # Tests for each command\n│   └── testdata/\n│       ├── agents/                # Fixture TOML configs (basic, with_skill, with_tools, etc.)\n│       ├── skills/stub/SKILL.md   # Fixture skill file\n│       └── golden/                # Golden output files for dry-run and JSON modes\n├── internal/\n│   ├── agent/                     # AgentConfig parsing, validation, Load(), List(), Scaffold()\n│   ├── config/                    # GlobalConfig (config.toml), API key resolution\n│   ├── provider/                  # Provider interface + Anthropic, OpenAI, Ollama, OpenCode impls\n│   ├── tool/                      # Tool registry, tool executors, call_agent sub-agent logic\n│   ├── toolname/                  # Constants for tool names\n│   ├── resolve/                   # Workdir, Files (glob), Skill, Stdin, BuildSystemPrompt\n│   ├── memory/                    # Memory file CRUD (FilePath, Append, Load, Trim, Count)\n│   ├── mcpclient/                 # MCP server client + router for tool dispatch\n│   ├── envinterp/                 # Environment variable interpolation\n│   ├── refusal/                   # LLM refusal detection\n│   ├── xdg/                       # XDG Base Directory spec helpers (GetConfigDir, GetDataDir)\n│   └── testutil/                  # Shared test helpers (SetupXDGDirs, BuildBinary, MockLLMServer, etc.)\n├── docs/design/                   # Design docs (agent-config-schema.md, cli-structure.md, etc.)\n├── skills/sample/SKILL.md         # Embedded sample skill (served via go:embed)\n└── examples/                      # Example agent configurations\n```\n\n---\n\n## How Agents Are Configured\n\nAgents are **TOML files** at `$XDG_CONFIG_HOME/axe/agents/<name>.toml`.\n\n**Struct: `agent.AgentConfig`** (`internal/agent/agent.go`):\n```go\ntype AgentConfig struct {\n    Name          string            // required\n    Description   string\n    Model         string            // required — \"provider/model-name\" format\n    SystemPrompt  string\n    Skill         string            // path to SKILL.md\n    Files         []string          // glob patterns for context files\n    Workdir       string\n    Tools         []string          // e.g. [\"read_file\", \"list_directory\"]\n    MCPServers    []MCPServerConfig // MCP server connections\n    SubAgents     []string          // names of allowed sub-agents\n    SubAgentsConf SubAgentsConfig   // max_depth (≤5), parallel (*bool), timeout\n    Memory        MemoryConfig      // enabled, path, last_n, max_entries\n    Params        ParamsConfig      // temperature, max_tokens\n}\n```\n\n**TOML example:**\n```toml\nname = \"pr-reviewer\"\nmodel = \"anthropic/claude-sonnet-4-20250514\"\nsystem_prompt = \"You are a code reviewer.\"\nskill = \"skills/code-review/SKILL.md\"\nfiles = [\"src/**/*.go\"]\ntools = [\"read_file\", \"run_command\"]\nsub_agents = [\"test-runner\"]\n\n[memory]\nenabled = true\nlast_n = 10\nmax_entries = 100\n\n[params]\ntemperature = 0.3\nmax_tokens = 4096\n```\n\n**Agent lifecycle (`agent.Load()`):**\n1. Resolve path: `$XDG_CONFIG_HOME/axe/agents/<name>.toml`\n2. Read file via `os.ReadFile`\n3. TOML-decode into `AgentConfig` (using `BurntSushi/toml`)\n4. Validate: name, model, sub-agent depth limits, tool names, MCP server fields\n\n---\n\n## How Agents Are Executed (`cmd/run.go`)\n\n`axe run <agent>` follows this 21-step pipeline:\n1. Load agent TOML (`agent.Load()`)\n2. Apply flag overrides: `--model`, `--skill`, `--workdir`\n3. Parse model string (`provider/model-name`)\n4. Load global config (`config.Load()` — `$XDG_CONFIG_HOME/axe/config.toml`)\n5. Resolve working directory (flag > TOML > cwd)\n6. Resolve file globs relative to workdir\n7. Load skill content from path (3-step fallback: direct → dir/SKILL.md → skills/<name>/SKILL.md)\n8. Read stdin (piped or empty)\n9. Build system prompt: `system_prompt + skill + context_files`\n10. Load memory entries into system prompt (if enabled)\n11. **Dry-run mode**: print resolved context and stop (no LLM call)\n12. Resolve API key (env var > config.toml > empty)\n13. Create provider (`provider.New()`)\n14. Build `provider.Request` with model, system, messages, temperature, max_tokens\n15. Build tool registry (`tool.RegisterAll()`)\n16. Inject `call_agent` tool if sub_agents configured\n17. Connect MCP servers, list and register their tools\n18. Call provider — either single-shot (no tools) or conversation loop (with tools, up to 50 turns)\n19. Execute tool calls in parallel (goroutines) or sequentially\n20. Output: plain text to stdout, or `--json` envelope\n21. Append memory entry after successful response\n\n**Sub-agent execution** (`internal/tool/tool.go`): when the LLM calls `call_agent`, the tool executor recursively loads and runs the named sub-agent as a full isolated pipeline (its own config, skill, files, memory). Depth is tracked and capped at 3 (default) or up to 5. Results return only final text — internal turns are never surfaced to the parent.\n\n---\n\n## CLI Structure\n\nBuilt with **cobra** (`github.com/spf13/cobra`). Commands are registered via `init()` functions.\n\n**Command tree:**\n```\naxe\n├── version                    # Print version\n├── config\n│   ├── path                   # Print XDG config dir\n│   └── init                   # Create dir structure + copy sample skill + scaffold config.toml\n├── agents\n│   ├── list                   # List all valid agent configs\n│   ├── show <agent>           # Pretty-print agent config fields\n│   ├── init <agent>           # Create scaffolded TOML\n│   └── edit <agent>           # Open config in $EDITOR\n├── run <agent>                # Execute an agent\n│   ├── --skill <path>         # Override skill path\n│   ├── --workdir <path>       # Override working directory\n│   ├── --model <p/m>          # Override model (provider/model-name)\n│   ├── --timeout <int>        # Request timeout in seconds (default 120)\n│   ├── --dry-run              # Show resolved context, skip LLM call\n│   ├── --verbose / -v         # Print debug info to stderr\n│   └── --json                 # Output wrapped JSON envelope\n└── gc [agent]                 # Memory GC: analyze + trim agent memory\n    ├── --dry-run              # Analyze but don't trim\n    ├── --all                  # Run GC on all memory-enabled agents\n    └── --model <p/m>          # Override model for GC analysis\n```\n\n**Key patterns:**\n- `exactArgs(n)` — custom `cobra.PositionalArgs` that generates actionable error messages with extracted placeholder names from `Use` string\n- `ExitError{Code, Err}` — wraps errors with exit codes (1=logic, 2=config, 3=provider/auth)\n- `SilenceErrors: true`, `SilenceUsage: true` on root — errors printed manually to `os.Stderr` with `fmt.Fprintln`\n- All output uses `cmd.OutOrStdout()` / `cmd.ErrOrStderr()` (not bare `os.Stdout`) enabling in-test redirection\n\n---\n\n## Key Interfaces and Types\n\n**`provider.Provider`** (the central interface):\n```go\ntype Provider interface {\n    Send(ctx context.Context, req *Request) (*Response, error)\n}\n```\n\n**`provider.Request` / `provider.Response`** — LLM request/response with `Tools`, `ToolCalls`, `ToolResults` for multi-turn tool use.\n\n**`provider.Tool` / `ToolCall` / `ToolResult`** — Provider-agnostic tool definitions, calls, and results.\n\n**`tool.Registry`** — Map of tool name → `ToolEntry{Definition func, Execute func}`. `RegisterAll()` registers all 7 built-in tools: `list_directory`, `read_file`, `write_file`, `edit_file`, `run_command`, `url_fetch`, `web_search`.\n\n**`tool.ExecContext`** — Carries `Workdir`, `Stderr`, `Verbose` into tool executors (no global state).\n\n**`tool.ExecuteOptions`** — Carries allowed agents, depth, global config, and MCP router into sub-agent invocations.\n\n**`agent.AgentConfig`** — The parsed TOML config (see above).\n\n**`config.GlobalConfig`** — Parsed `config.toml`; provides `ResolveAPIKey(provider)` and `ResolveBaseURL(provider)` with env-var > config file precedence.\n\n**`mcpclient.Router`** — Routes tool dispatch to the correct MCP server client; handles registration with collision detection against built-in tool names.\n\n**`resolve.FileContent`** — `{Path string, Content string}` for resolved glob matches.\n\n**`cmd.ExitError`** — `{Code int, Err error}` maps provider/config errors to specific exit codes.\n\n---\n\n## Testing Patterns\n\n### Unit Tests (internal packages)\n- **Table-driven** using `[]struct{name, input, want}` + `t.Run(tt.name, ...)` — used throughout (agent validation, tool dispatch, resolve, memory)\n- **No mocks**: use real file I/O with `t.TempDir()` and `t.Setenv(\"XDG_CONFIG_HOME\", tmpDir)` for isolation\n- Helper functions: `setupAgentsDir(t)`, `writeAgentFile(t, dir, name, content)` are `t.Helper()`-annotated\n- Tests live in the same package (white-box) for internal packages\n\n### Command Tests (`cmd/` package)\n- **In-process tests** (`package cmd`): redirect cobra I/O with `rootCmd.SetOut(buf)`, `rootCmd.SetErr(errBuf)`, `rootCmd.SetIn(reader)`, then call `rootCmd.Execute()`\n- **Mock HTTP servers** (`net/http/httptest`): `httptest.NewServer` to fake Anthropic/OpenAI/Ollama APIs; each test calls `defer server.Close()`\n- `resetRunCmd(t)` resets all flag values between tests (since cobra flag state is shared across tests in-process)\n- `setupRunTestAgent(t, name, toml)` — creates temp XDG dir, writes agent TOML, sets env\n\n### Smoke / Integration Tests\n- **`testutil.BuildBinary(t)`**: compiles the real binary once (`sync.Once`) per test process, returns path\n- **`runAxe(t, env, stdin, args...)`**: spawns the binary as a child process, captures stdout/stderr/exit code\n- Useful for testing exit codes and full end-to-end pipeline behavior\n\n### Golden File Tests (`cmd/golden_test.go`)\n- Compares command output against files in `cmd/testdata/golden/`\n- Supports `--update-golden` flag or `UPDATE_GOLDEN=1` env var to regenerate\n- **Masking**: non-deterministic values (workdir paths, `duration_ms`, tool outputs) are replaced with `{{WORKDIR}}`, `{{DURATION_MS}}`, `{{TOOL_OUTPUT}}` before comparison\n\n### `internal/testutil` Package\n- `SetupXDGDirs(t)` — creates isolated XDG dirs, sets `XDG_CONFIG_HOME` and `XDG_DATA_HOME` env vars\n- `SeedFixtureAgents(t, src, dst)` / `SeedFixtureSkills(t, src, dst)` — copy testdata fixtures into temp dirs\n- `MockLLMServer` with `NewMockLLMServer(t, responses)` — queued response mock; fails test if more requests arrive than responses queued\n- Factory helpers: `AnthropicResponse()`, `OpenAIResponse()`, `AnthropicToolUseResponse()`, `OpenAIToolCallResponse()`, `SlowResponse(duration)`\n\n---\n\n## Logging / Output Mechanisms\n\nThe project rigorously separates stdout from stderr:\n\n| Channel | Used for |\n|---------|----------|\n| `cmd.OutOrStdout()` / `fmt.Fprint(cmd.OutOrStdout(), ...)` | **Final agent response** (plain or JSON), dry-run output, version, config path, agents list |\n| `cmd.ErrOrStderr()` / `fmt.Fprintf(cmd.ErrOrStderr(), ...)` | **Verbose debug info** (`--verbose`): model, workdir, skill, tokens, duration; warnings (memory, MCP), MCP connection logs, sub-agent progress |\n| `fmt.Fprintln(os.Stderr, err)` in `Execute()` | Fatal errors at top level |\n\n**Verbose output** (all to stderr):\n```\nModel:    anthropic/claude-sonnet-4-20250514\nWorkdir:  /path/to/work\nSkill:    skills/sample/SKILL.md\nFiles:    3 file(s)\nStdin:    yes\nTimeout:  120s\nParams:   temperature=0.3, max_tokens=4096\nMemory:   5 entries loaded from /data/axe/memory/agent.md\n[turn 1] Sending request (1 messages, 0 tool calls pending)\n[turn 1] Received response: tool_use (2 tool calls)\n[mcp] Connecting to \"github\" at https://... (sse)\n[sub-agent] Calling \"helper\" (depth 1) with task: ...\nDuration: 1234ms\nTokens:   100 input, 50 output (cumulative)\nStop:     end_turn\n```\n\n**JSON output mode** (`--json`): wraps response in a single-line JSON envelope on stdout:\n```json\n{\"model\":\"...\", \"content\":\"...\", \"input_tokens\":10, \"output_tokens\":5,\n \"stop_reason\":\"end_turn\", \"duration_ms\":1234, \"tool_calls\":2,\n \"tool_call_details\":[...], \"refused\":false}\n```\n</task_result>",
+            "title": "Explore axe codebase structure",
+            "metadata": {
+              "sessionId": "ses_327f9e9c7ffeuxuN2d3kuG0uy1",
+              "model": {
+                "providerID": "anthropic",
+                "modelID": "claude-sonnet-4-6"
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773150803511,
+              "end": 1773150941072
+            }
+          },
+          "id": "prt_cd806043e001DXVrAPaxYJrFgd",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.09821625,
+          "tokens": {
+            "total": 14539,
+            "input": 2,
+            "output": 392,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 14145
+            }
+          },
+          "id": "prt_cd8082f91001vuAD4UXN4Dx8zt",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773150941138,
+          "completed": 1773150945085
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.060915,
+        "tokens": {
+          "total": 22340,
+          "input": 1,
+          "output": 140,
+          "reasoning": 0,
+          "cache": {
+            "read": 14145,
+            "write": 8054
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8082fd20025JX5txCJjhTmIc",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "REDACTED",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8082fd20025JX5txCJjhTmIc"
+        },
+        {
+          "type": "text",
+          "text": "Now let me look at the specific file that needs to be modified:",
+          "time": {
+            "start": 1773150944274,
+            "end": 1773150944274
+          },
+          "id": "prt_cd8083866001lwFRsrowX3Ce89",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8082fd20025JX5txCJjhTmIc"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"net/http\"\n8: \t\"net/url\"\n9: \n10: \t\"github.com/jrswab/axe/internal/provider\"\n11: \t\"github.com/jrswab/axe/internal/toolname\"\n12: )\n13: \n14: const maxReadBytes = 10000\n15: \n16: func truncateURL(urlStr string, maxLen int) string {\n17: \tif len(urlStr) <= maxLen {\n18: \t\treturn urlStr\n19: \t}\n20: \treturn urlStr[:maxLen] + \"...\"\n21: }\n22: \n23: func sanitizeURL(urlStr string) string {\n24: \tparsedURL, err := url.Parse(urlStr)\n25: \tif err != nil {\n26: \t\treturn \"invalid-url\"\n27: \t}\n28: \n29: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n30: \t\treturn \"invalid-url\"\n31: \t}\n32: \n33: \tpath := parsedURL.EscapedPath()\n34: \tif path == \"\" {\n35: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n36: \t}\n37: \n38: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n39: }\n40: \n41: func urlFetchEntry() ToolEntry {\n42: \treturn ToolEntry{\n43: \t\tDefinition: urlFetchDefinition,\n44: \t\tExecute:    urlFetchExecute,\n45: \t}\n46: }\n47: \n48: func urlFetchDefinition() provider.Tool {\n49: \treturn provider.Tool{\n50: \t\tName:        toolname.URLFetch,\n51: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n52: \t\tParameters: map[string]provider.ToolParameter{\n53: \t\t\t\"url\": {\n54: \t\t\t\tType:        \"string\",\n55: \t\t\t\tDescription: \"The URL to fetch.\",\n56: \t\t\t\tRequired:    true,\n57: \t\t\t},\n58: \t\t},\n59: \t}\n60: }\n61: \n62: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n63: \turlStr := call.Arguments[\"url\"]\n64: \tstatusCode := 0\n65: \n66: \tdefer func() {\n67: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n68: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n69: \t\tif statusCode != 0 {\n70: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n71: \t\t} else if result.IsError {\n72: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n73: \t\t}\n74: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n75: \t}()\n76: \n77: \tif urlStr == \"\" {\n78: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n79: \t}\n80: \n81: \tparsedURL, err := url.Parse(urlStr)\n82: \tif err != nil {\n83: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n84: \t}\n85: \n86: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n87: \t\treturn provider.ToolResult{\n88: \t\t\tCallID:  call.ID,\n89: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n90: \t\t\tIsError: true,\n91: \t\t}\n92: \t}\n93: \n94: \treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n95: \tif err != nil {\n96: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n97: \t}\n98: \n99: \tresp, err := http.DefaultClient.Do(req)\n100: \tif err != nil {\n101: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n102: \t}\n103: \tdefer func() {\n104: \t\t_ = resp.Body.Close()\n105: \t}()\n106: \tstatusCode = resp.StatusCode\n107: \n108: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n109: \tif err != nil {\n110: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n111: \t}\n112: \n113: \tbodyStr := string(body)\n114: \tif len(body) > maxReadBytes {\n115: \t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n116: \t}\n117: \n118: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n119: \t\treturn provider.ToolResult{\n120: \t\t\tCallID:  call.ID,\n121: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n122: \t\t\tIsError: true,\n123: \t\t}\n124: \t}\n125: \n126: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n127: }\n\n(End of file - total 127 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"net/url\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst maxReadBytes = 10000\n\nfunc truncateURL(urlStr string, maxLen int) string {\n\tif len(urlStr) <= maxLen {\n\t\treturn urlStr\n\t}\n\treturn urlStr[:maxLen] + \"...\"",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773150944666,
+              "end": 1773150944672
+            }
+          },
+          "id": "prt_cd8083c17001U13eZq07ZhhlJz",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8082fd20025JX5txCJjhTmIc"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_012tCT7ZG4jT4ePmcQjPBP7r",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "internal/tool/*_test.go"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/run_command_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/edit_file_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/list_directory_test.go\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation_test.go",
+            "title": "",
+            "metadata": {
+              "count": 11,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773150945003,
+              "end": 1773150945018
+            }
+          },
+          "id": "prt_cd8083d9c001EVxwcM4pSH7lea",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8082fd20025JX5txCJjhTmIc"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.060915,
+          "tokens": {
+            "total": 22340,
+            "input": 1,
+            "output": 140,
+            "reasoning": 0,
+            "cache": {
+              "read": 14145,
+              "write": 8054
+            }
+          },
+          "id": "prt_cd8083efa001JfL5r9avo9TfNX",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8082fd20025JX5txCJjhTmIc"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773150945086,
+          "completed": 1773150949114
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03014825,
+        "tokens": {
+          "total": 24617,
+          "input": 1,
+          "output": 210,
+          "reasoning": 0,
+          "cache": {
+            "read": 22199,
+            "write": 2207
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8083f3e002zkENGznLrZ07JS",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd8084773001LtNR6XCRR02JbO",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8083f3e002zkENGznLrZ07JS"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"net\"\n7: \t\"net/http\"\n8: \t\"net/http/httptest\"\n9: \t\"strings\"\n10: \t\"testing\"\n11: \t\"time\"\n12: \n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: )\n15: \n16: func TestURLFetch_Success(t *testing.T) {\n17: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n18: \t\t_, _ = w.Write([]byte(\"hello world\"))\n19: \t}))\n20: \tdefer ts.Close()\n21: \n22: \tentry := urlFetchEntry()\n23: \tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n24: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n25: \n26: \tif result.IsError {\n27: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n28: \t}\n29: \tif result.Content != \"hello world\" {\n30: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n31: \t}\n32: \tif result.CallID != call.ID {\n33: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n34: \t}\n35: }\n36: \n37: func TestURLFetch_EmptyURL(t *testing.T) {\n38: \tentry := urlFetchEntry()\n39: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n40: \n41: \tif !result.IsError {\n42: \t\tt.Fatal(\"expected IsError true\")\n43: \t}\n44: \tif !strings.Contains(result.Content, \"url is required\") {\n45: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n46: \t}\n47: }\n48: \n49: func TestURLFetch_MissingURLArgument(t *testing.T) {\n50: \tentry := urlFetchEntry()\n51: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n52: \n53: \tif !result.IsError {\n54: \t\tt.Fatal(\"expected IsError true\")\n55: \t}\n56: \tif !strings.Contains(result.Content, \"url is required\") {\n57: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n58: \t}\n59: }\n60: \n61: func TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n62: \tentry := urlFetchEntry()\n63: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n64: \n65: \tif !result.IsError {\n66: \t\tt.Fatal(\"expected IsError true\")\n67: \t}\n68: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n69: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n70: \t}\n71: \tif !strings.Contains(result.Content, \"file\") {\n72: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n73: \t}\n74: }\n75: \n76: func TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n77: \tentry := urlFetchEntry()\n78: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n79: \n80: \tif !result.IsError {\n81: \t\tt.Fatal(\"expected IsError true\")\n82: \t}\n83: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n84: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n85: \t}\n86: \tif !strings.Contains(result.Content, \"ftp\") {\n87: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n88: \t}\n89: }\n90: \n91: func TestURLFetch_NoScheme(t *testing.T) {\n92: \tentry := urlFetchEntry()\n93: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n94: \n95: \tif !result.IsError {\n96: \t\tt.Fatal(\"expected IsError true\")\n97: \t}\n98: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n99: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n100: \t}\n101: }\n102: \n103: func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n104: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n105: \t\tw.WriteHeader(http.StatusNotFound)\n106: \t\t_, _ = w.Write([]byte(\"not found\"))\n107: \t}))\n108: \tdefer ts.Close()\n109: \n110: \tentry := urlFetchEntry()\n111: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n112: \n113: \tif !result.IsError {\n114: \t\tt.Fatal(\"expected IsError true\")\n115: \t}\n116: \tif !strings.Contains(result.Content, \"HTTP 404\") {\n117: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n118: \t}\n119: \tif !strings.Contains(result.Content, \"not found\") {\n120: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n121: \t}\n122: }\n123: \n124: func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n125: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n126: \t\tw.WriteHeader(http.StatusInternalServerError)\n127: \t\t_, _ = w.Write([]byte(\"internal error\"))\n128: \t}))\n129: \tdefer ts.Close()\n130: \n131: \tentry := urlFetchEntry()\n132: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n133: \n134: \tif !result.IsError {\n135: \t\tt.Fatal(\"expected IsError true\")\n136: \t}\n137: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n138: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n139: \t}\n140: \tif !strings.Contains(result.Content, \"internal error\") {\n141: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n142: \t}\n143: }\n144: \n145: func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n146: \tlargeBody := strings.Repeat(\"A\", 20000)\n147: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n148: \t\t_, _ = w.Write([]byte(largeBody))\n149: \t}))\n150: \tdefer ts.Close()\n151: \n152: \tentry := urlFetchEntry()\n153: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n154: \n155: \tif result.IsError {\n156: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n157: \t}\n158: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n159: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n160: \t}\n161: \tif len(result.Content) <= 10000 {\n162: \t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n163: \t}\n164: \tif len(result.Content) >= 20000 {\n165: \t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n166: \t}\n167: }\n168: \n169: func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n170: \texactBody := strings.Repeat(\"B\", 10000)\n171: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n172: \t\t_, _ = w.Write([]byte(exactBody))\n173: \t}))\n174: \tdefer ts.Close()\n175: \n176: \tentry := urlFetchEntry()\n177: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n178: \n179: \tif result.IsError {\n180: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n181: \t}\n182: \tif strings.Contains(result.Content, \"truncated\") {\n183: \t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n184: \t}\n185: \tif len(result.Content) != 10000 {\n186: \t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n187: \t}\n188: }\n189: \n190: func TestURLFetch_ContextCancellation(t *testing.T) {\n191: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n192: \t\ttimer := time.NewTimer(10 * time.Second)\n193: \t\tdefer timer.Stop()\n194: \n195: \t\tselect {\n196: \t\tcase <-r.Context().Done():\n197: \t\t\treturn\n198: \t\tcase <-timer.C:\n199: \t\t\t_, _ = w.Write([]byte(\"too late\"))\n200: \t\t}\n201: \t}))\n202: \tdefer ts.Close()\n203: \n204: \tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n205: \tdefer cancel()\n206: \n207: \tentry := urlFetchEntry()\n208: \tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n209: \n210: \tif !result.IsError {\n211: \t\tt.Fatal(\"expected IsError true\")\n212: \t}\n213: }\n214: \n215: func TestURLFetch_ConnectionRefused(t *testing.T) {\n216: \tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n217: \tif err != nil {\n218: \t\tt.Fatalf(\"net.Listen error: %v\", err)\n219: \t}\n220: \taddr := listener.Addr().String()\n221: \tif err := listener.Close(); err != nil {\n222: \t\tt.Fatalf(\"listener.Close error: %v\", err)\n223: \t}\n224: \n225: \tentry := urlFetchEntry()\n226: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n227: \n228: \tif !result.IsError {\n229: \t\tt.Fatal(\"expected IsError true\")\n230: \t}\n231: \tif result.Content == \"\" {\n232: \t\tt.Fatal(\"expected non-empty error content\")\n233: \t}\n234: }\n235: \n236: func TestURLFetch_CallIDPassthrough(t *testing.T) {\n237: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n238: \t\t_, _ = w.Write([]byte(\"ok\"))\n239: \t}))\n240: \tdefer ts.Close()\n241: \n242: \tentry := urlFetchEntry()\n243: \tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n244: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n245: \n246: \tif result.CallID != \"uf-unique-42\" {\n247: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n248: \t}\n249: }\n250: \n251: func TestURLFetch_EmptyResponseBody(t *testing.T) {\n252: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n253: \t\tw.WriteHeader(http.StatusOK)\n254: \t}))\n255: \tdefer ts.Close()\n256: \n257: \tentry := urlFetchEntry()\n258: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n259: \n260: \tif result.IsError {\n261: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n262: \t}\n263: \tif result.Content != \"\" {\n264: \t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n265: \t}\n266: }\n267: \n268: func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n269: \tlargeBody := strings.Repeat(\"C\", 20000)\n270: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n271: \t\tw.WriteHeader(http.StatusInternalServerError)\n272: \t\t_, _ = w.Write([]byte(largeBody))\n273: \t}))\n274: \tdefer ts.Close()\n275: \n276: \tentry := urlFetchEntry()\n277: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n278: \n279: \tif !result.IsError {\n280: \t\tt.Fatal(\"expected IsError true\")\n281: \t}\n282: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n283: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n284: \t}\n285: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n286: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n287: \t}\n288: }\n289: \n290: func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n291: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n292: \t\t_, _ = w.Write([]byte(\"ok\"))\n293: \t}))\n294: \tdefer ts.Close()\n295: \n296: \ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n297: \n298: \tvar stderr bytes.Buffer\n299: \tentry := urlFetchEntry()\n300: \t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n301: \n302: \tlogOutput := stderr.String()\n303: \tif strings.Contains(logOutput, \"user:pass\") {\n304: \t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n305: \t}\n306: \tif strings.Contains(logOutput, \"token=abc\") {\n307: \t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n308: \t}\n309: \tif strings.Contains(logOutput, \"#frag\") {\n310: \t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n311: \t}\n312: \tif !strings.Contains(logOutput, \"/secret/path\") {\n313: \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n314: \t}\n315: }\n\n(End of file - total 315 lines)\n</content>",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773150948090,
+              "end": 1773150948097
+            }
+          },
+          "id": "prt_cd8084773002vAPzKfDIU0zOER",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8083f3e002zkENGznLrZ07JS"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "grep -r \"html\" /Users/jaronswab/go/src/github.com/jrswab/axe/go.mod /Users/jaronswab/go/src/github.com/jrswab/axe/go.sum 2>/dev/null | head -20",
+              "description": "Check for existing HTML dependencies"
+            },
+            "output": "",
+            "title": "Check for existing HTML dependencies",
+            "metadata": {
+              "output": "",
+              "exit": 0,
+              "description": "Check for existing HTML dependencies",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773150949016,
+              "end": 1773150949050
+            }
+          },
+          "id": "prt_cd8084afc00192lNVq7MBk1Phl",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8083f3e002zkENGznLrZ07JS"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.03014825,
+          "tokens": {
+            "total": 24617,
+            "input": 1,
+            "output": 210,
+            "reasoning": 0,
+            "cache": {
+              "read": 22199,
+              "write": 2207
+            }
+          },
+          "id": "prt_cd8084ebb001xhBeTnMdxot8d6",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8083f3e002zkENGznLrZ07JS"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773150949115,
+          "completed": 1773150953941
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.04672675,
+        "tokens": {
+          "total": 29624,
+          "input": 1,
+          "output": 102,
+          "reasoning": 0,
+          "cache": {
+            "read": 24406,
+            "write": 5115
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8084efb002tgrO8N4e6cq64Q",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd8085994001ev6WveuTgQGF27",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8084efb002tgrO8N4e6cq64Q"
+        },
+        {
+          "type": "text",
+          "text": "Now let me check the go.mod for existing dependencies and look at the TypeScript implementation referenced in the issue:",
+          "time": {
+            "start": 1773150953138,
+            "end": 1773150953138
+          },
+          "id": "prt_cd80859950010K2Yjg041dmyCk",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8084efb002tgrO8N4e6cq64Q"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_012GmTTMcGQkfRGP9tSd2fJb",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/go.mod"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/go.mod</path>\n<type>file</type>\n<content>1: module github.com/jrswab/axe\n2: \n3: go 1.24.4\n4: \n5: require (\n6: \tgithub.com/BurntSushi/toml v1.6.0\n7: \tgithub.com/modelcontextprotocol/go-sdk v1.4.0\n8: \tgithub.com/spf13/cobra v1.10.2\n9: )\n10: \n11: require (\n12: \tgithub.com/google/jsonschema-go v0.4.2 // indirect\n13: \tgithub.com/inconshreveable/mousetrap v1.1.0 // indirect\n14: \tgithub.com/segmentio/asm v1.1.3 // indirect\n15: \tgithub.com/segmentio/encoding v0.5.3 // indirect\n16: \tgithub.com/spf13/pflag v1.0.9 // indirect\n17: \tgithub.com/yosida95/uritemplate/v3 v3.0.2 // indirect\n18: \tgolang.org/x/oauth2 v0.34.0 // indirect\n19: \tgolang.org/x/sys v0.40.0 // indirect\n20: )\n\n(End of file - total 20 lines)\n</content>",
+            "title": "go.mod",
+            "metadata": {
+              "preview": "module github.com/jrswab/axe\n\ngo 1.24.4\n\nrequire (\n\tgithub.com/BurntSushi/toml v1.6.0\n\tgithub.com/modelcontextprotocol/go-sdk v1.4.0\n\tgithub.com/spf13/cobra v1.10.2\n)\n\nrequire (\n\tgithub.com/google/jsonschema-go v0.4.2 // indirect\n\tgithub.com/inconshreveable/mousetrap v1.1.0 // indirect\n\tgithub.com/segmentio/asm v1.1.3 // indirect\n\tgithub.com/segmentio/encoding v0.5.3 // indirect\n\tgithub.com/spf13/pflag v1.0.9 // indirect\n\tgithub.com/yosida95/uritemplate/v3 v3.0.2 // indirect\n\tgolang.org/x/oauth2 v0.34.0 // indirect\n\tgolang.org/x/sys v0.40.0 // indirect\n)",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773150953851,
+              "end": 1773150953854
+            }
+          },
+          "id": "prt_cd8085eb2001Cml7btjZM3eV5R",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8084efb002tgrO8N4e6cq64Q"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.04672675,
+          "tokens": {
+            "total": 29624,
+            "input": 1,
+            "output": 102,
+            "reasoning": 0,
+            "cache": {
+              "read": 24406,
+              "write": 5115
+            }
+          },
+          "id": "prt_cd808618b0013hAxfFjlRmF3w8",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd8084efb002tgrO8N4e6cq64Q"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773150953942,
+          "completed": 1773151069945
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.033903,
+        "tokens": {
+          "total": 30655,
+          "input": 1,
+          "output": 643,
+          "reasoning": 0,
+          "cache": {
+            "read": 29521,
+            "write": 490
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80861d6002mohFqJh8q1zHmY",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd8086a050012FSJbTh5Hsl3dk",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80861d6002mohFqJh8q1zHmY"
+        },
+        {
+          "type": "text",
+          "text": "Good. I now have all the context needed to form a plan. Let me summarize the issue and present the plan.\n\n---\n\n## Issue Summary\n\n**GitHub Issue #17**: `url_fetch` tool needs two fixes:\n\n1. **No per-request HTTP timeout** — Currently uses `http.DefaultClient.Do(req)` with no timeout. A hanging URL blocks for the entire agent timeout (120s). Should have a 15-second per-request timeout.\n\n2. **No HTML stripping for `text/html` responses** — Raw HTML (scripts, styles, nav, etc.) is returned verbatim, wasting tokens. Should strip `<script>`, `<style>` blocks, then all remaining HTML tags, returning clean text.\n\n## Plan\n\nThe changes are scoped to a single file: `internal/tool/url_fetch.go`, with corresponding test additions in `internal/tool/url_fetch_test.go`.\n\n### Pre-implementation analysis\n\nBefore coding, per your rules:\n\n1. **Is this even necessary?** — Yes. Both issues are real production concerns: a hanging URL blocks agents for 2 minutes, and raw HTML wastes LLM tokens badly.\n2. **What can I remove?** — Nothing to remove. These are additions to existing behavior.\n3. **Simplest approach?** — Use `context.WithTimeout` for the timeout (stdlib, zero deps). Use `regexp` for HTML stripping (stdlib, no new dependency needed). The stripping is simple: remove `<script>...</script>`, `<style>...</style>`, then all tags. No need for a full HTML parser.\n4. **Now improve** — See implementation details below.",
+          "time": {
+            "start": 1773150966987,
+            "end": 1773150966987
+          },
+          "id": "prt_cd8086a06001GX3SbGha30I0G9",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80861d6002mohFqJh8q1zHmY"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "question",
+          "state": {
+            "status": "completed",
+            "input": {
+              "questions": [
+                {
+                  "question": "For HTML stripping, I see two approaches. Regex-based stripping (remove <script>...</script>, <style>...</style>, then all HTML tags) is simpler and zero-dependency. Alternatively, we could use golang.org/x/net/html for proper DOM parsing and text extraction, which handles edge cases better (e.g., malformed HTML, nested scripts) but adds a dependency. The issue explicitly describes the regex approach matching the TypeScript implementation. Which do you prefer?",
+                  "header": "HTML stripping approach",
+                  "options": [
+                    {
+                      "label": "Regex-based (Recommended)",
+                      "description": "Use regexp to strip <script>, <style>, and tags. Zero new deps, matches TypeScript implementation, simpler. May mishandle deeply malformed HTML but sufficient for the use case."
+                    },
+                    {
+                      "label": "golang.org/x/net/html parser",
+                      "description": "Full DOM parse, extract text nodes. Handles edge cases better but adds a dependency and more code."
+                    }
+                  ]
+                }
+              ]
+            },
+            "output": "User has answered your questions: \"For HTML stripping, I see two approaches. Regex-based stripping (remove <script>...</script>, <style>...</style>, then all HTML tags) is simpler and zero-dependency. Alternatively, we could use golang.org/x/net/html for proper DOM parsing and text extraction, which handles edge cases better (e.g., malformed HTML, nested scripts) but adds a dependency. The issue explicitly describes the regex approach matching the TypeScript implementation. Which do you prefer?\"=\"golang.org/x/net/html parser\". You can now continue with the user's answers in mind.",
+            "title": "Asked 1 question",
+            "metadata": {
+              "answers": [
+                [
+                  "golang.org/x/net/html parser"
+                ]
+              ],
+              "truncated": false
+            },
+            "time": {
+              "start": 1773150972538,
+              "end": 1773151069828
+            }
+          },
+          "id": "prt_cd80894cc00111et4YRrhArsZ8",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80861d6002mohFqJh8q1zHmY"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.033903,
+          "tokens": {
+            "total": 30655,
+            "input": 1,
+            "output": 643,
+            "reasoning": 0,
+            "cache": {
+              "read": 29521,
+              "write": 490
+            }
+          },
+          "id": "prt_cd80a2686001qaIEupa43s2IiJ",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80861d6002mohFqJh8q1zHmY"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151069946,
+          "completed": 1773151092270
+        },
+        "parentID": "msg_cd805f33d001f2oiEp2dYno8eT",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0466105,
+        "tokens": {
+          "total": 31876,
+          "input": 1,
+          "output": 1064,
+          "reasoning": 0,
+          "cache": {
+            "read": 30011,
+            "write": 800
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd80a26fa002ekV0mR28S1b5nJ",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80a317a0015MpRAvMeDqswek",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a26fa002ekV0mR28S1b5nJ"
+        },
+        {
+          "type": "text",
+          "text": "Got it — we'll use `golang.org/x/net/html` for proper DOM-based text extraction.\n\n### Implementation Plan\n\nHere's the detailed plan with red/green TDD:\n\n**Branch**: Create `issue-17-url-fetch-timeout-html-strip` off `develop`\n\n#### Step 1: Add dependency\n- `go get golang.org/x/net/html`\n\n#### Step 2: Per-request timeout (TDD)\n\n**Red**: Write test `TestURLFetch_PerRequestTimeout` in `url_fetch_test.go`\n- Start an `httptest.Server` that sleeps for 30 seconds before responding\n- Call `urlFetchExecute` with `context.Background()` (no parent timeout)\n- Assert the call returns an error within ~15 seconds (the per-request timeout), not 30+\n- Also verify the error content mentions context deadline or timeout\n\n**Green**: Modify `urlFetchExecute` in `url_fetch.go`\n- After URL validation, before creating the request, derive a 15-second timeout context:\n  ```go\n  const fetchTimeout = 15 * time.Second\n  fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)\n  defer cancel()\n  ```\n- Use `fetchCtx` in `http.NewRequestWithContext` instead of `ctx`\n\n**Refactor**: Extract `fetchTimeout` as a package-level const for clarity.\n\n**Note**: The existing `TestURLFetch_ContextCancellation` test uses a 50ms parent context timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — that test continues to pass unchanged.\n\n#### Step 3: HTML stripping (TDD)\n\n**Red**: Write tests for the HTML stripping function and integration:\n\n1. `TestStripHTML_RemovesScriptsAndStyles` — HTML with `<script>` and `<style>` blocks → text with those removed\n2. `TestStripHTML_RemovesAllTags` — HTML with `<div>`, `<p>`, `<a>`, etc. → plain text\n3. `TestStripHTML_PreservesPlainText` — Plain text input → unchanged\n4. `TestStripHTML_HandlesNestedElements` — Deeply nested HTML → correct text extraction\n5. `TestStripHTML_HandlesEmptyInput` — Empty string → empty string\n6. `TestURLFetch_HTMLContentType_Stripped` — Integration test: httptest server returns `text/html` with Content-Type header, verify response has tags stripped\n7. `TestURLFetch_NonHTMLContentType_NotStripped` — Server returns `application/json` with angle brackets → body returned verbatim\n8. `TestURLFetch_HTMLContentTypeWithCharset` — `Content-Type: text/html; charset=utf-8` still triggers stripping\n\n**Green**: Implement `stripHTML(body string) string` in `url_fetch.go`:\n- Parse the HTML string using `golang.org/x/net/html`\n- Walk the node tree, skip `<script>` and `<style>` elements (and their children)\n- Collect text nodes\n- Join and collapse whitespace\n- In `urlFetchExecute`, after reading the body, check if `Content-Type` starts with `text/html`\n- If so, call `stripHTML(bodyStr)` before truncation\n\n**Refactor**: Ensure the `stripHTML` function is a clean, testable unit. Truncation to 10,000 chars happens _after_ stripping (since stripping reduces size).\n\n#### Step 4: Run all tests\n- Run `go test ./internal/tool/...` to verify all existing + new tests pass\n- Run `go vet ./...` to check for issues\n\n#### Files Modified\n| File | Changes |\n|------|---------|\n| `go.mod` / `go.sum` | Add `golang.org/x/net` |\n| `internal/tool/url_fetch.go` | Add `fetchTimeout` const, derive timeout context, add `stripHTML()`, apply stripping for `text/html` responses |\n| `internal/tool/url_fetch_test.go` | Add ~8 new test cases |\n\n#### What Won't Change\n- The `maxReadBytes` constant (10,000) stays the same\n- All existing tests pass unchanged\n- Tool definition/registration unchanged\n- No changes outside `internal/tool/`\n\n---\n\nDoes this plan look good? Any adjustments before I start implementation?",
+          "time": {
+            "start": 1773151092139,
+            "end": 1773151092139
+          },
+          "id": "prt_cd80a317a002Fib3mkfgu94j1t",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a26fa002ekV0mR28S1b5nJ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.0466105,
+          "tokens": {
+            "total": 31876,
+            "input": 1,
+            "output": 1064,
+            "reasoning": 0,
+            "cache": {
+              "read": 30011,
+              "write": 800
+            }
+          },
+          "id": "prt_cd80a7dc0001wRj5r2W0dbZfiX",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a26fa002ekV0mR28S1b5nJ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773151097228
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "before": "",
+              "after": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+              "additions": 77,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "id": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "## Objective\nCapture the research phase findings and create a milestone tracking document.\n**DO NOT do the work.** ONLY produce the milestone document as defined below.\n\n## Requirements\n- Place the file in `.opencode/plans/` with the name `000_nnn_milestones.md`\n  - \"nnn\" = what we aim to achieve at the project level.\n- Milestones ordered by dependency and priority.\n- If anything is unclear, ask, then update the milestone doc to match.\n- All open questions must be answered and documented.\n\n## Document Structure\n\n### Section 1: Research Findings\nCapture everything discovered before writing milestones:\n- Codebase structure, files, and patterns found\n- Key decisions made and why\n- Approaches considered and rejected (with reasons)\n- Constraints and assumptions\n- Open questions and their answers\n\nDo not summarize away details! Subsequent specs and implementation guides draw from this.\n\n### Section 2: Milestones\n- High-level outcomes only — no implementation details.\n- `- [ ] 001: {Task description}` format — number must be sequential and match the spec/implement file prefix.",
+          "id": "prt_cd80a918c001Giq21u7WoZM6Fk",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a9180001LAb8jtEiCQIM0P"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151097237,
+          "completed": 1773151213246
+        },
+        "parentID": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.2162725,
+        "tokens": {
+          "total": 28682,
+          "input": 2,
+          "output": 1974,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 26706
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80a919500257GKz7QGP1VhBn",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80a9b5c001c9aDIjwouUPcB0",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a919500257GKz7QGP1VhBn"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI have all the research from our prior analysis. Let me create the milestone document now.",
+          "time": {
+            "start": 1773151100589,
+            "end": 1773151100589
+          },
+          "id": "prt_cd80a9b5d001Dr5TBBnfaJuzH6",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a919500257GKz7QGP1VhBn"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "task",
+          "state": {
+            "status": "completed",
+            "input": {
+              "description": "Create milestone document",
+              "subagent_type": "general",
+              "prompt": "Create the file `.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` at the project root `/Users/jaronswab/go/src/github.com/jrswab/axe/`.\n\nFirst, create the `.opencode/plans/` directory if it doesn't exist.\n\nWrite the following content EXACTLY to the file:\n\n```markdown\n# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n```\n\nAfter writing the file, verify it exists and print its full contents back to me."
+            },
+            "output": "task_id: ses_327f4cf6fffeqK2RhmlkU4L2ax (for resuming to continue this task if needed)\n\n<task_result>\nFile written and verified. A couple of notes on what happened:\n\n- `.opencode/plans` is a **symlink** → `docs/plans`, so the Write tool (which tries to `mkdir` the path) tripped on the existing symlink. I wrote directly to the resolved path `docs/plans/` instead.\n- The file is accessible at both paths:\n  - `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` (actual location)\n  - `.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` (via symlink)\n\nAll 77 lines match the requested content exactly.\n</task_result>",
+            "title": "Create milestone document",
+            "metadata": {
+              "sessionId": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+              "model": {
+                "providerID": "anthropic",
+                "modelID": "claude-sonnet-4-6"
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151137934,
+              "end": 1773151213176
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a919500257GKz7QGP1VhBn"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.2162725,
+          "tokens": {
+            "total": 28682,
+            "input": 2,
+            "output": 1974,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 26706
+            }
+          },
+          "id": "prt_cd80c56790012PKDk88CkYtOKu",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a919500257GKz7QGP1VhBn"
+        },
+        {
+          "type": "patch",
+          "hash": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+          ],
+          "id": "prt_cd80c56bc001920UlGP6xp9vfT",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80a919500257GKz7QGP1VhBn"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151213247,
+          "completed": 1773151217207
+        },
+        "parentID": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.029758,
+        "tokens": {
+          "total": 29010,
+          "input": 1,
+          "output": 107,
+          "reasoning": 0,
+          "cache": {
+            "read": 26706,
+            "write": 2196
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80c56bf002mECI5XgeR4QOnm",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c60c60015o2jyoeWV9J0e1",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c56bf002mECI5XgeR4QOnm"
+        },
+        {
+          "type": "text",
+          "text": "Let me verify the file:",
+          "time": {
+            "start": 1773151216288,
+            "end": 1773151216288
+          },
+          "id": "prt_cd80c60c6002rscxrKs0Y7Lg45",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c56bf002mECI5XgeR4QOnm"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "error",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+            },
+            "error": "Error: File not found: /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "time": {
+              "start": 1773151216962,
+              "end": 1773151216962
+            }
+          },
+          "id": "prt_cd80c62a8001Tcq5TyhNHXUql6",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c56bf002mECI5XgeR4QOnm"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.029758,
+          "tokens": {
+            "total": 29010,
+            "input": 1,
+            "output": 107,
+            "reasoning": 0,
+            "cache": {
+              "read": 26706,
+              "write": 2196
+            }
+          },
+          "id": "prt_cd80c65f4001kLWZLmAAF69PNc",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c56bf002mECI5XgeR4QOnm"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151217209,
+          "completed": 1773151220481
+        },
+        "parentID": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0184935,
+        "tokens": {
+          "total": 29201,
+          "input": 1,
+          "output": 116,
+          "reasoning": 0,
+          "cache": {
+            "read": 28902,
+            "write": 182
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80c6639002GwXlyls19BArrw",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c6f41001dDVA0QzalJpAff",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c6639002GwXlyls19BArrw"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01F4gQJ7uLzQxFw6CxC8pw94",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "**/*milestones*"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_tool_call_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_i9n_milestones.md",
+            "title": "",
+            "metadata": {
+              "count": 4,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151219926,
+              "end": 1773151219943
+            }
+          },
+          "id": "prt_cd80c6f42001z8zutkkWpE0ZGC",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c6639002GwXlyls19BArrw"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01E9PLti2vKpda2g5qkhkKKo",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode</path>\n<type>directory</type>\n<entries>\n.gitignore\nbun.lock\nnode_modules/\npackage.json\nplans\nplugins/\nskills/\n\n(7 entries)\n</entries>",
+            "title": ".opencode",
+            "metadata": {
+              "preview": ".gitignore\nbun.lock\nnode_modules/\npackage.json\nplans\nplugins/\nskills/",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773151220394,
+              "end": 1773151220396
+            }
+          },
+          "id": "prt_cd80c70d80015VHOVXS3CZ4hle",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c6639002GwXlyls19BArrw"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.0184935,
+          "tokens": {
+            "total": 29201,
+            "input": 1,
+            "output": 116,
+            "reasoning": 0,
+            "cache": {
+              "read": 28902,
+              "write": 182
+            }
+          },
+          "id": "prt_cd80c72ba001eAi2zMVtUIdV63",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c6639002GwXlyls19BArrw"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151220483,
+          "completed": 1773151224074
+        },
+        "parentID": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.020447,
+        "tokens": {
+          "total": 29633,
+          "input": 1,
+          "output": 132,
+          "reasoning": 0,
+          "cache": {
+            "read": 29084,
+            "write": 416
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80c7303002Pju5YyH2atWYtF",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c7b55001uPLp09OxdwTIt9",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c7303002Pju5YyH2atWYtF"
+        },
+        {
+          "type": "text",
+          "text": "The file was written to `docs/plans/` which is where `.opencode/plans` symlinks to. Let me verify the content is correct:",
+          "time": {
+            "start": 1773151223550,
+            "end": 1773151223550
+          },
+          "id": "prt_cd80c7b55002ktUp03zVv6b3nW",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c7303002Pju5YyH2atWYtF"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>\n<type>file</type>\n<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n2: \n3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n4: **Date:** 2026-03-10  \n5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n6: \n7: ---\n8: \n9: ## Section 1: Research Findings\n10: \n11: ### Codebase Structure & Relevant Files\n12: \n13: The `url_fetch` tool lives entirely within the `internal/tool/` package:\n14: \n15: | File | Role |\n16: |------|------|\n17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n22: \n23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n31: \n32: ### Key Decisions Made\n33: \n34: | Decision | Rationale |\n35: |----------|-----------|\n36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n42: \n43: ### Approaches Considered & Rejected\n44: \n45: | Approach | Why Rejected |\n46: |----------|-------------|\n47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n51: \n52: ### Constraints & Assumptions\n53: \n54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n60: \n61: ### Open Questions & Answers\n62: \n63: | # | Question | Answer |\n64: |---|----------|--------|\n65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n70: \n71: ---\n72: \n73: ## Section 2: Milestones\n74: \n75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n\n(End of file - total 77 lines)\n</content>",
+            "title": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "metadata": {
+              "preview": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773151223985,
+              "end": 1773151223988
+            }
+          },
+          "id": "prt_cd80c7eff0011FMtm7RvaEwMF6",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c7303002Pju5YyH2atWYtF"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.020447,
+          "tokens": {
+            "total": 29633,
+            "input": 1,
+            "output": 132,
+            "reasoning": 0,
+            "cache": {
+              "read": 29084,
+              "write": 416
+            }
+          },
+          "id": "prt_cd80c80bd0012O2Hvz1Vosi0go",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c7303002Pju5YyH2atWYtF"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151224076,
+          "completed": 1773151231352
+        },
+        "parentID": "msg_cd80a9180001LAb8jtEiCQIM0P",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03621125,
+        "tokens": {
+          "total": 31989,
+          "input": 1,
+          "output": 315,
+          "reasoning": 0,
+          "cache": {
+            "read": 29500,
+            "write": 2173
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd80c810c002I6xwK93hDchUcc",
+        "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c88a9001s3hvjtSQ5NUbel",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c810c002I6xwK93hDchUcc"
+        },
+        {
+          "type": "text",
+          "text": "The milestone document is complete and verified. Here's a summary:\n\n### Created: `.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`\n\n**Section 1 — Research Findings** captures:\n- **5 relevant files** in `internal/tool/` — changes are fully scoped there\n- **4 current behaviors** documented (no timeout, raw HTML, truncation at 10K, URL sanitization)\n- **6 key decisions** with rationale (15s timeout, `x/net/html` parser, script/style stripping, Content-Type detection, post-strip truncation, unchanged limit)\n- **4 rejected approaches** with reasons (regex, transport-level timeout, configurable timeout, streaming tokenizer)\n- **6 constraints/assumptions** (no public API, existing tests unaffected, TDD required, single new dep, whitespace collapsing)\n- **5 open questions** all answered and documented\n\n**Section 2 — Milestones** (3 milestones, dependency-ordered):\n1. `001`: Add 15-second per-request HTTP timeout\n2. `002`: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n3. `003`: Verify all existing and new tests pass, run vet/lint checks",
+          "time": {
+            "start": 1773151231220,
+            "end": 1773151231220
+          },
+          "id": "prt_cd80c88aa0011wNI6aj589LpsG",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c810c002I6xwK93hDchUcc"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.03621125,
+          "tokens": {
+            "total": 31989,
+            "input": 1,
+            "output": 315,
+            "reasoning": 0,
+            "cache": {
+              "read": 29500,
+              "write": 2173
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+          "messageID": "msg_cd80c810c002I6xwK93hDchUcc"
+        }
+      ]
+    }
+  ]
+}
