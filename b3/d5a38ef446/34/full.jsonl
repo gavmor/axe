@@ -1,0 +1,1675 @@
+{
+  "info": {
+    "id": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+    "slug": "brave-star",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_327fa0cc5ffeOYFkHiaXx57o7x",
+    "title": "Create milestone document (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 77,
+      "deletions": 0,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773151137936,
+      "updated": 1773151206293
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773151137942
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "before": "",
+              "after": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n",
+              "additions": 77,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Create the file `.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` at the project root `/Users/jaronswab/go/src/github.com/jrswab/axe/`.\n\nFirst, create the `.opencode/plans/` directory if it doesn't exist.\n\nWrite the following content EXACTLY to the file:\n\n```markdown\n# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n```\n\nAfter writing the file, verify it exists and print its full contents back to me.",
+          "id": "prt_cd80b30960015vZ4CffloeL0Om",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3095001MkAB0fB6Cy4Ez1"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151137945,
+          "completed": 1773151140370
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.04534275,
+        "tokens": {
+          "total": 11786,
+          "input": 3,
+          "output": 102,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 11681
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80b3099001lT6fJYr6HcTsEc",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80b38a4001CrmbbpNd0uBd5d",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3099001lT6fJYr6HcTsEc"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/",
+              "description": "Check if .opencode directory exists"
+            },
+            "output": "bun.lock\nnode_modules\npackage.json\nplans\nplugins\nskills\n",
+            "title": "Check if .opencode directory exists",
+            "metadata": {
+              "output": "bun.lock\nnode_modules\npackage.json\nplans\nplugins\nskills\n",
+              "exit": 0,
+              "description": "Check if .opencode directory exists",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151140259,
+              "end": 1773151140277
+            }
+          },
+          "id": "prt_cd80b38a40022gIvNQX7d969yX",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3099001lT6fJYr6HcTsEc"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.04534275,
+          "tokens": {
+            "total": 11786,
+            "input": 3,
+            "output": 102,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 11681
+            }
+          },
+          "id": "prt_cd80b39b6001lwOr3N5rz5TzWb",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3099001lT6fJYr6HcTsEc"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151140370,
+          "completed": 1773151154831
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03231855,
+        "tokens": {
+          "total": 13704,
+          "input": 1,
+          "output": 1887,
+          "reasoning": 0,
+          "cache": {
+            "read": 11681,
+            "write": 135
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80b3a12001eYFCq9Pbbnd5GB",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80b41920019UQRKSs7j95o9Q",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3a12001eYFCq9Pbbnd5GB"
+        },
+        {
+          "type": "text",
+          "text": "The `.opencode/plans/` directory already exists. Writing the file now.",
+          "time": {
+            "start": 1773151142646,
+            "end": 1773151142646
+          },
+          "id": "prt_cd80b4192002uTz4UJUpTkm1HR",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3a12001eYFCq9Pbbnd5GB"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "write",
+          "state": {
+            "status": "error",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "content": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n"
+            },
+            "error": "Error: EEXIST: file already exists, mkdir '/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans'",
+            "time": {
+              "start": 1773151154709,
+              "end": 1773151154710
+            }
+          },
+          "id": "prt_cd80b42fc001yRerwsYVBfmHMe",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3a12001eYFCq9Pbbnd5GB"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.03231855,
+          "tokens": {
+            "total": 13704,
+            "input": 1,
+            "output": 1887,
+            "reasoning": 0,
+            "cache": {
+              "read": 11681,
+              "write": 135
+            }
+          },
+          "id": "prt_cd80b7225001Mi6l8x0RKvAi0o",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b3a12001eYFCq9Pbbnd5GB"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151154832,
+          "completed": 1773151157582
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0123528,
+        "tokens": {
+          "total": 13865,
+          "input": 1,
+          "output": 100,
+          "reasoning": 0,
+          "cache": {
+            "read": 11816,
+            "write": 1948
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80b72900017GyFz3vUFNG0cF",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80b79c2001FrkYqTEVRe82Ip",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b72900017GyFz3vUFNG0cF"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "error",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+            },
+            "error": "Error: File not found: /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "time": {
+              "start": 1773151157391,
+              "end": 1773151157392
+            }
+          },
+          "id": "prt_cd80b79c3001cAewkTBLdYBM2o",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b72900017GyFz3vUFNG0cF"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.0123528,
+          "tokens": {
+            "total": 13865,
+            "input": 1,
+            "output": 100,
+            "reasoning": 0,
+            "cache": {
+              "read": 11816,
+              "write": 1948
+            }
+          },
+          "id": "prt_cd80b7cda0013MneUXT10CLSdV",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b72900017GyFz3vUFNG0cF"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151157583,
+          "completed": 1773151161256
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00670845,
+        "tokens": {
+          "total": 14068,
+          "input": 1,
+          "output": 128,
+          "reasoning": 0,
+          "cache": {
+            "read": 13764,
+            "write": 175
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "REDACTED",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "The Write tool errored on the directory step but the file may not have been written. Let me write it directly with bash:",
+          "time": {
+            "start": 1773151160403,
+            "end": 1773151160403
+          },
+          "id": "prt_cd80b836f001IIH5gHUEK20Q47",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/",
+              "description": "List existing plans directory contents"
+            },
+            "output": "ls: /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/: No such file or directory\n",
+            "title": "List existing plans directory contents",
+            "metadata": {
+              "output": "ls: /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans/: No such file or directory\n",
+              "exit": 1,
+              "description": "List existing plans directory contents",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151161042,
+              "end": 1773151161057
+            }
+          },
+          "id": "prt_cd80b8856001MgndTeHkYIpY7I",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.00670845,
+          "tokens": {
+            "total": 14068,
+            "input": 1,
+            "output": 128,
+            "reasoning": 0,
+            "cache": {
+              "read": 13764,
+              "write": 175
+            }
+          },
+          "id": "prt_cd80b8b430014P1mtIYPPATVyz",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151161257,
+          "completed": 1773151163695
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0063522,
+        "tokens": {
+          "total": 14218,
+          "input": 1,
+          "output": 100,
+          "reasoning": 0,
+          "cache": {
+            "read": 13939,
+            "write": 178
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80b8ba9001Jzhfw2RKTNMb2P",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80b9243001cwGp5LF9JUXg05",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b8ba9001Jzhfw2RKTNMb2P"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/",
+              "description": "List .opencode directory contents"
+            },
+            "output": "bun.lock\nnode_modules\npackage.json\nplans\nplugins\nskills\n",
+            "title": "List .opencode directory contents",
+            "metadata": {
+              "output": "bun.lock\nnode_modules\npackage.json\nplans\nplugins\nskills\n",
+              "exit": 0,
+              "description": "List .opencode directory contents",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151163521,
+              "end": 1773151163547
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b8ba9001Jzhfw2RKTNMb2P"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.0063522,
+          "tokens": {
+            "total": 14218,
+            "input": 1,
+            "output": 100,
+            "reasoning": 0,
+            "cache": {
+              "read": 13939,
+              "write": 178
+            }
+          },
+          "id": "prt_cd80b94bd001rPu2l1zpBpJ5Oh",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b8ba9001Jzhfw2RKTNMb2P"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151163695,
+          "completed": 1773151166132
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00630435,
+        "tokens": {
+          "total": 14354,
+          "input": 1,
+          "output": 105,
+          "reasoning": 0,
+          "cache": {
+            "read": 14117,
+            "write": 131
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80b9b9a001TiTKzcowXeo5qF",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls -la /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans",
+              "description": "Check if plans is a file or directory"
+            },
+            "output": "lrwxr-xr-x@ 1 jaronswab  staff  10 Feb 27 08:46 /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans -> docs/plans\n",
+            "title": "Check if plans is a file or directory",
+            "metadata": {
+              "output": "lrwxr-xr-x@ 1 jaronswab  staff  10 Feb 27 08:46 /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/plans -> docs/plans\n",
+              "exit": 0,
+              "description": "Check if plans is a file or directory",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151165992,
+              "end": 1773151166018
+            }
+          },
+          "id": "prt_cd80b9b9b001wqJNcUdyY0DIvC",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.00630435,
+          "tokens": {
+            "total": 14354,
+            "input": 1,
+            "output": 105,
+            "reasoning": 0,
+            "cache": {
+              "read": 14117,
+              "write": 131
+            }
+          },
+          "id": "prt_cd80b9e48001By5H42LmcSoxBG",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151166134,
+          "completed": 1773151169131
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00681615,
+        "tokens": {
+          "total": 14554,
+          "input": 1,
+          "output": 124,
+          "reasoning": 0,
+          "cache": {
+            "read": 14248,
+            "write": 181
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80b9eb60018V70jDfxKLBVGo",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80ba52b0016ayeF1mag55ftb",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b9eb60018V70jDfxKLBVGo"
+        },
+        {
+          "type": "text",
+          "text": "`plans` is a symlink pointing to `docs/plans`. Let me check that target:",
+          "time": {
+            "start": 1773151168631,
+            "end": 1773151168631
+          },
+          "id": "prt_cd80ba52c001B4fpnOEDDh9CCQ",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b9eb60018V70jDfxKLBVGo"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_014FEByoy4Gh44SwXtt241D2",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/",
+              "description": "List actual plans directory via symlink target"
+            },
+            "output": "000_i9n_milestones.md\n000_manual_testing.md\n000_milestones.md\n000_tool_call_milestones.md\n001_skeleton_implement.md\n001_skeleton_spec.md\n002_agent_config_implement.md\n002_agent_config_spec.md\n003_single_agent_run_implement.md\n003_single_agent_run_spec.md\n004_multi_provider_support_implement.md\n004_multi_provider_support_spec.md\n005_sub_agents_implement.md\n005_sub_agents_spec.md\n006_memory_implement.md\n006_memory_spec.md\n007_gc_implement.md\n007_gc_spec.md\n008_i9n_test_infrastructure_implement.md\n008_i9n_test_infrastructure_spec.md\n009_mock_provider_integration_implement.md\n009_mock_provider_integration_spec.md\n010_cli_smoke_tests_implement.md\n010_cli_smoke_tests_spec.md\n011_golden_file_tests_implement.md\n011_golden_file_tests_spec.md\n012_tools_config_implement.md\n012_tools_config_spec.md\n013_tool_registry_implement.md\n013_tool_registry_spec.md\n014_list_directory_implement.md\n014_list_directory_spec.md\n015_read_file_implement.md\n015_read_file_spec.md\n016_write_file_implement.md\n016_write_file_spec.md\n017_edit_file_implement.md\n017_edit_file_spec.md\n018_run_command_implement.md\n018_run_command_spec.md\n019_m8_integration_polish_implement.md\n019_m8_integration_polish_spec.md\n020_manual_testing_fixes_implement.md\n020_manual_testing_fixes_spec.md\n021_path_expansion_implement.md\n021_path_expansion_spec.md\n022_docker_containerization_implement.md\n022_docker_containerization_spec.md\n023_json_tool_call_details_implement.md\n023_json_tool_call_details_spec.md\n024_refusal_detection_implement.md\n024_refusal_detection_spec.md\n025_url_fetch_implement.md\n025_url_fetch_spec.md\n026_web_search_implement.md\n026_web_search_spec.md\n027_mcp_tool_support_implement.md\n027_mcp_tool_support_spec.md\n028_opencode_zen_provider_implement.md\n028_opencode_zen_provider_spec.md\n",
+            "title": "List actual plans directory via symlink target",
+            "metadata": {
+              "output": "000_i9n_milestones.md\n000_manual_testing.md\n000_milestones.md\n000_tool_call_milestones.md\n001_skeleton_implement.md\n001_skeleton_spec.md\n002_agent_config_implement.md\n002_agent_config_spec.md\n003_single_agent_run_implement.md\n003_single_agent_run_spec.md\n004_multi_provider_support_implement.md\n004_multi_provider_support_spec.md\n005_sub_agents_implement.md\n005_sub_agents_spec.md\n006_memory_implement.md\n006_memory_spec.md\n007_gc_implement.md\n007_gc_spec.md\n008_i9n_test_infrastructure_implement.md\n008_i9n_test_infrastructure_spec.md\n009_mock_provider_integration_implement.md\n009_mock_provider_integration_spec.md\n010_cli_smoke_tests_implement.md\n010_cli_smoke_tests_spec.md\n011_golden_file_tests_implement.md\n011_golden_file_tests_spec.md\n012_tools_config_implement.md\n012_tools_config_spec.md\n013_tool_registry_implement.md\n013_tool_registry_spec.md\n014_list_directory_implement.md\n014_list_directory_spec.md\n015_read_file_implement.md\n015_read_file_spec.md\n016_write_file_implement.md\n016_write_file_spec.md\n017_edit_file_implement.md\n017_edit_file_spec.md\n018_run_command_implement.md\n018_run_command_spec.md\n019_m8_integration_polish_implement.md\n019_m8_integration_polish_spec.md\n020_manual_testing_fixes_implement.md\n020_manual_testing_fixes_spec.md\n021_path_expansion_implement.md\n021_path_expansion_spec.md\n022_docker_containerization_implement.md\n022_docker_containerization_spec.md\n023_json_tool_call_details_implement.md\n023_json_tool_call_details_spec.md\n024_refusal_detection_implement.md\n024_refusal_detection_spec.md\n025_url_fetch_implement.md\n025_url_fetch_spec.md\n026_web_search_implement.md\n026_web_search_spec.md\n027_mcp_tool_support_implement.md\n027_mcp_tool_support_spec.md\n028_opencode_zen_provider_implement.md\n028_opencode_zen_provider_spec.md\n",
+              "exit": 0,
+              "description": "List actual plans directory via symlink target",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151168987,
+              "end": 1773151169012
+            }
+          },
+          "id": "prt_cd80ba878001eGGXRQ7m10tveZ",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b9eb60018V70jDfxKLBVGo"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "cost": 0.00681615,
+          "tokens": {
+            "total": 14554,
+            "input": 1,
+            "output": 124,
+            "reasoning": 0,
+            "cache": {
+              "read": 14248,
+              "write": 181
+            }
+          },
+          "id": "prt_cd80ba9ff001dKxDjfBBOq9cE4",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80b9eb60018V70jDfxKLBVGo"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151169133,
+          "completed": 1773151203155
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0357942,
+        "tokens": {
+          "total": 17117,
+          "input": 1,
+          "output": 1901,
+          "reasoning": 0,
+          "cache": {
+            "read": 14429,
+            "write": 786
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80baa6d001UVul12N3hI6OgQ",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "id": "prt_cd80baf5f001ljZ7T35bCyzM1E",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80baa6d001UVul12N3hI6OgQ"
+        },
+        {
+          "type": "text",
+          "text": "`plans` is a symlink to `docs/plans`. The Write tool tripped on the symlink. I'll write directly to the resolved path:",
+          "time": {
+            "start": 1773151171204,
+            "end": 1773151171204
+          },
+          "id": "prt_cd80baf5f002qQsOOSH62qr2E2",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80baa6d001UVul12N3hI6OgQ"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01YMoPuPe6Qhe1ima7rWqr8V",
+          "tool": "write",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "content": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n| `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n\nNo other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n\n### Current Behavior\n\n1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n\n### Key Decisions Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n| **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n| **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n| **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n| **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n\n### Approaches Considered & Rejected\n\n| Approach | Why Rejected |\n|----------|-------------|\n| **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n| **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n| **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n| **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n\n### Constraints & Assumptions\n\n- **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n- **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n- **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n- **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n- **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n- **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n\n### Open Questions & Answers\n\n| # | Question | Answer |\n|---|----------|--------|\n| 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n| 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n| 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n| 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n| 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n\n---\n\n## Section 2: Milestones\n\n- [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n- [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n- [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n"
+            },
+            "output": "Wrote file successfully.",
+            "title": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/main.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 63,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 63,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 380,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 380,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 469,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 469,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/agents.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/config/config.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 115,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 115,
+                        "character": 8
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field System"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 116,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 21
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Messages"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 131,
+                        "character": 7
+                      },
+                      "end": {
+                        "line": 131,
+                        "character": 7
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Model"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 132,
+                        "character": 13
+                      },
+                      "end": {
+                        "line": 132,
+                        "character": 13
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field InputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 133,
+                        "character": 14
+                      },
+                      "end": {
+                        "line": 133,
+                        "character": 14
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field OutputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 134,
+                        "character": 12
+                      },
+                      "end": {
+                        "line": 134,
+                        "character": 12
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field StopReason"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 147,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 147,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 148,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 148,
+                        "character": 9
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Content"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 169,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 169,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 96,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 101,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 342,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 342,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 431,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 431,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/resolve/resolve.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 165,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 165,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 288,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 288,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/args.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/config.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/exit.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/gc.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 709,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 709,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 726,
+                        "character": 48
+                      },
+                      "end": {
+                        "line": 726,
+                        "character": 59
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 742,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 742,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 746,
+                        "character": 47
+                      },
+                      "end": {
+                        "line": 746,
+                        "character": 58
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 934,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 934,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 936,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 936,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 948,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 948,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1795,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1795,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/fixture_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 720,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 720,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/golden_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 72,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 72,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 80,
+                        "character": 52
+                      },
+                      "end": {
+                        "line": 80,
+                        "character": 63
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 82,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 82,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 148,
+                        "character": 4
+                      },
+                      "end": {
+                        "line": 148,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#minmax"
+                    },
+                    "source": "minmax",
+                    "message": "if statement can be modernized using max"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 259,
+                        "character": 2
+                      },
+                      "end": {
+                        "line": 259,
+                        "character": 10
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#forvar"
+                    },
+                    "source": "forvar",
+                    "message": "copying variable is unneeded",
+                    "tags": [
+                      1
+                    ]
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 294,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 294,
+                        "character": 11
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#mapsloop"
+                    },
+                    "source": "mapsloop",
+                    "message": "Replace m[k]=v loop with maps.Copy"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 440,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 440,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/testutil.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/mockserver.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/smoke_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/memory/memory.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 242,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 242,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "filepath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "exists": false,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773151203055,
+              "end": 1773151203081
+            }
+          },
+          "id": "prt_cd80bb285001duYEDPNgT1KCUt",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80baa6d001UVul12N3hI6OgQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.0357942,
+          "tokens": {
+            "total": 17117,
+            "input": 1,
+            "output": 1901,
+            "reasoning": 0,
+            "cache": {
+              "read": 14429,
+              "write": 786
+            }
+          },
+          "id": "prt_cd80c2f0a001gLR1Cy1wBpKJFh",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80baa6d001UVul12N3hI6OgQ"
+        },
+        {
+          "type": "patch",
+          "hash": "4451a8524d54e346e0b1cc223ba9dd0c61580679",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+          ],
+          "id": "prt_cd80c2f51001fICK7zNpjNu2GL",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80baa6d001UVul12N3hI6OgQ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151203157,
+          "completed": 1773151206228
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01324125,
+        "tokens": {
+          "total": 17232,
+          "input": 1,
+          "output": 99,
+          "reasoning": 0,
+          "cache": {
+            "read": 15215,
+            "write": 1917
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd80c2f55001jz3vwwnACyfxFd",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c3a800011dQI5kGuLg4VJZ",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c2f55001jz3vwwnACyfxFd"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>\n<type>file</type>\n<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n2: \n3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n4: **Date:** 2026-03-10  \n5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n6: \n7: ---\n8: \n9: ## Section 1: Research Findings\n10: \n11: ### Codebase Structure & Relevant Files\n12: \n13: The `url_fetch` tool lives entirely within the `internal/tool/` package:\n14: \n15: | File | Role |\n16: |------|------|\n17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n22: \n23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n31: \n32: ### Key Decisions Made\n33: \n34: | Decision | Rationale |\n35: |----------|-----------|\n36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n42: \n43: ### Approaches Considered & Rejected\n44: \n45: | Approach | Why Rejected |\n46: |----------|-------------|\n47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n51: \n52: ### Constraints & Assumptions\n53: \n54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n60: \n61: ### Open Questions & Answers\n62: \n63: | # | Question | Answer |\n64: |---|----------|--------|\n65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n70: \n71: ---\n72: \n73: ## Section 2: Milestones\n74: \n75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n\n(End of file - total 77 lines)\n</content>",
+            "title": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+            "metadata": {
+              "preview": "# Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n\n**GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Research Findings\n\n### Codebase Structure & Relevant Files\n\nThe `url_fetch` tool lives entirely within the `internal/tool/` package:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773151206123,
+              "end": 1773151206125
+            }
+          },
+          "id": "prt_cd80c3a80002K4myqVcfjRGdSI",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c2f55001jz3vwwnACyfxFd"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.01324125,
+          "tokens": {
+            "total": 17232,
+            "input": 1,
+            "output": 99,
+            "reasoning": 0,
+            "cache": {
+              "read": 15215,
+              "write": 1917
+            }
+          },
+          "id": "prt_cd80c3b03001qRj27HtpfS38o5",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c2f55001jz3vwwnACyfxFd"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773151206229,
+          "completed": 1773151211353
+        },
+        "parentID": "msg_cd80b3095001MkAB0fB6Cy4Ez1",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0156126,
+        "tokens": {
+          "total": 19436,
+          "input": 1,
+          "output": 163,
+          "reasoning": 0,
+          "cache": {
+            "read": 17132,
+            "write": 2140
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd80c3b55001KND1t1m3VoRq9I",
+        "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd80c42fa001dCZXXbjuJcvwv1",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c3b55001KND1t1m3VoRq9I"
+        },
+        {
+          "type": "text",
+          "text": "File written and verified. A couple of notes on what happened:\n\n- `.opencode/plans` is a **symlink** → `docs/plans`, so the Write tool (which tries to `mkdir` the path) tripped on the existing symlink. I wrote directly to the resolved path `docs/plans/` instead.\n- The file is accessible at both paths:\n  - `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` (actual location)\n  - `.opencode/plans/000_url_fetch_timeout_and_html_stripping_milestones.md` (via symlink)\n\nAll 77 lines match the requested content exactly.",
+          "time": {
+            "start": 1773151211273,
+            "end": 1773151211273
+          },
+          "id": "prt_cd80c42fb001rvTz6PvMpCrcen",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c3b55001KND1t1m3VoRq9I"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.0156126,
+          "tokens": {
+            "total": 19436,
+            "input": 1,
+            "output": 163,
+            "reasoning": 0,
+            "cache": {
+              "read": 17132,
+              "write": 2140
+            }
+          },
+          "id": "prt_cd80c4f18001og8s372eHlUILq",
+          "sessionID": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+          "messageID": "msg_cd80c3b55001KND1t1m3VoRq9I"
+        }
+      ]
+    }
+  ]
+}

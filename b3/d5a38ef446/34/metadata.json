@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b3d5a38ef446",
+  "session_id": "ses_327f4cf6fffeqK2RhmlkU4L2ax",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-10T16:50:19.797958Z",
+  "branch": "master",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "952d6f6d3334",
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 19272,
+    "cache_read_tokens": 126341,
+    "output_tokens": 4709,
+    "api_call_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-10T16:50:19.775223Z",
+    "agent_lines": 74,
+    "human_added": 819,
+    "human_modified": 3,
+    "human_removed": 0,
+    "total_committed": 896,
+    "agent_percentage": 8.258928571428571
+  }
+}
