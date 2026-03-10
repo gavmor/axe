@@ -1,0 +1,27 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go, find the test `TestURLFetch_HTMLStrippedBeforeTruncation`. 
+
+The current test builds HTML like:
+```go
+bigCSS := strings.Repeat("x", 9000)
+htmlBody := "<html><body><style>" + bigCSS + "</style><p>Short text</p></body></html>"
+```
+
+The problem is that the total raw HTML is only ~9050 bytes, which is under maxReadBytes (10000). The test needs the raw HTML to EXCEED maxReadBytes so that WITHOUT stripping it would be truncated, but WITH stripping (removing the style tag) the result is small enough to not be truncated.
+
+Fix the test by changing `9000` to `9950` so the total raw HTML is about 10000+ bytes (the wrapper tags add ~50 bytes, making total ~10000+). This way:
+- Raw HTML > 10000 bytes → would be truncated without stripping
+- After stripping, only "Short text" remains → well under 10000 → no truncation
+
+Edit the line to:
+```go
+bigCSS := strings.Repeat("x", 9950)
+```
+
+After editing, run:
+```
+cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestURLFetch_HTMLStrippedBeforeTruncation -v -count=1
+```
+
+The test should now FAIL (red phase) because the stub `stripHTML` doesn't actually strip, so the raw HTML exceeds maxReadBytes and gets truncated, but the test asserts no truncation.
+
+Return the test output confirming it fails.
