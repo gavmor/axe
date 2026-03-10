@@ -1,0 +1,7 @@
+Read and return the full contents of these files:
+1. /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go
+2. /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go
+3. /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go
+4. /Users/jaronswab/go/src/github.com/jrswab/axe/go.mod
+
+Return the full contents of each file so I can understand the current codebase structure.
