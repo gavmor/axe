@@ -1,0 +1,616 @@
+# Implementation Instructions
+
+Before starting, ask what branch to use.
+
+## Setup
+Locate the plan files in `docs/plans/`:
+- Spec: file starting with 029, or the newest `xxx_topic_spec.md` if 029 is empty.
+- Implement: file starting with 029, or the newest `xxx_topic_implement.md` if 029 is empty.
+
+## Steps
+
+1. Read the **Context Summary** in the implement guide to understand the *why* before selecting any tasks.
+2. Study the spec file thoroughly.
+3. Study the implement file thoroughly.
+4. Pick the highest leverage unchecked task.
+5. Complete the task.
+6. Verify the task changes against `## Rules` listed below.
+7. Run the `auto-review` skill is a sub-agent and fix what is returned.
+8. Update the implementation plan to check off the completed task using a sub-agent.
+9. Run `git diff --shortstat` to check total line changes in as sub-agent.
+    - If changes are greater than 300, stop and let the human know.
+    - If changes are less than 300, repeat steps 4-9.
+10. If all tasks in the implement file are checked off:
+    - Mark the corresponding milestone as complete in the milestone doc (`- [ ] 001:` → `- [x] 001:`).
+    - Commit the changes.
+
+## Rules
+
+- Always use red/green TDD
+- Use @explore sub-agents for exploring the codebase
+- Use @general sub-agents for working on the codebase
+- Each sub-agent must only have one explicit task.
+- Each sub-agent must only return the information that fulfills that task.
+- Spin off multiple sub-agents in parallel for tasks that do not depend on another task.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+- Verify that the unit tests for functions with updates have a test case that will verify the change.
+- Verify that all new code has an unbiased unit test.
+ Use the above message and context to generate a prompt and call the task tool with subagent: explore
+ Use the above message and context to generate a prompt and call the task tool with subagent: general
+
+---
+
+{miles}=@docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md
+
+if {miles} is empty or blank, use current context
+else create a spec file for the next incomplete milestone in {miles} and it to the top of the new spec document.
+
+## Objective
+Create a specification document for a single milestone.
+**DO NOT do the work.** ONLY produce the specification document as defined below.
+
+## Requirements
+- Use clear, unambiguous language. No assumptions; be explicit.
+- All edge cases must be documented.
+- Ask questions to the user as needed to be explicit.
+- No implementation details.
+- Specifiy which parts of the spec can be done in parallel.
+- Place the file in `.opencode/plans/` with the name `xxx_nnn_spec.md`
+  - "xxx" = A Linear issue ID; ask the user for the ID or if you should use the next highest spec number.
+  - "nnn" = task to achieve
+
+## Document Structure
+
+### Section 1: Context & Constraints
+Extract the relevant context from the milestone's **Research Findings** that applies to this milestone:
+- Codebase structure and patterns relevant to this milestone
+- Decisions already made and why
+- Approaches already ruled out (do not re-evaluate these)
+- Constraints and assumptions that apply
+- Open questions resolved during research
+
+This section must come before requirements. The implementation guide will rely on it — do not omit details.
+
+### Section 2: Requirements
+What needs to happen: behaviors, interfaces, data flow, edge cases.
+No implementation details — what and why, not how or where.
+
+## Post Spec Generation
+1. Once complete, ask the user if there are any changes.
+2. If changes are needed, update the spec to match.
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>
+<type>file</type>
+<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping
+2: 
+3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  
+4: **Date:** 2026-03-10  
+5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+6: 
+7: ---
+8: 
+9: ## Section 1: Research Findings
+10: 
+11: ### Codebase Structure & Relevant Files
+12: 
+13: The `url_fetch` tool lives entirely within the `internal/tool/` package:
+14: 
+15: | File | Role |
+16: |------|------|
+17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |
+20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |
+22: 
+23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).
+28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.
+29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.
+30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.
+31: 
+32: ### Key Decisions Made
+33: 
+34: | Decision | Rationale |
+35: |----------|-----------|
+36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |
+38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |
+39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |
+40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |
+42: 
+43: ### Approaches Considered & Rejected
+44: 
+45: | Approach | Why Rejected |
+46: |----------|-------------|
+47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |
+49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |
+50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+51: 
+52: ### Constraints & Assumptions
+53: 
+54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.
+55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.
+56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.
+57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.
+58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.
+59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.
+60: 
+61: ### Open Questions & Answers
+62: 
+63: | # | Question | Answer |
+64: |---|----------|--------|
+65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |
+66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |
+67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |
+68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |
+69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |
+70: 
+71: ---
+72: 
+73: ## Section 2: Milestones
+74: 
+75: - [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool
+76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`
+77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks
+
+(End of file - total 77 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>
+<type>file</type>
+<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping
+2: 
+3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  
+4: **Date:** 2026-03-10  
+5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+6: 
+7: ---
+8: 
+9: ## Section 1: Research Findings
+10: 
+11: ### Codebase Structure & Relevant Files
+12: 
+13: The `url_fetch` tool lives entirely within the `internal/tool/` package:
+14: 
+15: | File | Role |
+16: |------|------|
+17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |
+20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |
+22: 
+23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).
+28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.
+29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.
+30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.
+31: 
+32: ### Key Decisions Made
+33: 
+34: | Decision | Rationale |
+35: |----------|-----------|
+36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |
+38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |
+39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |
+40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |
+42: 
+43: ### Approaches Considered & Rejected
+44: 
+45: | Approach | Why Rejected |
+46: |----------|-------------|
+47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |
+49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |
+50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+51: 
+52: ### Constraints & Assumptions
+53: 
+54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.
+55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.
+56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.
+57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.
+58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.
+59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.
+60: 
+61: ### Open Questions & Answers
+62: 
+63: | # | Question | Answer |
+64: |---|----------|--------|
+65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |
+66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |
+67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |
+68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |
+69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |
+70: 
+71: ---
+72: 
+73: ## Section 2: Milestones
+74: 
+75: - [x] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool
+76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`
+77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks
+
+(End of file - total 77 lines)
+</content>
+
+---
+
+## Objective
+Create an implementation guide from a specification document.
+**DO NOT do the work.** ONLY produce the implementation guide as defined below.
+
+## Requirements
+- If @docs/plans/030_html_stripping_spec.md is empty or omitted, pull the latest `*_spec.md` from `docs/plans/` and verify it with the user.
+- Read the spec's **Context & Constraints** before writing tasks. Do not re-derive or re-evaluate decisions already made there.
+- Each task must reference the exact file path and function/method (e.g. `internal/handler/auth.go: UpdateUser()`).
+- Each task must be implementable and testable in isolation.
+- Tasks ordered by dependency and priority.
+- If anything is unclear, ask — then update the spec to match.
+- Specifiy which parts of the implementation checklist can be done in parallel.
+- Place the file in `docs/plans/` with the name `xxx_nnn_implement.md`
+  - "xxx" = number matching the spec file
+  - "nnn" = task to achieve
+
+## Testing Rules
+- Test real code, not mocks. If deleting the code under test doesn't break the test, the test adds no value.
+- Mock at the router level only for auth gating, input validation, and error propagation.
+
+## Document Structure
+
+### Section 1: Context Summary
+One paragraph summarizing the *why* behind this implementation, drawn from the spec's Context & Constraints. Anchors the executing agent without needing to re-read the spec.
+
+### Section 2: Implementation Checklist
+- `- [ ] {Task description}` format
+- Exact file path and function/method on each task
+- Include test tasks alongside implementation tasks
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/030_html_stripping_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/030_html_stripping_spec.md</path>
+<type>file</type>
+<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 002 -->
+2: 
+3: # Spec 030: Strip HTML from `text/html` Responses in `url_fetch` Tool
+4: 
+5: **Milestone:** 002 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  
+6: **Date:** 2026-03-10  
+7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+8: 
+9: ---
+10: 
+11: ## Section 1: Context & Constraints
+12: 
+13: ### Codebase Structure
+14: 
+15: The `url_fetch` tool is self-contained within `internal/tool/`:
+16: 
+17: | File | Role |
+18: |------|------|
+19: | `internal/tool/url_fetch.go` (~133 lines) | Tool definition + execution logic (includes 15s per-request timeout from milestone 001) |
+20: | `internal/tool/url_fetch_test.go` (~397 lines) | 19 existing test cases (13 original + 3 timeout tests + 3 from milestone 001) |
+21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+22: 
+23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: - `urlFetchExecute` reads the response body via `io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))` where `maxReadBytes = 10000`.
+28: - The raw body bytes are converted to a string and returned verbatim, regardless of `Content-Type`.
+29: - For `text/html` responses, this means full HTML markup — `<script>`, `<style>`, navigation, ads, boilerplate — is sent to the LLM, wasting the 10,000 character budget on noise.
+30: - Truncation (appending `"\n... [response truncated, exceeded 10000 characters]"`) is applied if the body exceeds `maxReadBytes`. This currently happens on the raw HTML, before any stripping.
+31: - Non-2xx responses return `fmt.Sprintf("HTTP %d: %s", resp.StatusCode, bodyStr)` with `IsError: true`.
+32: 
+33: ### Decisions Already Made
+34: 
+35: | Decision | Rationale |
+36: |----------|-----------|
+37: | **Use `golang.org/x/net/html` for HTML stripping** | DOM-based parsing handles malformed HTML, nested scripts, and edge cases correctly. User explicitly chose this over regex. |
+38: | **Strip `<script>` and `<style>` elements (including all children)** | These elements contain code/CSS that is noise for LLMs. Matches the TypeScript implementation. |
+39: | **Preserve `<noscript>` content** | `<noscript>` often contains meaningful fallback text. Only `<script>` and `<style>` are stripped. |
+40: | **Detect `text/html` via `mime.ParseMediaType` on the `Content-Type` header** | Correctly handles parameters like `charset=utf-8`, `boundary`, etc. More robust than `strings.HasPrefix`. |
+41: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+42: | **HTML stripping applies to error responses (non-2xx)** | Error pages are often HTML. Stripping before returning the error body keeps error messages clean. The `"HTTP %d: "` prefix is preserved. |
+43: | **Whitespace collapsing** | After extracting text nodes from the DOM, consecutive whitespace (spaces, tabs, newlines) MUST be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget. |
+44: | **`maxReadBytes` (10,000) unchanged** | The existing limit is sufficient for LLM consumption. |
+45: | **`golang.org/x/net` is a new direct dependency** | It is NOT currently in `go.mod`. It must be added via `go get golang.org/x/net`. It is a Go official sub-repository, well-maintained, and widely used. |
+46: 
+47: ### Approaches Ruled Out — Do Not Re-Evaluate
+48: 
+49: | Approach | Why Rejected |
+50: |----------|-------------|
+51: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+52: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+53: 
+54: ### Constraints
+55: 
+56: - **No new public API.** The HTML stripping function (`stripHTML` or similar) MUST be unexported. All changes are internal to the `tool` package.
+57: - **All 19 existing tests must pass unchanged.** None of the existing tests serve `text/html` content (they all use plain text or no Content-Type), so they are unaffected by HTML stripping.
+58: - **Red/green TDD required.** Write failing tests first, then implement.
+59: - **One new dependency:** `golang.org/x/net`. No other new dependencies.
+60: 
+61: ---
+62: 
+63: ## Section 2: Requirements
+64: 
+65: ### R1: Content-Type Detection
+66: 
+67: When `urlFetchExecute` receives an HTTP response, it MUST check the `Content-Type` response header to determine whether to strip HTML.
+68: 
+69: - The media type MUST be parsed using `mime.ParseMediaType` from the Go stdlib.
+70: - If the media type is `text/html`, the response body MUST be processed through HTML stripping before being returned.
+71: - If the media type is anything other than `text/html` (including `application/json`, `text/plain`, `application/xhtml+xml`, `text/xml`, or any other type), the response body MUST be returned verbatim (existing behavior, unchanged).
+72: - If the `Content-Type` header is missing or cannot be parsed, the response body MUST be returned verbatim (existing behavior, unchanged). Do not guess or sniff content type.
+73: 
+74: ### R2: HTML Stripping Behavior
+75: 
+76: When the response is `text/html`, the raw body string MUST be processed to extract meaningful text content:
+77: 
+78: - **Parse the HTML** into a DOM tree using `golang.org/x/net/html`.
+79: - **Remove `<script>` elements** and all their children (text nodes, nested elements, everything). No content from inside `<script>` tags may appear in the output.
+80: - **Remove `<style>` elements** and all their children. No content from inside `<style>` tags may appear in the output.
+81: - **Preserve all other text nodes.** Text inside `<p>`, `<div>`, `<span>`, `<h1>`–`<h6>`, `<li>`, `<td>`, `<noscript>`, and all other non-script/non-style elements MUST be preserved.
+82: - **Collapse whitespace.** After extracting text nodes, all runs of consecutive whitespace characters (spaces, tabs, newlines, carriage returns) MUST be collapsed to a single space. The final result MUST be trimmed of leading and trailing whitespace.
+83: - **Return the extracted text.** The stripped text replaces the raw HTML body in the result.
+84: 
+85: ### R3: Ordering — Strip Before Truncate
+86: 
+87: The processing pipeline for `text/html` responses MUST be:
+88: 
+89: 1. Read the raw body (up to `maxReadBytes + 1` bytes, existing behavior).
+90: 2. Convert to string (existing behavior).
+91: 3. **Strip HTML** (new step — only for `text/html`).
+92: 4. Apply truncation if the **stripped** text exceeds `maxReadBytes` (existing behavior, but now applied to stripped text instead of raw HTML).
+93: 
+94: This ordering ensures that stripping reduces the content size first, maximizing useful content within the 10,000 character budget.
+95: 
+96: ### R4: Error Responses (Non-2xx)
+97: 
+98: HTML stripping MUST apply to non-2xx responses when the `Content-Type` is `text/html`.
+99: 
+100: - The existing error format `"HTTP %d: %s"` MUST be preserved. The `%s` placeholder receives the stripped text (instead of raw HTML).
+101: - Example: A 404 page with HTML body becomes `"HTTP 404: Page not found"` (stripped text) instead of `"HTTP 404: <!DOCTYPE html><html>..."`.
+102: 
+103: ### R5: Malformed HTML
+104: 
+105: The HTML stripping function MUST handle malformed HTML gracefully:
+106: 
+107: - If `html.Parse` returns an error, the raw body MUST be returned verbatim (no stripping). Do not return an error to the caller — treat parse failure as a fallback to existing behavior.
+108: - If the HTML is valid but produces no text content after stripping (e.g., a page with only scripts and styles), the result MUST be an empty string.
+109: 
+110: ### R6: No Change to Non-HTML Responses
+111: 
+112: Responses with `Content-Type` values other than `text/html` MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging. This includes but is not limited to:
+113: 
+114: - `application/json`
+115: - `text/plain`
+116: - `text/xml` / `application/xml`
+117: - `application/xhtml+xml`
+118: - Missing `Content-Type` header
+119: - Unparseable `Content-Type` header
+120: 
+121: ### R7: No Change to Verbose Logging
+122: 
+123: The existing verbose logging behavior (URL sanitization, status code, truncation notice) MUST NOT change. The verbose log reports the URL and status code, not the body content, so HTML stripping does not affect it.
+124: 
+125: ---
+126: 
+127: ### Edge Cases
+128: 
+129: | Case | Expected Behavior |
+130: |------|-------------------|
+131: | `Content-Type: text/html; charset=utf-8` | HTML stripping applies. `mime.ParseMediaType` extracts `text/html` correctly. |
+132: | `Content-Type: text/html; charset=iso-8859-1` | HTML stripping applies. Charset parameter is ignored for detection purposes. |
+133: | `Content-Type: TEXT/HTML` | HTML stripping applies. Media type comparison MUST be case-insensitive (per RFC 2045). `mime.ParseMediaType` handles this. |
+134: | `Content-Type: text/plain` | No stripping. Body returned verbatim. |
+135: | `Content-Type: application/xhtml+xml` | No stripping. Body returned verbatim. Only `text/html` triggers stripping. |
+136: | No `Content-Type` header | No stripping. Body returned verbatim. |
+137: | `Content-Type` header present but unparseable | No stripping. Body returned verbatim. |
+138: | HTML with only `<script>` and `<style>` | Stripping produces empty string. Empty string is returned. |
+139: | HTML with nested `<script>` inside `<div>` | The `<script>` and its children are removed. Text in the `<div>` outside the `<script>` is preserved. |
+140: | HTML with `<script>` containing `</script>` in a string literal | `html.Parse` handles this correctly per the HTML5 parsing spec. The parser knows where `<script>` ends. |
+141: | HTML with `<style>` containing `</style>` in a comment | `html.Parse` handles this correctly. |
+142: | Deeply nested HTML (100+ levels) | `html.Parse` handles this. No stack overflow at 10KB input. |
+143: | HTML with HTML entities (`&amp;`, `&#x27;`, etc.) | `html.Parse` decodes entities in text nodes automatically. The extracted text contains decoded characters. |
+144: | Empty HTML body (`""`) | `html.Parse` on empty string produces an empty document. Stripping produces empty string. |
+145: | HTML body `"<html><body></body></html>"` | No text nodes. Stripping produces empty string. |
+146: | Non-2xx with `Content-Type: text/html` | HTML stripping applies. Result is `"HTTP 404: [stripped text]"`. |
+147: | Non-2xx with `Content-Type: application/json` | No stripping. Result is `"HTTP 500: {\"error\": \"...\"}` (existing behavior). |
+148: | Response body exceeds `maxReadBytes` and is `text/html` | Raw body is read up to `maxReadBytes + 1` bytes (existing). Then stripped. Then truncation check on stripped text. If stripped text ≤ `maxReadBytes`, no truncation notice (stripping saved space). If stripped text > `maxReadBytes`, truncation notice appended. |
+149: | `<noscript>` element | Content preserved. Only `<script>` and `<style>` are removed. |
+150: | Text with excessive whitespace between elements | Collapsed to single spaces. `"  Hello   \n\n  World  "` becomes `"Hello World"`. |
+151: 
+152: ---
+153: 
+154: ### Parallelism Notes
+155: 
+156: The HTML stripping function (`stripHTML`) is a pure function with no dependencies on the HTTP request or response handling. Its tests can be written and verified independently of the integration into `urlFetchExecute`. This means:
+157: 
+158: - **The `stripHTML` unit tests** (testing the pure function in isolation with various HTML inputs) can be developed in parallel with...
+159: - **The integration tests** (testing `urlFetchExecute` end-to-end with `httptest.NewServer` serving `text/html` content).
+160: 
+161: Both test groups must be written before implementation (red phase), but they test different things and can be authored concurrently.
+162: 
+163: The implementation itself is sequential: `stripHTML` must exist before `urlFetchExecute` can call it.
+
+(End of file - total 163 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/030_html_stripping_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/030_html_stripping_spec.md</path>
+<type>file</type>
+<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 002 -->
+2: 
+3: # Spec 030: Strip HTML from `text/html` Responses in `url_fetch` Tool
+4: 
+5: **Milestone:** 002 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  
+6: **Date:** 2026-03-10  
+7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+8: 
+9: ---
+10: 
+11: ## Section 1: Context & Constraints
+12: 
+13: ### Codebase Structure
+14: 
+15: The `url_fetch` tool is self-contained within `internal/tool/`:
+16: 
+17: | File | Role |
+18: |------|------|
+19: | `internal/tool/url_fetch.go` (~133 lines) | Tool definition + execution logic (includes 15s per-request timeout from milestone 001) |
+20: | `internal/tool/url_fetch_test.go` (~397 lines) | 19 existing test cases (13 original + 3 timeout tests + 3 from milestone 001) |
+21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+22: 
+23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: - `urlFetchExecute` reads the response body via `io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))` where `maxReadBytes = 10000`.
+28: - The raw body bytes are converted to a string and returned verbatim, regardless of `Content-Type`.
+29: - For `text/html` responses, this means full HTML markup — `<script>`, `<style>`, navigation, ads, boilerplate — is sent to the LLM, wasting the 10,000 character budget on noise.
+30: - Truncation (appending `"\n... [response truncated, exceeded 10000 characters]"`) is applied if the body exceeds `maxReadBytes`. This currently happens on the raw HTML, before any stripping.
+31: - Non-2xx responses return `fmt.Sprintf("HTTP %d: %s", resp.StatusCode, bodyStr)` with `IsError: true`.
+32: 
+33: ### Decisions Already Made
+34: 
+35: | Decision | Rationale |
+36: |----------|-----------|
+37: | **Use `golang.org/x/net/html` for HTML stripping** | DOM-based parsing handles malformed HTML, nested scripts, and edge cases correctly. User explicitly chose this over regex. |
+38: | **Strip `<script>` and `<style>` elements (including all children)** | These elements contain code/CSS that is noise for LLMs. Matches the TypeScript implementation. |
+39: | **Preserve `<noscript>` content** | `<noscript>` often contains meaningful fallback text. Only `<script>` and `<style>` are stripped. |
+40: | **Detect `text/html` via `mime.ParseMediaType` on the `Content-Type` header** | Correctly handles parameters like `charset=utf-8`, `boundary`, etc. More robust than `strings.HasPrefix`. |
+41: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+42: | **HTML stripping applies to error responses (non-2xx)** | Error pages are often HTML. Stripping before returning the error body keeps error messages clean. The `"HTTP %d: "` prefix is preserved. |
+43: | **Whitespace collapsing** | After extracting text nodes from the DOM, consecutive whitespace (spaces, tabs, newlines) MUST be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget. |
+44: | **`maxReadBytes` (10,000) unchanged** | The existing limit is sufficient for LLM consumption. |
+45: | **`golang.org/x/net` is a new direct dependency** | It is NOT currently in `go.mod`. It must be added via `go get golang.org/x/net`. It is a Go official sub-repository, well-maintained, and widely used. |
+46: 
+47: ### Approaches Ruled Out — Do Not Re-Evaluate
+48: 
+49: | Approach | Why Rejected |
+50: |----------|-------------|
+51: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+52: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+53: 
+54: ### Constraints
+55: 
+56: - **No new public API.** The HTML stripping function (`stripHTML` or similar) MUST be unexported. All changes are internal to the `tool` package.
+57: - **All 19 existing tests must pass unchanged.** None of the existing tests serve `text/html` content (they all use plain text or no Content-Type), so they are unaffected by HTML stripping.
+58: - **Red/green TDD required.** Write failing tests first, then implement.
+59: - **One new dependency:** `golang.org/x/net`. No other new dependencies.
+60: 
+61: ---
+62: 
+63: ## Section 2: Requirements
+64: 
+65: ### R1: Content-Type Detection
+66: 
+67: When `urlFetchExecute` receives an HTTP response, it MUST check the `Content-Type` response header to determine whether to strip HTML.
+68: 
+69: - The media type MUST be parsed using `mime.ParseMediaType` from the Go stdlib.
+70: - If the media type is `text/html`, the response body MUST be processed through HTML stripping before being returned.
+71: - If the media type is anything other than `text/html` (including `application/json`, `text/plain`, `application/xhtml+xml`, `text/xml`, or any other type), the response body MUST be returned verbatim (existing behavior, unchanged).
+72: - If the `Content-Type` header is missing or cannot be parsed, the response body MUST be returned verbatim (existing behavior, unchanged). Do not guess or sniff content type.
+73: 
+74: ### R2: HTML Stripping Behavior
+75: 
+76: When the response is `text/html`, the raw body string MUST be processed to extract meaningful text content:
+77: 
+78: - **Parse the HTML** into a DOM tree using `golang.org/x/net/html`.
+79: - **Remove `<script>` elements** and all their children (text nodes, nested elements, everything). No content from inside `<script>` tags may appear in the output.
+80: - **Remove `<style>` elements** and all their children. No content from inside `<style>` tags may appear in the output.
+81: - **Preserve all other text nodes.** Text inside `<p>`, `<div>`, `<span>`, `<h1>`–`<h6>`, `<li>`, `<td>`, `<noscript>`, and all other non-script/non-style elements MUST be preserved.
+82: - **Collapse whitespace.** After extracting text nodes, all runs of consecutive whitespace characters (spaces, tabs, newlines, carriage returns) MUST be collapsed to a single space. The final result MUST be trimmed of leading and trailing whitespace.
+83: - **Return the extracted text.** The stripped text replaces the raw HTML body in the result.
+84: 
+85: ### R3: Ordering — Strip Before Truncate
+86: 
+87: The processing pipeline for `text/html` responses MUST be:
+88: 
+89: 1. Read the raw body (up to `maxReadBytes + 1` bytes, existing behavior).
+90: 2. Convert to string (existing behavior).
+91: 3. **Strip HTML** (new step — only for `text/html`).
+92: 4. Apply truncation if the **stripped** text exceeds `maxReadBytes` (existing behavior, but now applied to stripped text instead of raw HTML).
+93: 
+94: This ordering ensures that stripping reduces the content size first, maximizing useful content within the 10,000 character budget.
+95: 
+96: ### R4: Error Responses (Non-2xx)
+97: 
+98: HTML stripping MUST apply to non-2xx responses when the `Content-Type` is `text/html`.
+99: 
+100: - The existing error format `"HTTP %d: %s"` MUST be preserved. The `%s` placeholder receives the stripped text (instead of raw HTML).
+101: - Example: A 404 page with HTML body becomes `"HTTP 404: Page not found"` (stripped text) instead of `"HTTP 404: <!DOCTYPE html><html>..."`.
+102: 
+103: ### R5: Malformed HTML
+104: 
+105: The HTML stripping function MUST handle malformed HTML gracefully:
+106: 
+107: - If `html.Parse` returns an error, the raw body MUST be returned verbatim (no stripping). Do not return an error to the caller — treat parse failure as a fallback to existing behavior.
+108: - If the HTML is valid but produces no text content after stripping (e.g., a page with only scripts and styles), the result MUST be an empty string.
+109: 
+110: ### R6: No Change to Non-HTML Responses
+111: 
+112: Responses with `Content-Type` values other than `text/html` MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging. This includes but is not limited to:
+113: 
+114: - `application/json`
+115: - `text/plain`
+116: - `text/xml` / `application/xml`
+117: - `application/xhtml+xml`
+118: - Missing `Content-Type` header
+119: - Unparseable `Content-Type` header
+120: 
+121: ### R7: No Change to Verbose Logging
+122: 
+123: The existing verbose logging behavior (URL sanitization, status code, truncation notice) MUST NOT change. The verbose log reports the URL and status code, not the body content, so HTML stripping does not affect it.
+124: 
+125: ---
+126: 
+127: ### Edge Cases
+128: 
+129: | Case | Expected Behavior |
+130: |------|-------------------|
+131: | `Content-Type: text/html; charset=utf-8` | HTML stripping applies. `mime.ParseMediaType` extracts `text/html` correctly. |
+132: | `Content-Type: text/html; charset=iso-8859-1` | HTML stripping applies. Charset parameter is ignored for detection purposes. |
+133: | `Content-Type: TEXT/HTML` | HTML stripping applies. Media type comparison MUST be case-insensitive (per RFC 2045). `mime.ParseMediaType` handles this. |
+134: | `Content-Type: text/plain` | No stripping. Body returned verbatim. |
+135: | `Content-Type: application/xhtml+xml` | No stripping. Body returned verbatim. Only `text/html` triggers stripping. |
+136: | No `Content-Type` header | No stripping. Body returned verbatim. |
+137: | `Content-Type` header present but unparseable | No stripping. Body returned verbatim. |
+138: | HTML with only `<script>` and `<style>` | Stripping produces empty string. Empty string is returned. |
+139: | HTML with nested `<script>` inside `<div>` | The `<script>` and its children are removed. Text in the `<div>` outside the `<script>` is preserved. |
+140: | HTML with `<script>` containing `</script>` in a string literal | `html.Parse` handles this correctly per the HTML5 parsing spec. The parser knows where `<script>` ends. |
+141: | HTML with `<style>` containing `</style>` in a comment | `html.Parse` handles this correctly. |
+142: | Deeply nested HTML (100+ levels) | `html.Parse` handles this. No stack overflow at 10KB input. |
+143: | HTML with HTML entities (`&amp;`, `&#x27;`, etc.) | `html.Parse` decodes entities in text nodes automatically. The extracted text contains decoded characters. |
+144: | Empty HTML body (`""`) | `html.Parse` on empty string produces an empty document. Stripping produces empty string. |
+145: | HTML body `"<html><body></body></html>"` | No text nodes. Stripping produces empty string. |
+146: | Non-2xx with `Content-Type: text/html` | HTML stripping applies. Result is `"HTTP 404: [stripped text]"`. |
+147: | Non-2xx with `Content-Type: application/json` | No stripping. Result is `"HTTP 500: {\"error\": \"...\"}` (existing behavior). |
+148: | Response body exceeds `maxReadBytes` and is `text/html` | Raw body is read up to `maxReadBytes + 1` bytes (existing). Then stripped. Then truncation check on stripped text. If stripped text ≤ `maxReadBytes`, no truncation notice (stripping saved space). If stripped text > `maxReadBytes`, truncation notice appended. |
+149: | `<noscript>` element | Content preserved. Only `<script>` and `<style>` are removed. |
+150: | Text with excessive whitespace between elements | Collapsed to single spaces. `"  Hello   \n\n  World  "` becomes `"Hello World"`. |
+151: 
+152: ---
+153: 
+154: ### Parallelism Notes
+155: 
+156: The HTML stripping function (`stripHTML`) is a pure function with no dependencies on the HTTP request or response handling. Its tests can be written and verified independently of the integration into `urlFetchExecute`. This means:
+157: 
+158: - **The `stripHTML` unit tests** (testing the pure function in isolation with various HTML inputs) can be developed in parallel with...
+159: - **The integration tests** (testing `urlFetchExecute` end-to-end with `httptest.NewServer` serving `text/html` content).
+160: 
+161: Both test groups must be written before implementation (red phase), but they test different things and can be authored concurrently.
+162: 
+163: The implementation itself is sequential: `stripHTML` must exist before `urlFetchExecute` can call it.
+
+(End of file - total 163 lines)
+</content>
