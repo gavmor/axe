@@ -1,0 +1,975 @@
+{
+  "info": {
+    "id": "ses_32783c229ffehc0HiGU5iQmXu0",
+    "slug": "neon-tiger",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_32787b37fffe99biMg057dtdLz",
+    "title": "Update implementation plan checkboxes (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 7,
+      "deletions": 7,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773158546902,
+      "updated": 1773158574646
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773158546918
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/029_http_request_timeout_implement.md",
+              "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+              "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [x] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+              "additions": 7,
+              "deletions": 7,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are working in the Go project at /Users/jaronswab/go/src/github.com/jrswab/axe.\n\nYour task: Update the file `docs/plans/029_http_request_timeout_implement.md` to check off ALL completed tasks. Change every `- [ ]` to `- [x]` for all 7 tasks in the checklist. All tasks have been completed:\n\n1. TestURLFetch_PerRequestTimeout — added\n2. TestURLFetch_ParentContextWinsOverPerRequestTimeout — added\n3. TestURLFetch_FastResponseUnaffectedByTimeout — added\n4. Define the timeout constant — added as `var urlFetchTimeout = 15 * time.Second`\n5. Wrap the request context with context.WithTimeout — done\n6. Run all existing tests — all 19 pass\n7. Run vet — zero findings\n\nMake the edits and return confirmation.\n",
+          "id": "prt_cd87c3de7001Aa1LHw3VQcEWS2",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c3de5001dSm5QeYRMZJdPW"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158546926,
+          "completed": 1773158549620
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00622635,
+        "tokens": {
+          "total": 10125,
+          "input": 2,
+          "output": 91,
+          "reasoning": 0,
+          "cache": {
+            "read": 9497,
+            "write": 535
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c3dee001h9Ee4MnwyP7f88",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0e45e2f78eab9deb9510c8d9491d8797601357b9",
+          "id": "prt_cd87c47c5001I9rflnH4b3hM5Z",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c3dee001h9Ee4MnwyP7f88"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01RDPmPnRwmgYDyKnNs3T3cd",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md</path>\n<type>file</type>\n<content>1: <!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n2: \n3: # Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n4: \n5: **Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n6: **Date:** 2026-03-10  \n7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n8: \n9: ---\n10: \n11: ## Section 1: Context Summary\n12: \n13: The `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n14: \n15: ---\n16: \n17: ## Section 2: Implementation Checklist\n18: \n19: Red/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n20: \n21: ### Phase 1: Tests (Red)\n22: \n23: - [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n24: \n25: - [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n26: \n27: - [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n28: \n29: ### Phase 2: Implementation (Green)\n30: \n31: - [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n32: \n33: - [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n34: \n35: ### Phase 3: Verify\n36: \n37: - [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n38: \n39: - [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n40: \n41: ---\n42: \n43: ### Parallelism Notes\n44: \n45: All tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n\n(End of file - total 45 lines)\n</content>",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "preview": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773158549513,
+              "end": 1773158549515
+            }
+          },
+          "id": "prt_cd87c47c6001qNgZxgtE8MtF1Y",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c3dee001h9Ee4MnwyP7f88"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "0e45e2f78eab9deb9510c8d9491d8797601357b9",
+          "cost": 0.00622635,
+          "tokens": {
+            "total": 10125,
+            "input": 2,
+            "output": 91,
+            "reasoning": 0,
+            "cache": {
+              "read": 9497,
+              "write": 535
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c3dee001h9Ee4MnwyP7f88"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158549621,
+          "completed": 1773158552793
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0107451,
+        "tokens": {
+          "total": 11612,
+          "input": 1,
+          "output": 161,
+          "reasoning": 0,
+          "cache": {
+            "read": 10032,
+            "write": 1418
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c4875001vXtQwJcbt8o6Kl",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "0e45e2f78eab9deb9510c8d9491d8797601357b9",
+          "id": "prt_cd87c5077001zfnLtAgySBATzA",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c4875001vXtQwJcbt8o6Kl"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Add test `TestURLFetch_PerRequestTimeout`**",
+              "newString": "- [x] **Add test `TestURLFetch_PerRequestTimeout`**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -19,9 +19,9 @@\n Red/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n \n ### Phase 1: Tests (Red)\n \n-- [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n+- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n \n - [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n \n - [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158552625,
+              "end": 1773158552664
+            }
+          },
+          "id": "prt_cd87c5077002nu2wR7WGhalY1N",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c4875001vXtQwJcbt8o6Kl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4947c157d7a9c756106c9e5144833ac7bdc2b205",
+          "cost": 0.0107451,
+          "tokens": {
+            "total": 11612,
+            "input": 1,
+            "output": 161,
+            "reasoning": 0,
+            "cache": {
+              "read": 10032,
+              "write": 1418
+            }
+          },
+          "id": "prt_cd87c5461001E16zfaXdhFPeGt",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c4875001vXtQwJcbt8o6Kl"
+        },
+        {
+          "type": "patch",
+          "hash": "0e45e2f78eab9deb9510c8d9491d8797601357b9",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87c54d8001Mpu78fU2YXKMGy",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c4875001vXtQwJcbt8o6Kl"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158552794,
+          "completed": 1773158556377
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.006663,
+        "tokens": {
+          "total": 11798,
+          "input": 1,
+          "output": 171,
+          "reasoning": 0,
+          "cache": {
+            "read": 11450,
+            "write": 176
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c54da001lcOEhqzdHQeqXS",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9c9bbd5f1d72b0ec4e44425d2d5bf862b8a2df2c",
+          "id": "prt_cd87c628a001US2XwYa7Awlt8G",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c54da001lcOEhqzdHQeqXS"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`**",
+              "newString": "- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -21,9 +21,9 @@\n ### Phase 1: Tests (Red)\n \n - [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n \n-- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n+- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n \n - [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n \n ### Phase 2: Implementation (Green)\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158556299,
+              "end": 1773158556299
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c54da001lcOEhqzdHQeqXS"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9c9bbd5f1d72b0ec4e44425d2d5bf862b8a2df2c",
+          "cost": 0.006663,
+          "tokens": {
+            "total": 11798,
+            "input": 1,
+            "output": 171,
+            "reasoning": 0,
+            "cache": {
+              "read": 11450,
+              "write": 176
+            }
+          },
+          "id": "prt_cd87c628c0016ErLGqlvc5T2SJ",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c54da001lcOEhqzdHQeqXS"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158556378,
+          "completed": 1773158559906
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0066933,
+        "tokens": {
+          "total": 11980,
+          "input": 1,
+          "output": 167,
+          "reasoning": 0,
+          "cache": {
+            "read": 11626,
+            "write": 186
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c62da001nlLd1MsGfBt4SV",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9c9bbd5f1d72b0ec4e44425d2d5bf862b8a2df2c",
+          "id": "REDACTED",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c62da001nlLd1MsGfBt4SV"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01VU6c3nLX6dvuzd16kPefaY",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`**",
+              "newString": "- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -23,9 +23,9 @@\n - [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n \n - [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n \n-- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n+- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n \n ### Phase 2: Implementation (Green)\n \n - [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158559752,
+              "end": 1773158559792
+            }
+          },
+          "id": "prt_cd87c6ba2001dXFsqXhmJpkhqH",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c62da001nlLd1MsGfBt4SV"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "2feba572dc11d14cbec4fa1aa52294baad309715",
+          "cost": 0.0066933,
+          "tokens": {
+            "total": 11980,
+            "input": 1,
+            "output": 167,
+            "reasoning": 0,
+            "cache": {
+              "read": 11626,
+              "write": 186
+            }
+          },
+          "id": "prt_cd87c70300019asmdxe4JVlgG7",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c62da001nlLd1MsGfBt4SV"
+        },
+        {
+          "type": "patch",
+          "hash": "9c9bbd5f1d72b0ec4e44425d2d5bf862b8a2df2c",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87c70a0001xGWEJpTFUEpu2t",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c62da001nlLd1MsGfBt4SV"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158559907,
+          "completed": 1773158564103
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0063741,
+        "tokens": {
+          "total": 12138,
+          "input": 1,
+          "output": 143,
+          "reasoning": 0,
+          "cache": {
+            "read": 11812,
+            "write": 182
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "2feba572dc11d14cbec4fa1aa52294baad309715",
+          "id": "prt_cd87c79000018DCywrs3RjYl1U",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Define the timeout constant**",
+              "newString": "- [x] **Define the timeout constant**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -27,9 +27,9 @@\n - [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n \n ### Phase 2: Implementation (Green)\n \n-- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n+- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n \n - [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n \n ### Phase 3: Verify\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158563915,
+              "end": 1773158563961
+            }
+          },
+          "id": "prt_cd87c7901001tr6YglFR6UoRGF",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "8c0fe37e25bb161b12ae5838743b40309fede2ea",
+          "cost": 0.0063741,
+          "tokens": {
+            "total": 12138,
+            "input": 1,
+            "output": 143,
+            "reasoning": 0,
+            "cache": {
+              "read": 11812,
+              "write": 182
+            }
+          },
+          "id": "prt_cd87c808b001vFZT1tQLdtX8Kf",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "2feba572dc11d14cbec4fa1aa52294baad309715",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87c8104001NneWdZ4WZvQ1w1",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158564103,
+          "completed": 1773158568000
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0065787,
+        "tokens": {
+          "total": 12312,
+          "input": 1,
+          "output": 159,
+          "reasoning": 0,
+          "cache": {
+            "read": 11994,
+            "write": 158
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c8107001vHyBVt646IEvLN",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8c0fe37e25bb161b12ae5838743b40309fede2ea",
+          "id": "prt_cd87c87af001WJNHGq0yTdFcKr",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c8107001vHyBVt646IEvLN"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Wrap the request context with `context.WithTimeout`**",
+              "newString": "- [x] **Wrap the request context with `context.WithTimeout`**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -29,9 +29,9 @@\n ### Phase 2: Implementation (Green)\n \n - [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n \n-- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n+- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n \n ### Phase 3: Verify\n \n - [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158567725,
+              "end": 1773158567764
+            }
+          },
+          "id": "prt_cd87c87af0029QHJzI0czrpg3L",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c8107001vHyBVt646IEvLN"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "ded0a2921637ea91b86093dba9168e193df562e4",
+          "cost": 0.0065787,
+          "tokens": {
+            "total": 12312,
+            "input": 1,
+            "output": 159,
+            "reasoning": 0,
+            "cache": {
+              "read": 11994,
+              "write": 158
+            }
+          },
+          "id": "prt_cd87c8fa9001DPMu5Pm5cLhGT3",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c8107001vHyBVt646IEvLN"
+        },
+        {
+          "type": "patch",
+          "hash": "8c0fe37e25bb161b12ae5838743b40309fede2ea",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87c903e001yo3WD6ixeFsEi8",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c8107001vHyBVt646IEvLN"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158568001,
+          "completed": 1773158571629
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0064461,
+        "tokens": {
+          "total": 12470,
+          "input": 1,
+          "output": 143,
+          "reasoning": 0,
+          "cache": {
+            "read": 12152,
+            "write": 174
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd87c90410016P89UBoMQ98Pnj",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "ded0a2921637ea91b86093dba9168e193df562e4",
+          "id": "REDACTED",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c90410016P89UBoMQ98Pnj"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01WY6UzSZduUuDGxf8co4bqD",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Run all existing tests**",
+              "newString": "- [x] **Run all existing tests**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -33,9 +33,9 @@\n - [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n \n ### Phase 3: Verify\n \n-- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n+- [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n \n - [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n \n ---\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158571501,
+              "end": 1773158571537
+            }
+          },
+          "id": "prt_cd87c97f8002CZcBXaWjO0foCY",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c90410016P89UBoMQ98Pnj"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "eb36cfa420b1160cfe8c930e4ea9a2c42e6e99b4",
+          "cost": 0.0064461,
+          "tokens": {
+            "total": 12470,
+            "input": 1,
+            "output": 143,
+            "reasoning": 0,
+            "cache": {
+              "read": 12152,
+              "write": 174
+            }
+          },
+          "id": "prt_cd87c9e20001v80qFNTGfMPm2x",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c90410016P89UBoMQ98Pnj"
+        },
+        {
+          "type": "patch",
+          "hash": "ded0a2921637ea91b86093dba9168e193df562e4",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87c9e6c001tMx7hWEIrwCMHr",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "msg_cd87c90410016P89UBoMQ98Pnj"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158571630,
+          "completed": 1773158574573
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0064083,
+        "tokens": {
+          "total": 12626,
+          "input": 1,
+          "output": 141,
+          "reasoning": 0,
+          "cache": {
+            "read": 12326,
+            "write": 158
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "eb36cfa420b1160cfe8c930e4ea9a2c42e6e99b4",
+          "id": "prt_cd87ca708001VlnkH0CCgq4w5Y",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+              "oldString": "- [ ] **Run vet**",
+              "newString": "- [x] **Run vet**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/029_http_request_timeout_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md\n@@ -35,9 +35,9 @@\n ### Phase 3: Verify\n \n - [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n \n-- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n+- [x] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n \n ---\n \n ### Parallelism Notes\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md",
+                "before": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [x] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [x] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [x] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [x] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [x] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [x] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [x] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773158574398,
+              "end": 1773158574436
+            }
+          },
+          "id": "prt_cd87ca708002xRBE6WiUWhieXT",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "cost": 0.0064083,
+          "tokens": {
+            "total": 12626,
+            "input": 1,
+            "output": 141,
+            "reasoning": 0,
+            "cache": {
+              "read": 12326,
+              "write": 158
+            }
+          },
+          "id": "prt_cd87ca977001QVPvLIyr3bin8R",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "eb36cfa420b1160cfe8c930e4ea9a2c42e6e99b4",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd87ca9ec001vosvR7kwRAvS5d",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773158574575,
+          "completed": 1773158578262
+        },
+        "parentID": "msg_cd87c3de5001dSm5QeYRMZJdPW",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0049782,
+        "tokens": {
+          "total": 12684,
+          "input": 1,
+          "output": 43,
+          "reasoning": 0,
+          "cache": {
+            "read": 12484,
+            "write": 156
+          }
+        },
+        "finish": "stop",
+        "id": "REDACTED",
+        "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "id": "prt_cd87cb2dd001W9N2lSfy9aEMD6",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "All 7 tasks in `docs/plans/029_http_request_timeout_implement.md` have been checked off (`- [ ]` → `- [x]`).",
+          "time": {
+            "start": 1773158578099,
+            "end": 1773158578099
+          },
+          "id": "prt_cd87cb2dd002rJnJJXDLMUKCaF",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "710293a0e59e7db5a9a9fa46d807b88890b302f8",
+          "cost": 0.0049782,
+          "tokens": {
+            "total": 12684,
+            "input": 1,
+            "output": 43,
+            "reasoning": 0,
+            "cache": {
+              "read": 12484,
+              "write": 156
+            }
+          },
+          "id": "prt_cd87cb7d2001im8e3fDjJY7Ryu",
+          "sessionID": "ses_32783c229ffehc0HiGU5iQmXu0",
+          "messageID": "REDACTED"
+        }
+      ]
+    }
+  ]
+}
