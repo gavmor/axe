@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b3d5a38ef446",
+  "session_id": "ses_33eb4a0f5ffeUQ3mvFsxRTFwAO",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-10T16:50:22.009709Z",
+  "branch": "master",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "internal/tool/url_fetch_test.go",
+    "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+    "docs/plans/030_html_stripping_implement.md",
+    "go.mod",
+    "internal/tool/url_fetch.go",
+    "docs/plans/029_http_request_timeout_implement.md",
+    "docs/plans/029_http_request_timeout_spec.md",
+    "docs/plans/030_html_stripping_spec.md",
+    "go.sum"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "a67a26fdfd8e",
+  "checkpoint_transcript_start": 96,
+  "transcript_lines_at_start": 96,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-10T16:50:21.464868Z",
+    "agent_lines": 821,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 821,
+    "agent_percentage": 100
+  }
+}
