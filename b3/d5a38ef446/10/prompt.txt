@@ -1,0 +1,26 @@
+You are reviewing code changes in /Users/jaronswab/go/src/github.com/jrswab/axe.
+
+## Steps
+
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && git diff HEAD` to get all current changes.
+2. Do a full code review on the diff:
+    - Evaluate whether each change makes sense in the broader system.
+    - Confirm the code does what it's intended to do, especially for user-facing or critical paths.
+    - Prioritize clear variable and function names, simple logic, and minimal complexity.
+    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.
+    - Avoid nitpicks that block progress unless they are critical.
+3. Check for:
+    - Potential bugs
+    - Security issues
+    - Code drift
+    - Performance bottlenecks
+    - Poor maintainability
+4. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && golangci-lint run ./internal/tool/` to check for linting issues.
+
+Return your review as a markdown list. Each item must include:
+- A specific prompt for an LLM coding agent to fix the issue, mentioning the file name prepended with `@`.
+- Mark non-blocking feedback clearly with "nit:" prefix.
+
+If there are no issues, return "No issues found."
+
+If golangci-lint has errors, include those as items in the review list too.

@@ -1,0 +1,401 @@
+{
+  "info": {
+    "id": "ses_3276eff97ffeA6ftNYO9adDuRF",
+    "slug": "quick-comet",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_3277bad71ffeueJa7cmk6cDVEp",
+    "title": "Auto-review code changes (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773159907433,
+      "updated": 1773159920013
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773159907443
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd8910072001tQUmF7BSgpav4Y",
+        "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are reviewing code changes in /Users/jaronswab/go/src/github.com/jrswab/axe.\n\n## Steps\n\n1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && git diff HEAD` to get all current changes.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it's intended to do, especially for user-facing or critical paths.\n    - Prioritize clear variable and function names, simple logic, and minimal complexity.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.\n    - Avoid nitpicks that block progress unless they are critical.\n3. Check for:\n    - Potential bugs\n    - Security issues\n    - Code drift\n    - Performance bottlenecks\n    - Poor maintainability\n4. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && golangci-lint run ./internal/tool/` to check for linting issues.\n\nReturn your review as a markdown list. Each item must include:\n- A specific prompt for an LLM coding agent to fix the issue, mentioning the file name prepended with `@`.\n- Mark non-blocking feedback clearly with \"nit:\" prefix.\n\nIf there are no issues, return \"No issues found.\"\n\nIf golangci-lint has errors, include those as items in the review list too.",
+          "id": "prt_cd8910073001J6ZStCS6JnfHBz",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910072001tQUmF7BSgpav4Y"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159907449,
+          "completed": 1773159910708
+        },
+        "parentID": "msg_cd8910072001tQUmF7BSgpav4Y",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0064956,
+        "tokens": {
+          "total": 10248,
+          "input": 3,
+          "output": 74,
+          "reasoning": 0,
+          "cache": {
+            "read": 9497,
+            "write": 674
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8910079001FB37CxJrSz7N24",
+        "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd89107b7001LqGQVk0q5vLFjK",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910079001FB37CxJrSz7N24"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get all current changes"
+            },
+            "output": "diff --git a/go.mod b/go.mod\nindex 5667a7d..72f5235 100644\n--- a/go.mod\n+++ b/go.mod\n@@ -1,11 +1,12 @@\n module github.com/jrswab/axe\n \n-go 1.24.4\n+go 1.25.0\n \n require (\n \tgithub.com/BurntSushi/toml v1.6.0\n \tgithub.com/modelcontextprotocol/go-sdk v1.4.0\n \tgithub.com/spf13/cobra v1.10.2\n+\tgolang.org/x/net v0.51.0\n )\n \n require (\n@@ -16,5 +17,5 @@ require (\n \tgithub.com/spf13/pflag v1.0.9 // indirect\n \tgithub.com/yosida95/uritemplate/v3 v3.0.2 // indirect\n \tgolang.org/x/oauth2 v0.34.0 // indirect\n-\tgolang.org/x/sys v0.40.0 // indirect\n+\tgolang.org/x/sys v0.41.0 // indirect\n )\ndiff --git a/go.sum b/go.sum\nindex c3044cb..768d2c9 100644\n--- a/go.sum\n+++ b/go.sum\n@@ -23,10 +23,12 @@ github.com/spf13/pflag v1.0.9/go.mod h1:REDACTED\n github.com/yosida95/uritemplate/v3 v3.0.2 h1:REDACTED\n github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=\n go.yaml.in/yaml/v3 v3.0.4/go.mod h1:REDACTED\n+golang.org/x/net v0.51.0 h1:94R/GTO7mt3/4wIKpcR5gkGmRLOuE/2hNGeWq/GBIFo=\n+golang.org/x/net v0.51.0/go.mod h1:aamm+2QF5ogm02fjy5Bb7CQ0WMt1/WVM7FtyaTLlA9Y=\n golang.org/x/oauth2 v0.34.0 h1:REDACTED\n golang.org/x/oauth2 v0.34.0/go.mod h1:REDACTED\n-golang.org/x/sys v0.40.0 h1:REDACTED\n-golang.org/x/sys v0.40.0/go.mod h1:REDACTED/uXjp9XT3ks=\n+golang.org/x/sys v0.41.0 h1:Ivj+2Cp/REDACTED\n+golang.org/x/sys v0.41.0/go.mod h1:REDACTED/uXjp9XT3ks=\n golang.org/x/tools v0.41.0 h1:REDACTED\n golang.org/x/tools v0.41.0/go.mod h1:REDACTED\n gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:REDACTED/cbN4VW5Yz0=\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 83b0dbd..9ae6000 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -4,8 +4,13 @@ import (\n \t\"context\"\n \t\"fmt\"\n \t\"io\"\n+\t\"mime\"\n \t\"net/http\"\n \t\"net/url\"\n+\t\"strings\"\n+\t\"time\"\n+\n+\t\"golang.org/x/net/html\"\n \n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n@@ -13,6 +18,8 @@ import (\n \n const maxReadBytes = 10000\n \n+var urlFetchTimeout = 15 * time.Second\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -59,6 +66,34 @@ func urlFetchDefinition() provider.Tool {\n \t}\n }\n \n+func stripHTML(raw string) string {\n+\tdoc, err := html.Parse(strings.NewReader(raw))\n+\tif err != nil {\n+\t\treturn raw\n+\t}\n+\n+\tvar b strings.Builder\n+\tvar walk func(*html.Node)\n+\twalk = func(n *html.Node) {\n+\t\tif n.Type == html.ElementNode && (n.Data == \"script\" || n.Data == \"style\") {\n+\t\t\tb.WriteByte(' ')\n+\t\t\treturn\n+\t\t}\n+\t\tif n.Type == html.TextNode {\n+\t\t\tb.WriteString(n.Data)\n+\t\t}\n+\t\tfor c := n.FirstChild; c != nil; c = c.NextSibling {\n+\t\t\twalk(c)\n+\t\t}\n+\t\tif n.Type == html.ElementNode {\n+\t\t\tb.WriteByte(' ')\n+\t\t}\n+\t}\n+\twalk(doc)\n+\n+\treturn strings.Join(strings.Fields(b.String()), \" \")\n+}\n+\n func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n \turlStr := call.Arguments[\"url\"]\n \tstatusCode := 0\n@@ -91,7 +126,10 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n-\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n+\treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\n@@ -111,8 +149,15 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t}\n \n \tbodyStr := string(body)\n-\tif len(body) > maxReadBytes {\n-\t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n+\n+\t// Strip HTML if Content-Type is text/html\n+\tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n+\tif mediaType == \"text/html\" {\n+\t\tbodyStr = stripHTML(bodyStr)\n+\t}\n+\n+\tif len(bodyStr) > maxReadBytes {\n+\t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n \t}\n \n \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex 37698bb..f3dd2bc 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -313,3 +313,358 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n \t}\n }\n+\n+func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t// Block longer than the per-request timeout\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Override the per-request timeout to keep the test fast\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 100 * time.Millisecond\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+\tif result.Content == \"\" {\n+\t\tt.Error(\"expected non-empty error content\")\n+\t}\n+}\n+\n+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Set per-request timeout to something long so the parent wins\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 10 * time.Second\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n+\tdefer cancel()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(ctx, call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n+\t}\n+}\n+\n+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t_, _ = w.Write([]byte(\"fast response\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"fast response\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+}\n+\n+// Phase 1A: stripHTML unit tests\n+\n+func TestStripHTML_BasicExtraction(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n+\twant := \"Hello World\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n+\twant := \"Keep this\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_PreservesNoscript(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n+\twant := \"Enable JS Main content\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_NestedScriptInDiv(t *testing.T) {\n+\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n+\twant := \"Before After\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n+\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n+\twant := \"Hello World\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_EmptyInput(t *testing.T) {\n+\tgot := stripHTML(\"\")\n+\twant := \"\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n+\twant := \"\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_HTMLEntities(t *testing.T) {\n+\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n+\twant := \"Tom & Jerry 's\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_NoHTMLTags(t *testing.T) {\n+\tgot := stripHTML(\"Just plain text\")\n+\twant := \"Just plain text\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+// Phase 1B: urlFetchExecute integration tests\n+\n+func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Visible\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n+\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Hello charset\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n+\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Case test\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n+\t}\n+}\n+\n+func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\twant := `{\"key\": \"<b>value</b>\"}`\n+\tif result.Content != want {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n+\t}\n+}\n+\n+func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n+\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"<p>Not HTML</p>\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n+\t}\n+}\n+\n+func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n+\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n+\t// We explicitly set it to empty to test the missing header case.\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"\")\n+\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\t// With empty Content-Type, body should be returned verbatim (no stripping)\n+\tif result.Content != \"<p>No header</p>\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n+\t}\n+}\n+\n+func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\tw.WriteHeader(http.StatusNotFound)\n+\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true\")\n+\t}\n+\tif !strings.Contains(result.Content, \"HTTP 404\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n+\t}\n+\tif !strings.Contains(result.Content, \"Not Found\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n+\t}\n+\tif strings.Contains(result.Content, \"<script>\") {\n+\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\tw.WriteHeader(http.StatusInternalServerError)\n+\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true\")\n+\t}\n+\tif !strings.Contains(result.Content, \"HTTP 500\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n+\t}\n+\tif !strings.Contains(result.Content, \"bad\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n+\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n+\t// 9950 bytes of CSS in a <style> tag + small visible text.\n+\tbigCSS := strings.Repeat(\"x\", 9950)\n+\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n+\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\t_, _ = w.Write([]byte(htmlBody))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif strings.Contains(result.Content, \"truncated\") {\n+\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n+\t}\n+\tif !strings.Contains(result.Content, \"Short text\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n+\t}\n+}\n",
+            "title": "Get all current changes",
+            "metadata": {
+              "output": "diff --git a/go.mod b/go.mod\nindex 5667a7d..72f5235 100644\n--- a/go.mod\n+++ b/go.mod\n@@ -1,11 +1,12 @@\n module github.com/jrswab/axe\n \n-go 1.24.4\n+go 1.25.0\n \n require (\n \tgithub.com/BurntSushi/toml v1.6.0\n \tgithub.com/modelcontextprotocol/go-sdk v1.4.0\n \tgithub.com/spf13/cobra v1.10.2\n+\tgolang.org/x/net v0.51.0\n )\n \n require (\n@@ -16,5 +17,5 @@ require (\n \tgithub.com/spf13/pflag v1.0.9 // indirect\n \tgithub.com/yosida95/uritemplate/v3 v3.0.2 // indirect\n \tgolang.org/x/oauth2 v0.34.0 // indirect\n-\tgolang.org/x/sys v0.40.0 // indirect\n+\tgolang.org/x/sys v0.41.0 // indirect\n )\ndiff --git a/go.sum b/go.sum\nindex c3044cb..768d2c9 100644\n--- a/go.sum\n+++ b/go.sum\n@@ -23,10 +23,12 @@ github.com/spf13/pflag v1.0.9/go.mod h1:REDACTED\n github.com/yosida95/uritemplate/v3 v3.0.2 h1:REDACTED\n github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=\n go.yaml.in/yaml/v3 v3.0.4/go.mod h1:REDACTED\n+golang.org/x/net v0.51.0 h1:94R/GTO7mt3/4wIKpcR5gkGmRLOuE/2hNGeWq/GBIFo=\n+golang.org/x/net v0.51.0/go.mod h1:aamm+2QF5ogm02fjy5Bb7CQ0WMt1/WVM7FtyaTLlA9Y=\n golang.org/x/oauth2 v0.34.0 h1:REDACTED\n golang.org/x/oauth2 v0.34.0/go.mod h1:REDACTED\n-golang.org/x/sys v0.40.0 h1:REDACTED\n-golang.org/x/sys v0.40.0/go.mod h1:REDACTED/uXjp9XT3ks=\n+golang.org/x/sys v0.41.0 h1:Ivj+2Cp/REDACTED\n+golang.org/x/sys v0.41.0/go.mod h1:REDACTED/uXjp9XT3ks=\n golang.org/x/tools v0.41.0 h1:REDACTED\n golang.org/x/tools v0.41.0/go.mod h1:REDACTED\n gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:REDACTED/cbN4VW5Yz0=\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 83b0dbd..9ae6000 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -4,8 +4,13 @@ import (\n \t\"context\"\n \t\"fmt\"\n \t\"io\"\n+\t\"mime\"\n \t\"net/http\"\n \t\"net/url\"\n+\t\"strings\"\n+\t\"time\"\n+\n+\t\"golang.org/x/net/html\"\n \n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n@@ -13,6 +18,8 @@ import (\n \n const maxReadBytes = 10000\n \n+var urlFetchTimeout = 15 * time.Second\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -59,6 +66,34 @@ func urlFetchDefinition() provider.Tool {\n \t}\n }\n \n+func stripHTML(raw string) string {\n+\tdoc, err := html.Parse(strings.NewReader(raw))\n+\tif err != nil {\n+\t\treturn raw\n+\t}\n+\n+\tvar b strings.Builder\n+\tvar walk func(*html.Node)\n+\twalk = func(n *html.Node) {\n+\t\tif n.Type == html.ElementNode && (n.Data == \"script\" || n.Data == \"style\") {\n+\t\t\tb.WriteByte(' ')\n+\t\t\treturn\n+\t\t}\n+\t\tif n.Type == html.TextNode {\n+\t\t\tb.WriteString(n.Data)\n+\t\t}\n+\t\tfor c := n.FirstChild; c != nil; c = c.NextSibling {\n+\t\t\twalk(c)\n+\t\t}\n+\t\tif n.Type == html.ElementNode {\n+\t\t\tb.WriteByte(' ')\n+\t\t}\n+\t}\n+\twalk(doc)\n+\n+\treturn strings.Join(strings.Fields(b.String()), \" \")\n+}\n+\n func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n \turlStr := call.Arguments[\"url\"]\n \tstatusCode := 0\n@@ -91,7 +126,10 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n-\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n+\treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\n@@ -111,8 +149,15 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t}\n \n \tbodyStr := string(body)\n-\tif len(body) > maxReadBytes {\n-\t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n+\n+\t// Strip HTML if Content-Type is text/html\n+\tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n+\tif mediaType == \"text/html\" {\n+\t\tbodyStr = stripHTML(bodyStr)\n+\t}\n+\n+\tif len(bodyStr) > maxReadBytes {\n+\t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n \t}\n \n \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex 37698bb..f3dd2bc 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -313,3 +313,358 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n \t}\n }\n+\n+func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t// Block longer than the per-request timeout\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Override the per-request timeout to keep the test fast\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 100 * time.Millisecond\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+\tif result.Content == \"\" {\n+\t\tt.Error(\"expected non-empty error content\")\n+\t}\n+}\n+\n+func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\ttimer := time.NewTimer(2 * time.Second)\n+\t\tdefer timer.Stop()\n+\t\tselect {\n+\t\tcase <-r.Context().Done():\n+\t\t\treturn\n+\t\tcase <-timer.C:\n+\t\t\t_, _ = w.Write([]byte(\"too late\"))\n+\t\t}\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Set per-request timeout to something long so the parent wins\n+\torig := urlFetchTimeout\n+\turlFetchTimeout = 10 * time.Second\n+\tdefer func() { urlFetchTimeout = orig }()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n+\tdefer cancel()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(ctx, call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true when parent context fires first\")\n+\t}\n+}\n+\n+func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\t_, _ = w.Write([]byte(\"fast response\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"fast response\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n+\t}\n+\tif result.CallID != call.ID {\n+\t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n+\t}\n+}\n+\n+// Phase 1A: stripHTML unit tests\n+\n+func TestStripHTML_BasicExtraction(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n+\twant := \"Hello World\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n+\twant := \"Keep this\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_PreservesNoscript(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n+\twant := \"Enable JS Main content\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_NestedScriptInDiv(t *testing.T) {\n+\tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n+\twant := \"Before After\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n+\tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n+\twant := \"Hello World\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_EmptyInput(t *testing.T) {\n+\tgot := stripHTML(\"\")\n+\twant := \"\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n+\tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n+\twant := \"\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_HTMLEntities(t *testing.T) {\n+\tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n+\twant := \"Tom & Jerry 's\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+func TestStripHTML_NoHTMLTags(t *testing.T) {\n+\tgot := stripHTML(\"Just plain text\")\n+\twant := \"Just plain text\"\n+\tif got != want {\n+\t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n+\t}\n+}\n+\n+// Phase 1B: urlFetchExecute integration tests\n+\n+func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Visible\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n+\t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Hello charset\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n+\t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"Case test\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n+\t}\n+}\n+\n+func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\twant := `{\"key\": \"<b>value</b>\"}`\n+\tif result.Content != want {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n+\t}\n+}\n+\n+func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n+\t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif result.Content != \"<p>Not HTML</p>\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n+\t}\n+}\n+\n+func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n+\t// Note: Go's http.DetectContentType may auto-set Content-Type.\n+\t// We explicitly set it to empty to test the missing header case.\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"\")\n+\t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\t// With empty Content-Type, body should be returned verbatim (no stripping)\n+\tif result.Content != \"<p>No header</p>\" {\n+\t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n+\t}\n+}\n+\n+func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\tw.WriteHeader(http.StatusNotFound)\n+\t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true\")\n+\t}\n+\tif !strings.Contains(result.Content, \"HTTP 404\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n+\t}\n+\tif !strings.Contains(result.Content, \"Not Found\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n+\t}\n+\tif strings.Contains(result.Content, \"<script>\") {\n+\t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\tw.WriteHeader(http.StatusInternalServerError)\n+\t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Fatal(\"expected IsError true\")\n+\t}\n+\tif !strings.Contains(result.Content, \"HTTP 500\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n+\t}\n+\tif !strings.Contains(result.Content, \"bad\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n+\t}\n+}\n+\n+func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n+\t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n+\t// 9950 bytes of CSS in a <style> tag + small visible text.\n+\tbigCSS := strings.Repeat(\"x\", 9950)\n+\thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n+\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.Header().Set(\"Content-Type\", \"text/html\")\n+\t\t_, _ = w.Write([]byte(htmlBody))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n+\tresult := entry.Execute(context.Background(), call, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n+\t}\n+\tif strings.Contains(result.Content, \"truncated\") {\n+\t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n+\t}\n+\tif !strings.Contains(result.Content, \"Short text\") {\n+\t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n+\t}\n+}\n",
+              "exit": 0,
+              "description": "Get all current changes",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159910554,
+              "end": 1773159910605
+            }
+          },
+          "id": "prt_cd89107b8001kdFjm35kNNDcjH",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910079001FB37CxJrSz7N24"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0064956,
+          "tokens": {
+            "total": 10248,
+            "input": 3,
+            "output": 74,
+            "reasoning": 0,
+            "cache": {
+              "read": 9497,
+              "write": 674
+            }
+          },
+          "id": "prt_cd8910cce001ipgWYWTHs1A1vB",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910079001FB37CxJrSz7N24"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159910709,
+          "completed": 1773159916277
+        },
+        "parentID": "msg_cd8910072001tQUmF7BSgpav4Y",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0317493,
+        "tokens": {
+          "total": 17560,
+          "input": 1,
+          "output": 88,
+          "reasoning": 0,
+          "cache": {
+            "read": 10171,
+            "write": 7300
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8910d35001h8RQyeMxrIA0Dg",
+        "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd8911785001poAb8EeGzxGEl3",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910d35001h8RQyeMxrIA0Dg"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "golangci-lint run ./internal/tool/",
+              "description": "Run golangci-lint on internal/tool package"
+            },
+            "output": "0 issues.\n",
+            "title": "Run golangci-lint on internal/tool package",
+            "metadata": {
+              "output": "0 issues.\n",
+              "exit": 0,
+              "description": "Run golangci-lint on internal/tool package",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773159914362,
+              "end": 1773159916179
+            }
+          },
+          "id": "prt_cd8911785002eBFTPDPs2mqaFp",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910d35001h8RQyeMxrIA0Dg"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0317493,
+          "tokens": {
+            "total": 17560,
+            "input": 1,
+            "output": 88,
+            "reasoning": 0,
+            "cache": {
+              "read": 10171,
+              "write": 7300
+            }
+          },
+          "id": "prt_cd8912294001BlLXtMlsJeMdfT",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd8910d35001h8RQyeMxrIA0Dg"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159916278,
+          "completed": 1773159919981
+        },
+        "parentID": "msg_cd8910072001tQUmF7BSgpav4Y",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00689805,
+        "tokens": {
+          "total": 17661,
+          "input": 1,
+          "output": 84,
+          "reasoning": 0,
+          "cache": {
+            "read": 17471,
+            "write": 105
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd89122f6001I6mHzLXeV03ze1",
+        "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "prt_cd8912be00017CIXh7etSP3suA",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd89122f6001I6mHzLXeV03ze1"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"mime\"\n8: \t\"net/http\"\n9: \t\"net/url\"\n10: \t\"strings\"\n11: \t\"time\"\n12: \n13: \t\"golang.org/x/net/html\"\n14: \n15: \t\"github.com/jrswab/axe/internal/provider\"\n16: \t\"github.com/jrswab/axe/internal/toolname\"\n17: )\n18: \n19: const maxReadBytes = 10000\n20: \n21: var urlFetchTimeout = 15 * time.Second\n22: \n23: func truncateURL(urlStr string, maxLen int) string {\n24: \tif len(urlStr) <= maxLen {\n25: \t\treturn urlStr\n26: \t}\n27: \treturn urlStr[:maxLen] + \"...\"\n28: }\n29: \n30: func sanitizeURL(urlStr string) string {\n31: \tparsedURL, err := url.Parse(urlStr)\n32: \tif err != nil {\n33: \t\treturn \"invalid-url\"\n34: \t}\n35: \n36: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n37: \t\treturn \"invalid-url\"\n38: \t}\n39: \n40: \tpath := parsedURL.EscapedPath()\n41: \tif path == \"\" {\n42: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n43: \t}\n44: \n45: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n46: }\n47: \n48: func urlFetchEntry() ToolEntry {\n49: \treturn ToolEntry{\n50: \t\tDefinition: urlFetchDefinition,\n51: \t\tExecute:    urlFetchExecute,\n52: \t}\n53: }\n54: \n55: func urlFetchDefinition() provider.Tool {\n56: \treturn provider.Tool{\n57: \t\tName:        toolname.URLFetch,\n58: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n59: \t\tParameters: map[string]provider.ToolParameter{\n60: \t\t\t\"url\": {\n61: \t\t\t\tType:        \"string\",\n62: \t\t\t\tDescription: \"The URL to fetch.\",\n63: \t\t\t\tRequired:    true,\n64: \t\t\t},\n65: \t\t},\n66: \t}\n67: }\n68: \n69: func stripHTML(raw string) string {\n70: \tdoc, err := html.Parse(strings.NewReader(raw))\n71: \tif err != nil {\n72: \t\treturn raw\n73: \t}\n74: \n75: \tvar b strings.Builder\n76: \tvar walk func(*html.Node)\n77: \twalk = func(n *html.Node) {\n78: \t\tif n.Type == html.ElementNode && (n.Data == \"script\" || n.Data == \"style\") {\n79: \t\t\tb.WriteByte(' ')\n80: \t\t\treturn\n81: \t\t}\n82: \t\tif n.Type == html.TextNode {\n83: \t\t\tb.WriteString(n.Data)\n84: \t\t}\n85: \t\tfor c := n.FirstChild; c != nil; c = c.NextSibling {\n86: \t\t\twalk(c)\n87: \t\t}\n88: \t\tif n.Type == html.ElementNode {\n89: \t\t\tb.WriteByte(' ')\n90: \t\t}\n91: \t}\n92: \twalk(doc)\n93: \n94: \treturn strings.Join(strings.Fields(b.String()), \" \")\n95: }\n96: \n97: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n98: \turlStr := call.Arguments[\"url\"]\n99: \tstatusCode := 0\n100: \n101: \tdefer func() {\n102: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n103: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n104: \t\tif statusCode != 0 {\n105: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n106: \t\t} else if result.IsError {\n107: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n108: \t\t}\n109: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n110: \t}()\n111: \n112: \tif urlStr == \"\" {\n113: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n114: \t}\n115: \n116: \tparsedURL, err := url.Parse(urlStr)\n117: \tif err != nil {\n118: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n119: \t}\n120: \n121: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n122: \t\treturn provider.ToolResult{\n123: \t\t\tCallID:  call.ID,\n124: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n125: \t\t\tIsError: true,\n126: \t\t}\n127: \t}\n128: \n129: \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n130: \tdefer cancel()\n131: \n132: \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n133: \tif err != nil {\n134: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n135: \t}\n136: \n137: \tresp, err := http.DefaultClient.Do(req)\n138: \tif err != nil {\n139: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n140: \t}\n141: \tdefer func() {\n142: \t\t_ = resp.Body.Close()\n143: \t}()\n144: \tstatusCode = resp.StatusCode\n145: \n146: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n147: \tif err != nil {\n148: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n149: \t}\n150: \n151: \tbodyStr := string(body)\n152: \n153: \t// Strip HTML if Content-Type is text/html\n154: \tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n155: \tif mediaType == \"text/html\" {\n156: \t\tbodyStr = stripHTML(bodyStr)\n157: \t}\n158: \n159: \tif len(bodyStr) > maxReadBytes {\n160: \t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n161: \t}\n162: \n163: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n164: \t\treturn provider.ToolResult{\n165: \t\t\tCallID:  call.ID,\n166: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n167: \t\t\tIsError: true,\n168: \t\t}\n169: \t}\n170: \n171: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n172: }\n\n(End of file - total 172 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"mime\"\n\t\"net/http\"\n\t\"net/url\"\n\t\"strings\"\n\t\"time\"\n\n\t\"golang.org/x/net/html\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst maxReadBytes = 10000\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773159919853,
+              "end": 1773159919855
+            }
+          },
+          "id": "prt_cd8912be10011P00x1e3ysBGbt",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd89122f6001I6mHzLXeV03ze1"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.00689805,
+          "tokens": {
+            "total": 17661,
+            "input": 1,
+            "output": 84,
+            "reasoning": 0,
+            "cache": {
+              "read": 17471,
+              "write": 105
+            }
+          },
+          "id": "prt_cd8913122001UD4t6Ry9LqvYIa",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd89122f6001I6mHzLXeV03ze1"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773159919982,
+          "completed": 1773159941847
+        },
+        "parentID": "msg_cd8910072001tQUmF7BSgpav4Y",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0258183,
+        "tokens": {
+          "total": 20607,
+          "input": 1,
+          "output": 816,
+          "reasoning": 0,
+          "cache": {
+            "read": 17576,
+            "write": 2214
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd891316d001mN5Zxg6pTX4k90",
+        "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "id": "REDACTED",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd891316d001mN5Zxg6pTX4k90"
+        },
+        {
+          "type": "text",
+          "text": "Here is the code review:\n\n---\n\n- **Bug — `stripHTML` writes a trailing space for every element node, including `<html>`, `<head>`, `<body>`, etc., meaning content from `<head>` (e.g. `<title>`, `<meta>` text, `<noscript>`) leaks into the output.**\n  In `@internal/tool/url_fetch.go`, update `stripHTML` to skip `head`-subtree nodes (or at minimum skip `<title>`, `<meta>`, and `<noscript>` element content), so only meaningful visible body text is extracted. The walk function should skip `n.Data == \"head\"` entirely to avoid leaking `<title>` and other head content into the stripped result. The test `TestStripHTML_PreservesNoscript` also codifies leaking `<noscript>` text as intentional — reconsider whether that's correct behaviour.\n\n- **Bug — `io.LimitReader` reads up to `maxReadBytes+1` bytes, but `stripHTML` is called on the raw bytes before stripping. If the HTML source is > 10001 bytes, the parser receives a truncated HTML document, which may produce malformed/incomplete parse trees and unreliable text extraction.**\n  In `@internal/tool/url_fetch.go`, remove the `LimitReader` cap (or raise it significantly, e.g. 1 MB) when the content type is `text/html`, strip first, then truncate the stripped plaintext to `maxReadBytes`. For non-HTML types, keep the existing early cap.\n\n- **Bug — `TestURLFetch_MissingContentTypeNotStripped` sets `Content-Type: \"\"` in the handler, but Go's `net/http` `ResponseRecorder`/server will detect the content type and overwrite it with `text/html; charset=utf-8` via `http.DetectContentType`. The test comment acknowledges this but then asserts the raw HTML is returned verbatim — this test will silently pass only if detection happens to not fire, making it unreliable.**\n  In `@internal/tool/url_fetch_test.go`, fix `TestURLFetch_MissingContentTypeNotStripped` to use a response body that `DetectContentType` will not classify as `text/html` (e.g. binary/random bytes or a body starting with `{`), or explicitly assert the stripped result if `text/html` is detected, so the test is not fragile.\n\n- **nit: `urlFetchTimeout` is a package-level `var` solely to allow test overrides — this is a global mutable that could cause races if tests run in parallel.**\n  In `@internal/tool/url_fetch.go` and `@internal/tool/url_fetch_test.go`, consider threading the timeout through `ExecContext` or as a field on a struct so tests can inject it without mutating shared state. If keeping the `var`, add `t.Parallel()` guards or document that the timeout tests must not run in parallel.\n\n- **nit: `mime.ParseMediaType` errors are silently discarded with `_`.**\n  In `@internal/tool/url_fetch.go`, if `mime.ParseMediaType` returns an error (e.g. malformed `Content-Type`), `mediaType` will be an empty string and stripping is skipped — this is the correct fallback, but consider at minimum logging the parse error at verbose level for debuggability.",
+          "time": {
+            "start": 1773159941728,
+            "end": 1773159941728
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd891316d001mN5Zxg6pTX4k90"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "48be0782cf68c0978b726bf95d47de3364b5b13c",
+          "cost": 0.0258183,
+          "tokens": {
+            "total": 20607,
+            "input": 1,
+            "output": 816,
+            "reasoning": 0,
+            "cache": {
+              "read": 17576,
+              "write": 2214
+            }
+          },
+          "id": "prt_cd891868a0019hvEmcaWDDWbMo",
+          "sessionID": "ses_3276eff97ffeA6ftNYO9adDuRF",
+          "messageID": "msg_cd891316d001mN5Zxg6pTX4k90"
+        }
+      ]
+    }
+  ]
+}
