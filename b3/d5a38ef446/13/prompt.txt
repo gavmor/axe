@@ -1,0 +1,57 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go, replace the current stub `stripHTML` function with the real implementation.
+
+First, read the current file to see its exact state.
+
+The `stripHTML` function must:
+1. Parse the HTML string into a DOM tree using `golang.org/x/net/html` (`html.Parse(strings.NewReader(raw))`)
+2. If `html.Parse` returns an error, return `raw` unchanged (fallback)
+3. Recursively walk the DOM tree
+4. Skip `<script>` and `<style>` element nodes and ALL their children entirely
+5. Collect text content from `html.TextNode` nodes into a `strings.Builder`
+6. After collecting all text, collapse whitespace using `strings.Fields` + `strings.Join` (simpler than regex)
+7. Return the result (already trimmed by Fields/Join)
+
+The function signature is: `func stripHTML(raw string) string`
+
+Add these imports to url_fetch.go (in addition to existing ones):
+- `"mime"` (will be needed for Phase 2B integration)
+- `"strings"`
+- `"golang.org/x/net/html"`
+
+Here's the implementation to write:
+
+```go
+func stripHTML(raw string) string {
+	doc, err := html.Parse(strings.NewReader(raw))
+	if err != nil {
+		return raw
+	}
+
+	var b strings.Builder
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.ElementNode && (n.Data == "script" || n.Data == "style") {
+			return
+		}
+		if n.Type == html.TextNode {
+			b.WriteString(n.Data)
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(doc)
+
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+```
+
+After replacing the stub with this implementation:
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./internal/tool/` to verify compilation
+2. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run "TestStripHTML" -v -count=1` to verify all 9 stripHTML unit tests pass
+3. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go mod tidy` to clean up go.mod (this should make golang.org/x/net a direct dependency now)
+
+Return:
+- Compilation result
+- Test results for all TestStripHTML tests
+- Whether go.mod now shows golang.org/x/net as direct (not indirect)
