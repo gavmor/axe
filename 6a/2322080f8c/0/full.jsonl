@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1773162292879,
-      "updated": 1773162296755
+      "updated": 1773162311000
     }
   },
   "messages": [
@@ -158,7 +158,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1773162296723
+          "created": 1773162296723,
+          "completed": 1773162305888
         },
         "parentID": "msg_cd8b56696001arao1PwixFDw9U",
         "modelID": "claude-sonnet-4-6",
@@ -169,16 +170,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.00481665,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 10153,
+          "input": 1,
+          "output": 90,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 9933,
+            "write": 129
           }
         },
+        "finish": "tool-calls",
         "id": "REDACTED",
         "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM"
       },
@@ -195,18 +198,204 @@
           "callID": "toolu_01V82diwT4YsLvxwZYS9uSoh",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git commit -m \"Update changelog and version for v1.2.0\"",
               "description": "Commit staged files with provided message"
             },
+            "output": "[master 71654b6] Update changelog and version for v1.2.0\n 4 files changed, 13 insertions(+), 5 deletions(-)\n",
+            "title": "Commit staged files with provided message",
+            "metadata": {
+              "output": "[master 71654b6] Update changelog and version for v1.2.0\n 4 files changed, 13 insertions(+), 5 deletions(-)\n",
+              "exit": 0,
+              "description": "Commit staged files with provided message",
+              "truncated": false
+            },
             "time": {
-              "start": 1773162300092
+              "start": 1773162300092,
+              "end": 1773162305811
             }
           },
           "id": "prt_cd8b57c21001Cti1wurQGJHltk",
           "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
           "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.00481665,
+          "tokens": {
+            "total": 10153,
+            "input": 1,
+            "output": 90,
+            "reasoning": 0,
+            "cache": {
+              "read": 9933,
+              "write": 129
+            }
+          },
+          "id": "prt_cd8b59913001FMu05nRUusUzgh",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162305888,
+          "completed": 1773162310971
+        },
+        "parentID": "msg_cd8b56696001arao1PwixFDw9U",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00468285,
+        "tokens": {
+          "total": 10281,
+          "input": 1,
+          "output": 75,
+          "reasoning": 0,
+          "cache": {
+            "read": 10062,
+            "write": 143
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "id": "prt_cd8b5a00800150NBWbAnskXYJz",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_012yX1ynhodrRTZHXoQcSH9q",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push origin master",
+              "description": "Push master branch to origin"
+            },
+            "output": "[entire] Pushing session logs to origin...\nremote: Bypassed rule violations for refs/heads/master:        \nremote: \nremote: - Changes must be made through a pull request.        \nremote: \nremote: - 3 of 3 required status checks are expected.        \nremote: \nTo github.com:jrswab/axe.git\n   71ff3ce..71654b6  master -> master\n",
+            "title": "Push master branch to origin",
+            "metadata": {
+              "output": "[entire] Pushing session logs to origin...\nremote: Bypassed rule violations for refs/heads/master:        \nremote: \nremote: - Changes must be made through a pull request.        \nremote: \nremote: - 3 of 3 required status checks are expected.        \nremote: \nTo github.com:jrswab/axe.git\n   71ff3ce..71654b6  master -> master\n",
+              "exit": 0,
+              "description": "Push master branch to origin",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162309012,
+              "end": 1773162310841
+            }
+          },
+          "id": "prt_cd8b5a0080024Wrj7v55GlL5wl",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.00468285,
+          "tokens": {
+            "total": 10281,
+            "input": 1,
+            "output": 75,
+            "reasoning": 0,
+            "cache": {
+              "read": 10062,
+              "write": 143
+            }
+          },
+          "id": "prt_cd8b5acbb001W5XmiMbzh013Lg",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162310972,
+          "completed": 1773162316177
+        },
+        "parentID": "msg_cd8b56696001arao1PwixFDw9U",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00610575,
+        "tokens": {
+          "total": 10549,
+          "input": 1,
+          "output": 156,
+          "reasoning": 0,
+          "cache": {
+            "read": 10205,
+            "write": 187
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd8b5ad3c001iXYgloIggZ6eTY",
+        "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "id": "REDACTED",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "msg_cd8b5ad3c001iXYgloIggZ6eTY"
+        },
+        {
+          "type": "text",
+          "text": "All three commands completed successfully:\n\n1. **`git add`** — Staged `cmd/root.go`, `cmd/version_test.go`, `internal/mcpclient/mcpclient.go`, and `CHANGELOG.md` with no errors.\n2. **`git commit`** — Created commit `71654b6` with 4 files changed, 13 insertions, 5 deletions.\n3. **`git push`** — Pushed to `origin/master` (`71ff3ce..71654b6`). Note: the remote reported bypassed rule violations (branch protection rules requiring PRs and status checks were bypassed), but the push succeeded.",
+          "time": {
+            "start": 1773162315960,
+            "end": 1773162315960
+          },
+          "id": "prt_cd8b5b4d5002F2akBbj17VQVSI",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "msg_cd8b5ad3c001iXYgloIggZ6eTY"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.00610575,
+          "tokens": {
+            "total": 10549,
+            "input": 1,
+            "output": 156,
+            "reasoning": 0,
+            "cache": {
+              "read": 10205,
+              "write": 187
+            }
+          },
+          "id": "prt_cd8b5c102001s5e688A2NL0IlV",
+          "sessionID": "ses_3274a9970ffeAHtp1S6hnXXmHM",
+          "messageID": "msg_cd8b5ad3c001iXYgloIggZ6eTY"
         }
       ]
     }
