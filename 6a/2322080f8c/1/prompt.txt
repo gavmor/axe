@@ -1,0 +1,7 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe
+
+Run the Go tests for the packages that were changed:
+1. `go test ./cmd/...`
+2. `go test ./internal/mcpclient/...`
+
+Return ONLY the failed test results. If all tests pass, say "All tests passed" and include the summary output.
