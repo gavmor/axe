@@ -1,0 +1,876 @@
+{
+  "info": {
+    "id": "ses_3274bba30ffePuGildnpIQIVHG",
+    "slug": "brave-planet",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_327533280ffe49Ci3cujWUI38K",
+    "title": "Update version and changelog (@general subagent)",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 13,
+      "deletions": 5,
+      "files": 4
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1773162218959,
+      "updated": 1773162245853
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773162218961
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "CHANGELOG.md",
+              "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+              "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+              "additions": 8,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/root.go",
+              "before": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.0.0\"\n\nvar rootCmd = &cobra.Command{\n\tUse:   \"axe\",\n\tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n\tLong: `Axe is a command-line interface for managing AI agents, skills,\nand configuration. It provides tools for setting up and organizing\nyour agent workspace.`,\n\tExample: `  axe version          Show the current version\n  axe config path      Print the configuration directory path\n  axe config init      Initialize the configuration directory\n  axe run pr-reviewer   Run the pr-reviewer agent`,\n\tSilenceErrors: true,\n\tSilenceUsage:  true,\n}\n\n// exitCodeFromError extracts the exit code from an ExitError, defaulting to 1.\nfunc exitCodeFromError(err error) int {\n\tvar exitErr *ExitError\n\tif errors.As(err, &exitErr) {\n\t\treturn exitErr.Code\n\t}\n\treturn 1\n}\n\n// Execute runs the root command and exits with the appropriate exit code on error.\nfunc Execute() {\n\tif err := rootCmd.Execute(); err != nil {\n\t\tfmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(exitCodeFromError(err))\n\t}\n}\n",
+              "after": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.2.0\"\n\nvar rootCmd = &cobra.Command{\n\tUse:   \"axe\",\n\tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n\tLong: `Axe is a command-line interface for managing AI agents, skills,\nand configuration. It provides tools for setting up and organizing\nyour agent workspace.`,\n\tExample: `  axe version          Show the current version\n  axe config path      Print the configuration directory path\n  axe config init      Initialize the configuration directory\n  axe run pr-reviewer   Run the pr-reviewer agent`,\n\tSilenceErrors: true,\n\tSilenceUsage:  true,\n}\n\n// exitCodeFromError extracts the exit code from an ExitError, defaulting to 1.\nfunc exitCodeFromError(err error) int {\n\tvar exitErr *ExitError\n\tif errors.As(err, &exitErr) {\n\t\treturn exitErr.Code\n\t}\n\treturn 1\n}\n\n// Execute runs the root command and exits with the appropriate exit code on error.\nfunc Execute() {\n\tif err := rootCmd.Execute(); err != nil {\n\t\tfmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(exitCodeFromError(err))\n\t}\n}\n",
+              "additions": 1,
+              "deletions": 1,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/version_test.go",
+              "before": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.0.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.0.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")\n\t}\n}\n",
+              "after": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.2.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.2.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")\n\t}\n}\n",
+              "additions": 3,
+              "deletions": 3,
+              "status": "modified"
+            },
+            {
+              "file": "internal/mcpclient/mcpclient.go",
+              "before": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error\n\ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n}\n\n// Connect initializes an MCP client session for one server config.\nfunc Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n\theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n\n\tvar transport mcp.Transport\n\tswitch cfg.Transport {\n\tcase \"sse\":\n\t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tcase \"streamable-http\":\n\t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n\t}\n\n\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.0.0\"}, nil)\n\tsession, err := client.Connect(ctx, transport, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n\t}\n\n\treturn &Client{name: cfg.Name, session: session}, nil\n}\n\n// Name returns the configured server name.\nfunc (c *Client) Name() string {\n\treturn c.name\n}\n\n// Close closes the underlying MCP session.\nfunc (c *Client) Close() error {\n\tif c == nil {\n\t\treturn nil\n\t}\n\tif c.closeFn != nil {\n\t\treturn c.closeFn()\n\t}\n\tif c.session == nil {\n\t\treturn nil\n\t}\n\treturn c.session.Close()\n}\n\n// ListTools returns MCP tools converted to provider tools.\nfunc (c *Client) ListTools(ctx context.Context) ([]provider.Tool, error) {\n\tres, err := c.session.ListTools(ctx, &mcp.ListToolsParams{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tc.toolSchemas = make(map[string]map[string]string, len(res.Tools))\n\ttools := make([]provider.Tool, 0, len(res.Tools))\n\tfor _, tool := range res.Tools {\n\t\tpt := convertTool(tool)\n\t\ttools = append(tools, pt)\n\n\t\tparamTypes := make(map[string]string, len(pt.Parameters))\n\t\tfor name, param := range pt.Parameters {\n\t\t\tparamTypes[name] = param.Type\n\t\t}\n\t\tc.toolSchemas[tool.Name] = paramTypes\n\t}\n\treturn tools, nil\n}\n\n// CallTool calls an MCP tool and converts the response into provider format.\nfunc (c *Client) CallTool(ctx context.Context, call provider.ToolCall) (provider.ToolResult, error) {\n\targs := make(map[string]any, len(call.Arguments))\n\tschema := c.toolSchemas[call.Name] // nil-safe: index on nil map returns \"\"\n\tfor key, value := range call.Arguments {\n\t\targs[key] = coerceArg(value, schema[key])\n\t}\n\n\tres, err := c.session.CallTool(ctx, &mcp.CallToolParams{Name: call.Name, Arguments: args})\n\tif err != nil {\n\t\treturn provider.ToolResult{}, err\n\t}\n\n\ttextParts := make([]string, 0, len(res.Content))\n\tfor _, content := range res.Content {\n\t\ttext, ok := content.(*mcp.TextContent)\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\t\ttextParts = append(textParts, text.Text)\n\t}\n\n\tif len(textParts) == 0 {\n\t\treturn provider.ToolResult{CallID: call.ID, IsError: true, Content: \"MCP tool returned no text content\"}, nil\n\t}\n\n\treturn provider.ToolResult{CallID: call.ID, IsError: res.IsError, Content: strings.Join(textParts, \"\\n\")}, nil\n}\n\n// coerceArg converts a string argument value to the type declared in the schema.\n// If conversion fails the original string is returned.\nfunc coerceArg(value, typeName string) any {\n\tswitch typeName {\n\tcase \"integer\":\n\t\tif v, err := strconv.ParseInt(value, 10, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"number\":\n\t\tif v, err := strconv.ParseFloat(value, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"boolean\":\n\t\tif v, err := strconv.ParseBool(value); err == nil {\n\t\t\treturn v\n\t\t}\n\t}\n\treturn value\n}\n\nfunc convertTool(tool *mcp.Tool) provider.Tool {\n\tout := provider.Tool{\n\t\tName:        tool.Name,\n\t\tDescription: tool.Description,\n\t\tParameters:  map[string]provider.ToolParameter{},\n\t}\n\n\tschema, ok := tool.InputSchema.(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\trequired := map[string]bool{}\n\tif reqList, ok := schema[\"required\"].([]any); ok {\n\t\tfor _, item := range reqList {\n\t\t\tif name, ok := item.(string); ok {\n\t\t\t\trequired[name] = true\n\t\t\t}\n\t\t}\n\t} else if reqList, ok := schema[\"required\"].([]string); ok {\n\t\tfor _, name := range reqList {\n\t\t\trequired[name] = true\n\t\t}\n\t}\n\n\tproperties, ok := schema[\"properties\"].(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\tfor name, raw := range properties {\n\t\tparam := provider.ToolParameter{Type: \"string\", Required: required[name]}\n\t\tproperty, ok := raw.(map[string]any)\n\t\tif !ok {\n\t\t\tparam.Description = \"Type unknown\"\n\t\t\tout.Parameters[name] = param\n\t\t\tcontinue\n\t\t}\n\n\t\tdesc, _ := property[\"description\"].(string)\n\t\tif typeName, ok := property[\"type\"].(string); ok {\n\t\t\tswitch typeName {\n\t\t\tcase \"string\", \"integer\", \"number\", \"boolean\":\n\t\t\t\tparam.Type = typeName\n\t\t\t\tparam.Description = desc\n\t\t\tdefault:\n\t\t\t\tparam.Description = prependTypeDescription(typeName, desc)\n\t\t\t}\n\t\t} else {\n\t\t\tparam.Description = prependTypeDescription(\"unknown\", desc)\n\t\t}\n\n\t\tout.Parameters[name] = param\n\t}\n\n\treturn out\n}\n\nfunc prependTypeDescription(typeName, desc string) string {\n\tif desc == \"\" {\n\t\treturn fmt.Sprintf(\"Type %s\", typeName)\n\t}\n\treturn fmt.Sprintf(\"Type %s: %s\", typeName, desc)\n}\n\ntype headerRoundTripper struct {\n\tbase    http.RoundTripper\n\theaders map[string]string\n}\n\nfunc (h *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {\n\tclone := req.Clone(req.Context())\n\tfor key, value := range h.headers {\n\t\tclone.Header.Set(key, value)\n\t}\n\n\tbase := h.base\n\tif base == nil {\n\t\tbase = http.DefaultTransport\n\t}\n\treturn base.RoundTrip(clone)\n}\n",
+              "after": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error\n\ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n}\n\n// Connect initializes an MCP client session for one server config.\nfunc Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n\theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n\n\tvar transport mcp.Transport\n\tswitch cfg.Transport {\n\tcase \"sse\":\n\t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tcase \"streamable-http\":\n\t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n\t}\n\n\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.2.0\"}, nil)\n\tsession, err := client.Connect(ctx, transport, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n\t}\n\n\treturn &Client{name: cfg.Name, session: session}, nil\n}\n\n// Name returns the configured server name.\nfunc (c *Client) Name() string {\n\treturn c.name\n}\n\n// Close closes the underlying MCP session.\nfunc (c *Client) Close() error {\n\tif c == nil {\n\t\treturn nil\n\t}\n\tif c.closeFn != nil {\n\t\treturn c.closeFn()\n\t}\n\tif c.session == nil {\n\t\treturn nil\n\t}\n\treturn c.session.Close()\n}\n\n// ListTools returns MCP tools converted to provider tools.\nfunc (c *Client) ListTools(ctx context.Context) ([]provider.Tool, error) {\n\tres, err := c.session.ListTools(ctx, &mcp.ListToolsParams{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tc.toolSchemas = make(map[string]map[string]string, len(res.Tools))\n\ttools := make([]provider.Tool, 0, len(res.Tools))\n\tfor _, tool := range res.Tools {\n\t\tpt := convertTool(tool)\n\t\ttools = append(tools, pt)\n\n\t\tparamTypes := make(map[string]string, len(pt.Parameters))\n\t\tfor name, param := range pt.Parameters {\n\t\t\tparamTypes[name] = param.Type\n\t\t}\n\t\tc.toolSchemas[tool.Name] = paramTypes\n\t}\n\treturn tools, nil\n}\n\n// CallTool calls an MCP tool and converts the response into provider format.\nfunc (c *Client) CallTool(ctx context.Context, call provider.ToolCall) (provider.ToolResult, error) {\n\targs := make(map[string]any, len(call.Arguments))\n\tschema := c.toolSchemas[call.Name] // nil-safe: index on nil map returns \"\"\n\tfor key, value := range call.Arguments {\n\t\targs[key] = coerceArg(value, schema[key])\n\t}\n\n\tres, err := c.session.CallTool(ctx, &mcp.CallToolParams{Name: call.Name, Arguments: args})\n\tif err != nil {\n\t\treturn provider.ToolResult{}, err\n\t}\n\n\ttextParts := make([]string, 0, len(res.Content))\n\tfor _, content := range res.Content {\n\t\ttext, ok := content.(*mcp.TextContent)\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\t\ttextParts = append(textParts, text.Text)\n\t}\n\n\tif len(textParts) == 0 {\n\t\treturn provider.ToolResult{CallID: call.ID, IsError: true, Content: \"MCP tool returned no text content\"}, nil\n\t}\n\n\treturn provider.ToolResult{CallID: call.ID, IsError: res.IsError, Content: strings.Join(textParts, \"\\n\")}, nil\n}\n\n// coerceArg converts a string argument value to the type declared in the schema.\n// If conversion fails the original string is returned.\nfunc coerceArg(value, typeName string) any {\n\tswitch typeName {\n\tcase \"integer\":\n\t\tif v, err := strconv.ParseInt(value, 10, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"number\":\n\t\tif v, err := strconv.ParseFloat(value, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"boolean\":\n\t\tif v, err := strconv.ParseBool(value); err == nil {\n\t\t\treturn v\n\t\t}\n\t}\n\treturn value\n}\n\nfunc convertTool(tool *mcp.Tool) provider.Tool {\n\tout := provider.Tool{\n\t\tName:        tool.Name,\n\t\tDescription: tool.Description,\n\t\tParameters:  map[string]provider.ToolParameter{},\n\t}\n\n\tschema, ok := tool.InputSchema.(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\trequired := map[string]bool{}\n\tif reqList, ok := schema[\"required\"].([]any); ok {\n\t\tfor _, item := range reqList {\n\t\t\tif name, ok := item.(string); ok {\n\t\t\t\trequired[name] = true\n\t\t\t}\n\t\t}\n\t} else if reqList, ok := schema[\"required\"].([]string); ok {\n\t\tfor _, name := range reqList {\n\t\t\trequired[name] = true\n\t\t}\n\t}\n\n\tproperties, ok := schema[\"properties\"].(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\tfor name, raw := range properties {\n\t\tparam := provider.ToolParameter{Type: \"string\", Required: required[name]}\n\t\tproperty, ok := raw.(map[string]any)\n\t\tif !ok {\n\t\t\tparam.Description = \"Type unknown\"\n\t\t\tout.Parameters[name] = param\n\t\t\tcontinue\n\t\t}\n\n\t\tdesc, _ := property[\"description\"].(string)\n\t\tif typeName, ok := property[\"type\"].(string); ok {\n\t\t\tswitch typeName {\n\t\t\tcase \"string\", \"integer\", \"number\", \"boolean\":\n\t\t\t\tparam.Type = typeName\n\t\t\t\tparam.Description = desc\n\t\t\tdefault:\n\t\t\t\tparam.Description = prependTypeDescription(typeName, desc)\n\t\t\t}\n\t\t} else {\n\t\t\tparam.Description = prependTypeDescription(\"unknown\", desc)\n\t\t}\n\n\t\tout.Parameters[name] = param\n\t}\n\n\treturn out\n}\n\nfunc prependTypeDescription(typeName, desc string) string {\n\tif desc == \"\" {\n\t\treturn fmt.Sprintf(\"Type %s\", typeName)\n\t}\n\treturn fmt.Sprintf(\"Type %s: %s\", typeName, desc)\n}\n\ntype headerRoundTripper struct {\n\tbase    http.RoundTripper\n\theaders map[string]string\n}\n\nfunc (h *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {\n\tclone := req.Clone(req.Context())\n\tfor key, value := range h.headers {\n\t\tclone.Header.Set(key, value)\n\t}\n\n\tbase := h.base\n\tif base == nil {\n\t\tbase = http.DefaultTransport\n\t}\n\treturn base.RoundTrip(clone)\n}\n",
+              "additions": 1,
+              "deletions": 1,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are working in /Users/jaronswab/go/src/github.com/jrswab/axe\n\nMake the following file edits (do NOT commit or push — just edit the files):\n\n1. **cmd/root.go line 12**: Change `const Version = \"1.0.0\"` to `const Version = \"1.2.0\"`\n\n2. **cmd/version_test.go**:\n   - Line 19: Change `want := \"axe version 1.0.0\\n\"` to `want := \"axe version 1.2.0\\n\"`\n   - Line 26: Change `if Version != \"1.0.0\" {` to `if Version != \"1.2.0\" {`\n   - Line 27: Change `t.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")` to `t.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")`\n\n3. **internal/mcpclient/mcpclient.go line 43**: Change `Version: \"1.0.0\"` to `Version: \"1.2.0\"`\n\n4. **CHANGELOG.md**: Prepend a new release section right after line 7 (after the \"and this project adheres to...\" line). Insert:\n\n```\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n```\n\nAlso update the reference links at the bottom of CHANGELOG.md. The current bottom has:\n```\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n```\n\nAdd this line at the top of the reference links section:\n```\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n```\n\nAfter making all edits, verify them by reading each file back and confirming the changes are correct. Return a summary of all changes made.",
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d1001eiTvvTzJtxDMzn"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162218964,
+          "completed": 1773162223806
+        },
+        "parentID": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0439215,
+        "tokens": {
+          "total": 10738,
+          "input": 3,
+          "output": 325,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 10410
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8b445d4001x4wipzowMhL76V",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "id": "prt_cd8b44ba5001EH1cz7eP0FYYZj",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "text",
+          "text": "I'll make all the edits in parallel, then verify them.",
+          "time": {
+            "start": 1773162221192,
+            "end": 1773162221192
+          },
+          "id": "prt_cd8b44ba6001T0fKk6GlvI4sw0",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go",
+              "limit": 20
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go</path>\n<type>file</type>\n<content>1: package cmd\n2: \n3: import (\n4: \t\"errors\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \n8: \t\"github.com/spf13/cobra\"\n9: )\n10: \n11: // Version is the hardcoded version constant for the CLI.\n12: const Version = \"1.0.0\"\n13: \n14: var rootCmd = &cobra.Command{\n15: \tUse:   \"axe\",\n16: \tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n17: \tLong: `Axe is a command-line interface for managing AI agents, skills,\n18: and configuration. It provides tools for setting up and organizing\n19: your agent workspace.`,\n20: \tExample: `  axe version          Show the current version\n\n(Showing lines 1-20 of 43. Use offset=21 to continue.)\n</content>",
+            "title": "cmd/root.go",
+            "metadata": {
+              "preview": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.0.0\"\n\nvar rootCmd = &cobra.Command{\n\tUse:   \"axe\",\n\tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n\tLong: `Axe is a command-line interface for managing AI agents, skills,\nand configuration. It provides tools for setting up and organizing\nyour agent workspace.`,\n\tExample: `  axe version          Show the current version",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162221670,
+              "end": 1773162221677
+            }
+          },
+          "id": "prt_cd8b44e890016Xl78ZWrdInxkt",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go</path>\n<type>file</type>\n<content>1: package cmd\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"testing\"\n6: )\n7: \n8: func TestVersionCommand_Output(t *testing.T) {\n9: \tbuf := new(bytes.Buffer)\n10: \trootCmd.SetOut(buf)\n11: \trootCmd.SetArgs([]string{\"version\"})\n12: \n13: \terr := rootCmd.Execute()\n14: \tif err != nil {\n15: \t\tt.Fatalf(\"unexpected error: %v\", err)\n16: \t}\n17: \n18: \tgot := buf.String()\n19: \twant := \"axe version 1.0.0\\n\"\n20: \tif got != want {\n21: \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n22: \t}\n23: }\n24: \n25: func TestVersionConstant(t *testing.T) {\n26: \tif Version != \"1.0.0\" {\n27: \t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")\n28: \t}\n29: }\n\n(End of file - total 29 lines)\n</content>",
+            "title": "cmd/version_test.go",
+            "metadata": {
+              "preview": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.0.0\\n\"\n\tif got != want {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162222103,
+              "end": 1773162222107
+            }
+          },
+          "id": "prt_cd8b45069001AA0TPpXqSFcZqR",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Up7QSjguEUNQkm17Hw3eDe",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go",
+              "limit": 55
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go</path>\n<type>file</type>\n<content>1: package mcpclient\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net/http\"\n7: \t\"strconv\"\n8: \t\"strings\"\n9: \n10: \t\"github.com/jrswab/axe/internal/agent\"\n11: \t\"github.com/jrswab/axe/internal/envinterp\"\n12: \t\"github.com/jrswab/axe/internal/provider\"\n13: \t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n14: )\n15: \n16: // Client wraps an MCP session for one configured server.\n17: type Client struct {\n18: \tname        string\n19: \tsession     *mcp.ClientSession\n20: \tcloseFn     func() error\n21: \ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n22: }\n23: \n24: // Connect initializes an MCP client session for one server config.\n25: func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n26: \theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n27: \tif err != nil {\n28: \t\treturn nil, err\n29: \t}\n30: \n31: \thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n32: \n33: \tvar transport mcp.Transport\n34: \tswitch cfg.Transport {\n35: \tcase \"sse\":\n36: \t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n37: \tcase \"streamable-http\":\n38: \t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n39: \tdefault:\n40: \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n41: \t}\n42: \n43: \tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.0.0\"}, nil)\n44: \tsession, err := client.Connect(ctx, transport, nil)\n45: \tif err != nil {\n46: \t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n47: \t}\n48: \n49: \treturn &Client{name: cfg.Name, session: session}, nil\n50: }\n51: \n52: // Name returns the configured server name.\n53: func (c *Client) Name() string {\n54: \treturn c.name\n55: }\n\n(Showing lines 1-55 of 223. Use offset=56 to continue.)\n</content>",
+            "title": "internal/mcpclient/mcpclient.go",
+            "metadata": {
+              "preview": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162222861,
+              "end": 1773162222866
+            }
+          },
+          "id": "prt_cd8b45219001AIHmD0tAhU92Tp",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md</path>\n<type>file</type>\n<content>1: # Changelog\n2: \n3: All notable changes to this project will be documented in this file.\n4: \n5: The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n6: and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n7: \n8: ## [1.1.1] - 2026-03-06\n9: \n10: ### Fixed\n11: - Remove hardcoded `/v1` from OpenAI provider URL path\n12: \n13: ## [1.1.0] - 2026-03-06\n14: \n15: ### Added\n16: - MCP tool support\n17: - `web_search` built-in tool using Tavily Search API\n18: - `url_fetch` built-in tool\n19: - JSON `tool_call_details` in run output\n20: - Refusal detection in JSON output\n21: - Executable examples\n22: \n23: ### Changed\n24: - Docker docs for running a single agent with selective mounts\n25: \n26: ## [1.0.0] - 2026-03-02\n27: \n28: ### Added\n29: - Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n30: - TOML-based agent configuration with SKILL.md context support\n31: - Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n32: - Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n33: - Sub-agent orchestration with `call_agent` tool and depth-limited execution\n34: - Agent memory system with XDG-compliant data storage and garbage collection\n35: - Path security: `~` and `$VAR` expansion for user-supplied paths\n36: - Stdin piping support for composing with Unix tools\n37: - Dry-run mode and per-tool verbose logging\n38: - Docker containerization support\n39: - CI workflows: lint, test, build, and GoReleaser\n40: \n41: ### Fixed\n42: - Arg validation UX and skill path resolution\n43: - staticcheck/errcheck lint issues\n44: - Duplicate error silencing, glob validation, and nil ExitError guard\n45: \n46: [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n47: [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n48: [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n\n(End of file - total 48 lines)\n</content>",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "preview": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162223633,
+              "end": 1773162223640
+            }
+          },
+          "id": "prt_cd8b4550f001r35R9cmCIE3LFF",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "cost": 0.0439215,
+          "tokens": {
+            "total": 10738,
+            "input": 3,
+            "output": 325,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 10410
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b445d4001x4wipzowMhL76V"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162223807,
+          "completed": 1773162233797
+        },
+        "parentID": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02592975,
+        "tokens": {
+          "total": 13891,
+          "input": 1,
+          "output": 867,
+          "reasoning": 0,
+          "cache": {
+            "read": 10410,
+            "write": 2613
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd8b458be001o8sB27125M5jKJ",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "text",
+          "text": "All files read. Now applying all edits in parallel.",
+          "time": {
+            "start": 1773162225838,
+            "end": 1773162225838
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_014Xt4by1NTHLvitqAFJ3ZyX",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go",
+              "oldString": "const Version = \"1.0.0\"",
+              "newString": "const Version = \"1.2.0\""
+            },
+            "output": "Edit applied successfully.",
+            "title": "cmd/root.go",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go\n@@ -8,9 +8,9 @@\n \t\"github.com/spf13/cobra\"\n )\n \n // Version is the hardcoded version constant for the CLI.\n-const Version = \"1.0.0\"\n+const Version = \"1.2.0\"\n \n var rootCmd = &cobra.Command{\n \tUse:   \"axe\",\n \tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go",
+                "before": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.0.0\"\n\nvar rootCmd = &cobra.Command{\n\tUse:   \"axe\",\n\tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n\tLong: `Axe is a command-line interface for managing AI agents, skills,\nand configuration. It provides tools for setting up and organizing\nyour agent workspace.`,\n\tExample: `  axe version          Show the current version\n  axe config path      Print the configuration directory path\n  axe config init      Initialize the configuration directory\n  axe run pr-reviewer   Run the pr-reviewer agent`,\n\tSilenceErrors: true,\n\tSilenceUsage:  true,\n}\n\n// exitCodeFromError extracts the exit code from an ExitError, defaulting to 1.\nfunc exitCodeFromError(err error) int {\n\tvar exitErr *ExitError\n\tif errors.As(err, &exitErr) {\n\t\treturn exitErr.Code\n\t}\n\treturn 1\n}\n\n// Execute runs the root command and exits with the appropriate exit code on error.\nfunc Execute() {\n\tif err := rootCmd.Execute(); err != nil {\n\t\tfmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(exitCodeFromError(err))\n\t}\n}\n",
+                "after": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.2.0\"\n\nvar rootCmd = &cobra.Command{\n\tUse:   \"axe\",\n\tShort: \"Axe is a CLI tool for managing AI agents and skills\",\n\tLong: `Axe is a command-line interface for managing AI agents, skills,\nand configuration. It provides tools for setting up and organizing\nyour agent workspace.`,\n\tExample: `  axe version          Show the current version\n  axe config path      Print the configuration directory path\n  axe config init      Initialize the configuration directory\n  axe run pr-reviewer   Run the pr-reviewer agent`,\n\tSilenceErrors: true,\n\tSilenceUsage:  true,\n}\n\n// exitCodeFromError extracts the exit code from an ExitError, defaulting to 1.\nfunc exitCodeFromError(err error) int {\n\tvar exitErr *ExitError\n\tif errors.As(err, &exitErr) {\n\t\treturn exitErr.Code\n\t}\n\treturn 1\n}\n\n// Execute runs the root command and exits with the appropriate exit code on error.\nfunc Execute() {\n\tif err := rootCmd.Execute(); err != nil {\n\t\tfmt.Fprintln(os.Stderr, err)\n\t\tos.Exit(exitCodeFromError(err))\n\t}\n}\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162227048,
+              "end": 1773162227268
+            }
+          },
+          "id": "prt_cd8b460af00173aWYa5EWvyWyA",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go",
+              "oldString": "\twant := \"axe version 1.0.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.0.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")",
+              "newString": "\twant := \"axe version 1.2.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.2.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")"
+            },
+            "output": "Edit applied successfully.",
+            "title": "cmd/version_test.go",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go\n@@ -15,15 +15,15 @@\n \t\tt.Fatalf(\"unexpected error: %v\", err)\n \t}\n \n \tgot := buf.String()\n-\twant := \"axe version 1.0.0\\n\"\n+\twant := \"axe version 1.2.0\\n\"\n \tif got != want {\n \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n \t}\n }\n \n func TestVersionConstant(t *testing.T) {\n-\tif Version != \"1.0.0\" {\n-\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")\n+\tif Version != \"1.2.0\" {\n+\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")\n \t}\n }\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go",
+                "before": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.0.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.0.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.0.0\")\n\t}\n}\n",
+                "after": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.2.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.2.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")\n\t}\n}\n",
+                "additions": 3,
+                "deletions": 3
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162229729,
+              "end": 1773162229953
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01BA84oZ4npyhhE3sxMLoTnQ",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go",
+              "oldString": "\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.0.0\"}, nil)",
+              "newString": "\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.2.0\"}, nil)"
+            },
+            "output": "Edit applied successfully.",
+            "title": "internal/mcpclient/mcpclient.go",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go\n@@ -39,9 +39,9 @@\n default:\n \treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n }\n \n-client := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.0.0\"}, nil)\n+client := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.2.0\"}, nil)\n session, err := client.Connect(ctx, transport, nil)\n if err != nil {\n \treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n }\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go",
+                "before": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error\n\ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n}\n\n// Connect initializes an MCP client session for one server config.\nfunc Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n\theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n\n\tvar transport mcp.Transport\n\tswitch cfg.Transport {\n\tcase \"sse\":\n\t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tcase \"streamable-http\":\n\t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n\t}\n\n\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.0.0\"}, nil)\n\tsession, err := client.Connect(ctx, transport, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n\t}\n\n\treturn &Client{name: cfg.Name, session: session}, nil\n}\n\n// Name returns the configured server name.\nfunc (c *Client) Name() string {\n\treturn c.name\n}\n\n// Close closes the underlying MCP session.\nfunc (c *Client) Close() error {\n\tif c == nil {\n\t\treturn nil\n\t}\n\tif c.closeFn != nil {\n\t\treturn c.closeFn()\n\t}\n\tif c.session == nil {\n\t\treturn nil\n\t}\n\treturn c.session.Close()\n}\n\n// ListTools returns MCP tools converted to provider tools.\nfunc (c *Client) ListTools(ctx context.Context) ([]provider.Tool, error) {\n\tres, err := c.session.ListTools(ctx, &mcp.ListToolsParams{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tc.toolSchemas = make(map[string]map[string]string, len(res.Tools))\n\ttools := make([]provider.Tool, 0, len(res.Tools))\n\tfor _, tool := range res.Tools {\n\t\tpt := convertTool(tool)\n\t\ttools = append(tools, pt)\n\n\t\tparamTypes := make(map[string]string, len(pt.Parameters))\n\t\tfor name, param := range pt.Parameters {\n\t\t\tparamTypes[name] = param.Type\n\t\t}\n\t\tc.toolSchemas[tool.Name] = paramTypes\n\t}\n\treturn tools, nil\n}\n\n// CallTool calls an MCP tool and converts the response into provider format.\nfunc (c *Client) CallTool(ctx context.Context, call provider.ToolCall) (provider.ToolResult, error) {\n\targs := make(map[string]any, len(call.Arguments))\n\tschema := c.toolSchemas[call.Name] // nil-safe: index on nil map returns \"\"\n\tfor key, value := range call.Arguments {\n\t\targs[key] = coerceArg(value, schema[key])\n\t}\n\n\tres, err := c.session.CallTool(ctx, &mcp.CallToolParams{Name: call.Name, Arguments: args})\n\tif err != nil {\n\t\treturn provider.ToolResult{}, err\n\t}\n\n\ttextParts := make([]string, 0, len(res.Content))\n\tfor _, content := range res.Content {\n\t\ttext, ok := content.(*mcp.TextContent)\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\t\ttextParts = append(textParts, text.Text)\n\t}\n\n\tif len(textParts) == 0 {\n\t\treturn provider.ToolResult{CallID: call.ID, IsError: true, Content: \"MCP tool returned no text content\"}, nil\n\t}\n\n\treturn provider.ToolResult{CallID: call.ID, IsError: res.IsError, Content: strings.Join(textParts, \"\\n\")}, nil\n}\n\n// coerceArg converts a string argument value to the type declared in the schema.\n// If conversion fails the original string is returned.\nfunc coerceArg(value, typeName string) any {\n\tswitch typeName {\n\tcase \"integer\":\n\t\tif v, err := strconv.ParseInt(value, 10, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"number\":\n\t\tif v, err := strconv.ParseFloat(value, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"boolean\":\n\t\tif v, err := strconv.ParseBool(value); err == nil {\n\t\t\treturn v\n\t\t}\n\t}\n\treturn value\n}\n\nfunc convertTool(tool *mcp.Tool) provider.Tool {\n\tout := provider.Tool{\n\t\tName:        tool.Name,\n\t\tDescription: tool.Description,\n\t\tParameters:  map[string]provider.ToolParameter{},\n\t}\n\n\tschema, ok := tool.InputSchema.(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\trequired := map[string]bool{}\n\tif reqList, ok := schema[\"required\"].([]any); ok {\n\t\tfor _, item := range reqList {\n\t\t\tif name, ok := item.(string); ok {\n\t\t\t\trequired[name] = true\n\t\t\t}\n\t\t}\n\t} else if reqList, ok := schema[\"required\"].([]string); ok {\n\t\tfor _, name := range reqList {\n\t\t\trequired[name] = true\n\t\t}\n\t}\n\n\tproperties, ok := schema[\"properties\"].(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\tfor name, raw := range properties {\n\t\tparam := provider.ToolParameter{Type: \"string\", Required: required[name]}\n\t\tproperty, ok := raw.(map[string]any)\n\t\tif !ok {\n\t\t\tparam.Description = \"Type unknown\"\n\t\t\tout.Parameters[name] = param\n\t\t\tcontinue\n\t\t}\n\n\t\tdesc, _ := property[\"description\"].(string)\n\t\tif typeName, ok := property[\"type\"].(string); ok {\n\t\t\tswitch typeName {\n\t\t\tcase \"string\", \"integer\", \"number\", \"boolean\":\n\t\t\t\tparam.Type = typeName\n\t\t\t\tparam.Description = desc\n\t\t\tdefault:\n\t\t\t\tparam.Description = prependTypeDescription(typeName, desc)\n\t\t\t}\n\t\t} else {\n\t\t\tparam.Description = prependTypeDescription(\"unknown\", desc)\n\t\t}\n\n\t\tout.Parameters[name] = param\n\t}\n\n\treturn out\n}\n\nfunc prependTypeDescription(typeName, desc string) string {\n\tif desc == \"\" {\n\t\treturn fmt.Sprintf(\"Type %s\", typeName)\n\t}\n\treturn fmt.Sprintf(\"Type %s: %s\", typeName, desc)\n}\n\ntype headerRoundTripper struct {\n\tbase    http.RoundTripper\n\theaders map[string]string\n}\n\nfunc (h *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {\n\tclone := req.Clone(req.Context())\n\tfor key, value := range h.headers {\n\t\tclone.Header.Set(key, value)\n\t}\n\n\tbase := h.base\n\tif base == nil {\n\t\tbase = http.DefaultTransport\n\t}\n\treturn base.RoundTrip(clone)\n}\n",
+                "after": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error\n\ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n}\n\n// Connect initializes an MCP client session for one server config.\nfunc Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n\theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n\n\tvar transport mcp.Transport\n\tswitch cfg.Transport {\n\tcase \"sse\":\n\t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tcase \"streamable-http\":\n\t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n\tdefault:\n\t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n\t}\n\n\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.2.0\"}, nil)\n\tsession, err := client.Connect(ctx, transport, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n\t}\n\n\treturn &Client{name: cfg.Name, session: session}, nil\n}\n\n// Name returns the configured server name.\nfunc (c *Client) Name() string {\n\treturn c.name\n}\n\n// Close closes the underlying MCP session.\nfunc (c *Client) Close() error {\n\tif c == nil {\n\t\treturn nil\n\t}\n\tif c.closeFn != nil {\n\t\treturn c.closeFn()\n\t}\n\tif c.session == nil {\n\t\treturn nil\n\t}\n\treturn c.session.Close()\n}\n\n// ListTools returns MCP tools converted to provider tools.\nfunc (c *Client) ListTools(ctx context.Context) ([]provider.Tool, error) {\n\tres, err := c.session.ListTools(ctx, &mcp.ListToolsParams{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tc.toolSchemas = make(map[string]map[string]string, len(res.Tools))\n\ttools := make([]provider.Tool, 0, len(res.Tools))\n\tfor _, tool := range res.Tools {\n\t\tpt := convertTool(tool)\n\t\ttools = append(tools, pt)\n\n\t\tparamTypes := make(map[string]string, len(pt.Parameters))\n\t\tfor name, param := range pt.Parameters {\n\t\t\tparamTypes[name] = param.Type\n\t\t}\n\t\tc.toolSchemas[tool.Name] = paramTypes\n\t}\n\treturn tools, nil\n}\n\n// CallTool calls an MCP tool and converts the response into provider format.\nfunc (c *Client) CallTool(ctx context.Context, call provider.ToolCall) (provider.ToolResult, error) {\n\targs := make(map[string]any, len(call.Arguments))\n\tschema := c.toolSchemas[call.Name] // nil-safe: index on nil map returns \"\"\n\tfor key, value := range call.Arguments {\n\t\targs[key] = coerceArg(value, schema[key])\n\t}\n\n\tres, err := c.session.CallTool(ctx, &mcp.CallToolParams{Name: call.Name, Arguments: args})\n\tif err != nil {\n\t\treturn provider.ToolResult{}, err\n\t}\n\n\ttextParts := make([]string, 0, len(res.Content))\n\tfor _, content := range res.Content {\n\t\ttext, ok := content.(*mcp.TextContent)\n\t\tif !ok {\n\t\t\tcontinue\n\t\t}\n\t\ttextParts = append(textParts, text.Text)\n\t}\n\n\tif len(textParts) == 0 {\n\t\treturn provider.ToolResult{CallID: call.ID, IsError: true, Content: \"MCP tool returned no text content\"}, nil\n\t}\n\n\treturn provider.ToolResult{CallID: call.ID, IsError: res.IsError, Content: strings.Join(textParts, \"\\n\")}, nil\n}\n\n// coerceArg converts a string argument value to the type declared in the schema.\n// If conversion fails the original string is returned.\nfunc coerceArg(value, typeName string) any {\n\tswitch typeName {\n\tcase \"integer\":\n\t\tif v, err := strconv.ParseInt(value, 10, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"number\":\n\t\tif v, err := strconv.ParseFloat(value, 64); err == nil {\n\t\t\treturn v\n\t\t}\n\tcase \"boolean\":\n\t\tif v, err := strconv.ParseBool(value); err == nil {\n\t\t\treturn v\n\t\t}\n\t}\n\treturn value\n}\n\nfunc convertTool(tool *mcp.Tool) provider.Tool {\n\tout := provider.Tool{\n\t\tName:        tool.Name,\n\t\tDescription: tool.Description,\n\t\tParameters:  map[string]provider.ToolParameter{},\n\t}\n\n\tschema, ok := tool.InputSchema.(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\trequired := map[string]bool{}\n\tif reqList, ok := schema[\"required\"].([]any); ok {\n\t\tfor _, item := range reqList {\n\t\t\tif name, ok := item.(string); ok {\n\t\t\t\trequired[name] = true\n\t\t\t}\n\t\t}\n\t} else if reqList, ok := schema[\"required\"].([]string); ok {\n\t\tfor _, name := range reqList {\n\t\t\trequired[name] = true\n\t\t}\n\t}\n\n\tproperties, ok := schema[\"properties\"].(map[string]any)\n\tif !ok {\n\t\treturn out\n\t}\n\n\tfor name, raw := range properties {\n\t\tparam := provider.ToolParameter{Type: \"string\", Required: required[name]}\n\t\tproperty, ok := raw.(map[string]any)\n\t\tif !ok {\n\t\t\tparam.Description = \"Type unknown\"\n\t\t\tout.Parameters[name] = param\n\t\t\tcontinue\n\t\t}\n\n\t\tdesc, _ := property[\"description\"].(string)\n\t\tif typeName, ok := property[\"type\"].(string); ok {\n\t\t\tswitch typeName {\n\t\t\tcase \"string\", \"integer\", \"number\", \"boolean\":\n\t\t\t\tparam.Type = typeName\n\t\t\t\tparam.Description = desc\n\t\t\tdefault:\n\t\t\t\tparam.Description = prependTypeDescription(typeName, desc)\n\t\t\t}\n\t\t} else {\n\t\t\tparam.Description = prependTypeDescription(\"unknown\", desc)\n\t\t}\n\n\t\tout.Parameters[name] = param\n\t}\n\n\treturn out\n}\n\nfunc prependTypeDescription(typeName, desc string) string {\n\tif desc == \"\" {\n\t\treturn fmt.Sprintf(\"Type %s\", typeName)\n\t}\n\treturn fmt.Sprintf(\"Type %s: %s\", typeName, desc)\n}\n\ntype headerRoundTripper struct {\n\tbase    http.RoundTripper\n\theaders map[string]string\n}\n\nfunc (h *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {\n\tclone := req.Clone(req.Context())\n\tfor key, value := range h.headers {\n\t\tclone.Header.Set(key, value)\n\t}\n\n\tbase := h.base\n\tif base == nil {\n\t\tbase = http.DefaultTransport\n\t}\n\treturn base.RoundTrip(clone)\n}\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162231189,
+              "end": 1773162231413
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+              "oldString": "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.1.1] - 2026-03-06",
+              "newString": "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06"
+            },
+            "output": "Edit applied successfully.",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n@@ -4,8 +4,15 @@\n \n The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n \n+## [1.2.0] - 2026-03-10\n+\n+### Added\n+- OpenCode provider support\n+- HTTP request timeout (15s per-request) for `url_fetch` tool\n+- HTML tag stripping for `url_fetch` responses\n+\n ## [1.1.1] - 2026-03-06\n \n ### Fixed\n - Remove hardcoded `/v1` from OpenAI provider URL path\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+                "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "additions": 7,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162233621,
+              "end": 1773162233668
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "56724f3ad3d8fbaea642645f642e94c2ffdfca68",
+          "cost": 0.02592975,
+          "tokens": {
+            "total": 13891,
+            "input": 1,
+            "output": 867,
+            "reasoning": 0,
+            "cache": {
+              "read": 10410,
+              "write": 2613
+            }
+          },
+          "id": "prt_cd8b47f44001s6yZOrcpxVzw5P",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        },
+        {
+          "type": "patch",
+          "hash": "dc1a235e54e213cdb121ef2f56b89132e6cd561f",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go"
+          ],
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b458be001o8sB27125M5jKJ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162233798,
+          "completed": 1773162238694
+        },
+        "parentID": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0111099,
+        "tokens": {
+          "total": 14242,
+          "input": 1,
+          "output": 234,
+          "reasoning": 0,
+          "cache": {
+            "read": 13023,
+            "write": 984
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "56724f3ad3d8fbaea642645f642e94c2ffdfca68",
+          "id": "prt_cd8b489f20016BpCmGpC8I6Z5I",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Now add the reference link to CHANGELOG.md:",
+          "time": {
+            "start": 1773162236689,
+            "end": 1773162236689
+          },
+          "id": "prt_cd8b489f3001OD3fhwXya06mc3",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_014pjEpcm7pyyh74sWuoQ8zj",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+              "oldString": "[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1",
+              "newString": "[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1"
+            },
+            "output": "Edit applied successfully.",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n@@ -49,7 +49,8 @@\n - Arg validation UX and skill path resolution\n - staticcheck/errcheck lint issues\n - Duplicate error silencing, glob validation, and nil ExitError guard\n \n+[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+                "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "additions": 1,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773162238537,
+              "end": 1773162238582
+            }
+          },
+          "id": "prt_cd8b48b13001xgylTyPyB6kVAZ",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.0111099,
+          "tokens": {
+            "total": 14242,
+            "input": 1,
+            "output": 234,
+            "reasoning": 0,
+            "cache": {
+              "read": 13023,
+              "write": 984
+            }
+          },
+          "id": "prt_cd8b49276001FKtS00d2bVVqpB",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "56724f3ad3d8fbaea642645f642e94c2ffdfca68",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+          ],
+          "id": "prt_cd8b492e4001z0401RLNmwGTlU",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162238695,
+          "completed": 1773162245705
+        },
+        "parentID": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00987885,
+        "tokens": {
+          "total": 14573,
+          "input": 1,
+          "output": 316,
+          "reasoning": 0,
+          "cache": {
+            "read": 14007,
+            "write": 249
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Now verify all changes:",
+          "time": {
+            "start": 1773162243276,
+            "end": 1773162243276
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go",
+              "limit": 13
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go</path>\n<type>file</type>\n<content>1: package cmd\n2: \n3: import (\n4: \t\"errors\"\n5: \t\"fmt\"\n6: \t\"os\"\n7: \n8: \t\"github.com/spf13/cobra\"\n9: )\n10: \n11: // Version is the hardcoded version constant for the CLI.\n12: const Version = \"1.2.0\"\n13: \n\n(Showing lines 1-13 of 43. Use offset=14 to continue.)\n</content>",
+            "title": "cmd/root.go",
+            "metadata": {
+              "preview": "package cmd\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/spf13/cobra\"\n)\n\n// Version is the hardcoded version constant for the CLI.\nconst Version = \"1.2.0\"\n",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162243694,
+              "end": 1773162243708
+            }
+          },
+          "id": "prt_cd8b4a4e2001Lw4a6Krpy3GU02",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_012bHuWSc6HQc6amkCKZkrym",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go</path>\n<type>file</type>\n<content>1: package cmd\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"testing\"\n6: )\n7: \n8: func TestVersionCommand_Output(t *testing.T) {\n9: \tbuf := new(bytes.Buffer)\n10: \trootCmd.SetOut(buf)\n11: \trootCmd.SetArgs([]string{\"version\"})\n12: \n13: \terr := rootCmd.Execute()\n14: \tif err != nil {\n15: \t\tt.Fatalf(\"unexpected error: %v\", err)\n16: \t}\n17: \n18: \tgot := buf.String()\n19: \twant := \"axe version 1.2.0\\n\"\n20: \tif got != want {\n21: \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n22: \t}\n23: }\n24: \n25: func TestVersionConstant(t *testing.T) {\n26: \tif Version != \"1.2.0\" {\n27: \t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.2.0\")\n28: \t}\n29: }\n\n(End of file - total 29 lines)\n</content>",
+            "title": "cmd/version_test.go",
+            "metadata": {
+              "preview": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.2.0\\n\"\n\tif got != want {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162244292,
+              "end": 1773162244305
+            }
+          },
+          "id": "prt_cd8b4a678001451QnF8XBfRagQ",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go",
+              "limit": 44
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go</path>\n<type>file</type>\n<content>1: package mcpclient\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net/http\"\n7: \t\"strconv\"\n8: \t\"strings\"\n9: \n10: \t\"github.com/jrswab/axe/internal/agent\"\n11: \t\"github.com/jrswab/axe/internal/envinterp\"\n12: \t\"github.com/jrswab/axe/internal/provider\"\n13: \t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n14: )\n15: \n16: // Client wraps an MCP session for one configured server.\n17: type Client struct {\n18: \tname        string\n19: \tsession     *mcp.ClientSession\n20: \tcloseFn     func() error\n21: \ttoolSchemas map[string]map[string]string // tool name -> param name -> type\n22: }\n23: \n24: // Connect initializes an MCP client session for one server config.\n25: func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n26: \theaders, err := envinterp.ExpandHeaders(cfg.Headers)\n27: \tif err != nil {\n28: \t\treturn nil, err\n29: \t}\n30: \n31: \thttpClient := &http.Client{Transport: &headerRoundTripper{base: http.DefaultTransport, headers: headers}}\n32: \n33: \tvar transport mcp.Transport\n34: \tswitch cfg.Transport {\n35: \tcase \"sse\":\n36: \t\ttransport = &mcp.SSEClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n37: \tcase \"streamable-http\":\n38: \t\ttransport = &mcp.StreamableClientTransport{Endpoint: cfg.URL, HTTPClient: httpClient}\n39: \tdefault:\n40: \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n41: \t}\n42: \n43: \tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.2.0\"}, nil)\n44: \tsession, err := client.Connect(ctx, transport, nil)\n\n(Showing lines 1-44 of 223. Use offset=45 to continue.)\n</content>",
+            "title": "internal/mcpclient/mcpclient.go",
+            "metadata": {
+              "preview": "package mcpclient\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net/http\"\n\t\"strconv\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/envinterp\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/modelcontextprotocol/go-sdk/mcp\"\n)\n\n// Client wraps an MCP session for one configured server.\ntype Client struct {\n\tname        string\n\tsession     *mcp.ClientSession\n\tcloseFn     func() error",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162244665,
+              "end": 1773162244681
+            }
+          },
+          "id": "prt_cd8b4a8c8001006puB5aHxTHpA",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md</path>\n<type>file</type>\n<content>1: # Changelog\n2: \n3: All notable changes to this project will be documented in this file.\n4: \n5: The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n6: and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n7: \n8: ## [1.2.0] - 2026-03-10\n9: \n10: ### Added\n11: - OpenCode provider support\n12: - HTTP request timeout (15s per-request) for `url_fetch` tool\n13: - HTML tag stripping for `url_fetch` responses\n14: \n15: ## [1.1.1] - 2026-03-06\n16: \n17: ### Fixed\n18: - Remove hardcoded `/v1` from OpenAI provider URL path\n19: \n20: ## [1.1.0] - 2026-03-06\n21: \n22: ### Added\n23: - MCP tool support\n24: - `web_search` built-in tool using Tavily Search API\n25: - `url_fetch` built-in tool\n26: - JSON `tool_call_details` in run output\n27: - Refusal detection in JSON output\n28: - Executable examples\n29: \n30: ### Changed\n31: - Docker docs for running a single agent with selective mounts\n32: \n33: ## [1.0.0] - 2026-03-02\n34: \n35: ### Added\n36: - Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n37: - TOML-based agent configuration with SKILL.md context support\n38: - Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n39: - Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n40: - Sub-agent orchestration with `call_agent` tool and depth-limited execution\n41: - Agent memory system with XDG-compliant data storage and garbage collection\n42: - Path security: `~` and `$VAR` expansion for user-supplied paths\n43: - Stdin piping support for composing with Unix tools\n44: - Dry-run mode and per-tool verbose logging\n45: - Docker containerization support\n46: - CI workflows: lint, test, build, and GoReleaser\n47: \n48: ### Fixed\n49: - Arg validation UX and skill path resolution\n50: - staticcheck/errcheck lint issues\n51: - Duplicate error silencing, glob validation, and nil ExitError guard\n52: \n53: [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n54: [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n55: [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n56: [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n\n(End of file - total 56 lines)\n</content>",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "preview": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773162245494,
+              "end": 1773162245500
+            }
+          },
+          "id": "prt_cd8b4aa3d001wZJ2El22T2RfC5",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.00987885,
+          "tokens": {
+            "total": 14573,
+            "input": 1,
+            "output": 316,
+            "reasoning": 0,
+            "cache": {
+              "read": 14007,
+              "write": 249
+            }
+          },
+          "id": "prt_cd8b4adc2001yG32aNswpgcVrp",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773162245706,
+          "completed": 1773162252595
+        },
+        "parentID": "msg_cd8b445d1001eiTvvTzJtxDMzn",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01812855,
+        "tokens": {
+          "total": 17050,
+          "input": 1,
+          "output": 300,
+          "reasoning": 0,
+          "cache": {
+            "read": 14256,
+            "write": 2493
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd8b4ae4a001J0EtGGsgs2gfv6",
+        "sessionID": "ses_3274bba30ffePuGildnpIQIVHG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "id": "prt_cd8b4b635001d1unj4Zg10BekN",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b4ae4a001J0EtGGsgs2gfv6"
+        },
+        {
+          "type": "text",
+          "text": "All changes verified. Here's a summary:\n\n**`cmd/root.go` (line 12)**\n- `const Version = \"1.0.0\"` → `\"1.2.0\"`\n\n**`cmd/version_test.go` (lines 19, 26, 27)**\n- `want := \"axe version 1.0.0\\n\"` → `\"axe version 1.2.0\\n\"`\n- `if Version != \"1.0.0\"` → `\"1.2.0\"`\n- `t.Errorf(... \"1.0.0\")` → `\"1.2.0\"`\n\n**`internal/mcpclient/mcpclient.go` (line 43)**\n- `Version: \"1.0.0\"` → `\"1.2.0\"` in the MCP client implementation struct\n\n**`CHANGELOG.md`**\n- New `## [1.2.0] - 2026-03-10` section inserted at line 8 with three Added entries\n- New `[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0` reference link prepended to the links section (line 53)",
+          "time": {
+            "start": 1773162252420,
+            "end": 1773162252420
+          },
+          "id": "prt_cd8b4b635002mAZtDFVGb9ckTD",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b4ae4a001J0EtGGsgs2gfv6"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "e9f8ce284ce427faa57fac71b4a6dee224b42b5e",
+          "cost": 0.01812855,
+          "tokens": {
+            "total": 17050,
+            "input": 1,
+            "output": 300,
+            "reasoning": 0,
+            "cache": {
+              "read": 14256,
+              "write": 2493
+            }
+          },
+          "id": "prt_cd8b4c8ac001mfRPMwlGjPsVlU",
+          "sessionID": "ses_3274bba30ffePuGildnpIQIVHG",
+          "messageID": "msg_cd8b4ae4a001J0EtGGsgs2gfv6"
+        }
+      ]
+    }
+  ]
+}

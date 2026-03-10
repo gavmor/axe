@@ -1,0 +1,37 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe
+
+Make the following file edits (do NOT commit or push — just edit the files):
+
+1. **cmd/root.go line 12**: Change `const Version = "1.0.0"` to `const Version = "1.2.0"`
+
+2. **cmd/version_test.go**:
+   - Line 19: Change `want := "axe version 1.0.0\n"` to `want := "axe version 1.2.0\n"`
+   - Line 26: Change `if Version != "1.0.0" {` to `if Version != "1.2.0" {`
+   - Line 27: Change `t.Errorf("Version = %q, want %q", Version, "1.0.0")` to `t.Errorf("Version = %q, want %q", Version, "1.2.0")`
+
+3. **internal/mcpclient/mcpclient.go line 43**: Change `Version: "1.0.0"` to `Version: "1.2.0"`
+
+4. **CHANGELOG.md**: Prepend a new release section right after line 7 (after the "and this project adheres to..." line). Insert:
+
+```
+## [1.2.0] - 2026-03-10
+
+### Added
+- OpenCode provider support
+- HTTP request timeout (15s per-request) for `url_fetch` tool
+- HTML tag stripping for `url_fetch` responses
+```
+
+Also update the reference links at the bottom of CHANGELOG.md. The current bottom has:
+```
+[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0
+```
+
+Add this line at the top of the reference links section:
+```
+[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0
+```
+
+After making all edits, verify them by reading each file back and confirming the changes are correct. Return a summary of all changes made.
