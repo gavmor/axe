@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Run `git status` in the current working directory and return the full output. Do NOT make any changes - just report what you see.
+
