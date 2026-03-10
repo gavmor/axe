@@ -3,7 +3,7 @@
   "checkpoint_id": "b3d5a38ef446",
   "strategy": "manual-commit",
   "branch": "master",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
     "docs/plans/029_http_request_timeout_implement.md",
@@ -36,13 +36,20 @@
       "context": "/b3/d5a38ef446/2/context.md",
       "content_hash": "/b3/d5a38ef446/2/content_hash.txt",
       "prompt": "/b3/d5a38ef446/2/prompt.txt"
+    },
+    {
+      "metadata": "/b3/d5a38ef446/3/metadata.json",
+      "transcript": "/b3/d5a38ef446/3/full.jsonl",
+      "context": "/b3/d5a38ef446/3/context.md",
+      "content_hash": "/b3/d5a38ef446/3/content_hash.txt",
+      "prompt": "/b3/d5a38ef446/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 10,
-    "cache_creation_tokens": 1445,
-    "cache_read_tokens": 37151,
-    "output_tokens": 500,
-    "api_call_count": 6
+    "input_tokens": 15,
+    "cache_creation_tokens": 13699,
+    "cache_read_tokens": 59132,
+    "output_tokens": 881,
+    "api_call_count": 9
   }
 }

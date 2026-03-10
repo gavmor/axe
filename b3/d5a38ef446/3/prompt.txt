@@ -1,0 +1,5 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md, change milestone 003 from unchecked to checked:
+
+Change `- [ ] 003:` to `- [x] 003:`
+
+After editing, show the final state of the milestones section to confirm all three are checked.
