@@ -1,0 +1,476 @@
+{miles}=@docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md
+
+if {miles} is empty or blank, use current context
+else create a spec file for the next incomplete milestone in {miles} and it to the top of the new spec document.
+
+## Objective
+Create a specification document for a single milestone.
+**DO NOT do the work.** ONLY produce the specification document as defined below.
+
+## Requirements
+- Use clear, unambiguous language. No assumptions; be explicit.
+- All edge cases must be documented.
+- Ask questions to the user as needed to be explicit.
+- No implementation details.
+- Specifiy which parts of the spec can be done in parallel.
+- Place the file in `.opencode/plans/` with the name `xxx_nnn_spec.md`
+  - "xxx" = A Linear issue ID; ask the user for the ID or if you should use the next highest spec number.
+  - "nnn" = task to achieve
+
+## Document Structure
+
+### Section 1: Context & Constraints
+Extract the relevant context from the milestone's **Research Findings** that applies to this milestone:
+- Codebase structure and patterns relevant to this milestone
+- Decisions already made and why
+- Approaches already ruled out (do not re-evaluate these)
+- Constraints and assumptions that apply
+- Open questions resolved during research
+
+This section must come before requirements. The implementation guide will rely on it — do not omit details.
+
+### Section 2: Requirements
+What needs to happen: behaviors, interfaces, data flow, edge cases.
+No implementation details — what and why, not how or where.
+
+## Post Spec Generation
+1. Once complete, ask the user if there are any changes.
+2. If changes are needed, update the spec to match.
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>
+<type>file</type>
+<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping
+2: 
+3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  
+4: **Date:** 2026-03-10  
+5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+6: 
+7: ---
+8: 
+9: ## Section 1: Research Findings
+10: 
+11: ### Codebase Structure & Relevant Files
+12: 
+13: The `url_fetch` tool lives entirely within the `internal/tool/` package:
+14: 
+15: | File | Role |
+16: |------|------|
+17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |
+20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |
+22: 
+23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).
+28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.
+29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.
+30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.
+31: 
+32: ### Key Decisions Made
+33: 
+34: | Decision | Rationale |
+35: |----------|-----------|
+36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |
+38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |
+39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |
+40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |
+42: 
+43: ### Approaches Considered & Rejected
+44: 
+45: | Approach | Why Rejected |
+46: |----------|-------------|
+47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |
+49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |
+50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+51: 
+52: ### Constraints & Assumptions
+53: 
+54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.
+55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.
+56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.
+57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.
+58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.
+59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.
+60: 
+61: ### Open Questions & Answers
+62: 
+63: | # | Question | Answer |
+64: |---|----------|--------|
+65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |
+66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |
+67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |
+68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |
+69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |
+70: 
+71: ---
+72: 
+73: ## Section 2: Milestones
+74: 
+75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool
+76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`
+77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks
+
+(End of file - total 77 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>
+<type>file</type>
+<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping
+2: 
+3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  
+4: **Date:** 2026-03-10  
+5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+6: 
+7: ---
+8: 
+9: ## Section 1: Research Findings
+10: 
+11: ### Codebase Structure & Relevant Files
+12: 
+13: The `url_fetch` tool lives entirely within the `internal/tool/` package:
+14: 
+15: | File | Role |
+16: |------|------|
+17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |
+20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |
+22: 
+23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).
+28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.
+29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.
+30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.
+31: 
+32: ### Key Decisions Made
+33: 
+34: | Decision | Rationale |
+35: |----------|-----------|
+36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |
+38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |
+39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |
+40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |
+41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |
+42: 
+43: ### Approaches Considered & Rejected
+44: 
+45: | Approach | Why Rejected |
+46: |----------|-------------|
+47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |
+48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |
+49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |
+50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |
+51: 
+52: ### Constraints & Assumptions
+53: 
+54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.
+55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.
+56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.
+57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.
+58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.
+59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.
+60: 
+61: ### Open Questions & Answers
+62: 
+63: | # | Question | Answer |
+64: |---|----------|--------|
+65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |
+66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |
+67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |
+68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |
+69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |
+70: 
+71: ---
+72: 
+73: ## Section 2: Milestones
+74: 
+75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool
+76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`
+77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks
+
+(End of file - total 77 lines)
+</content>
+
+---
+
+We need `029_http_request_timeout_spec.md` to live in @docs/plans/
+
+---
+
+## Objective
+Create an implementation guide from a specification document.
+**DO NOT do the work.** ONLY produce the implementation guide as defined below.
+
+## Requirements
+- If @docs/plans/029_http_request_timeout_spec.md is empty or omitted, pull the latest `*_spec.md` from `docs/plans/` and verify it with the user.
+- Read the spec's **Context & Constraints** before writing tasks. Do not re-derive or re-evaluate decisions already made there.
+- Each task must reference the exact file path and function/method (e.g. `internal/handler/auth.go: UpdateUser()`).
+- Each task must be implementable and testable in isolation.
+- Tasks ordered by dependency and priority.
+- If anything is unclear, ask — then update the spec to match.
+- Specifiy which parts of the implementation checklist can be done in parallel.
+- Place the file in `docs/plans/` with the name `xxx_nnn_implement.md`
+  - "xxx" = number matching the spec file
+  - "nnn" = task to achieve
+
+## Testing Rules
+- Test real code, not mocks. If deleting the code under test doesn't break the test, the test adds no value.
+- Mock at the router level only for auth gating, input validation, and error propagation.
+
+## Document Structure
+
+### Section 1: Context Summary
+One paragraph summarizing the *why* behind this implementation, drawn from the spec's Context & Constraints. Anchors the executing agent without needing to re-read the spec.
+
+### Section 2: Implementation Checklist
+- `- [ ] {Task description}` format
+- Exact file path and function/method on each task
+- Include test tasks alongside implementation tasks
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md</path>
+<type>file</type>
+<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->
+2: 
+3: # Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool
+4: 
+5: **Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  
+6: **Date:** 2026-03-10  
+7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+8: 
+9: ---
+10: 
+11: ## Section 1: Context & Constraints
+12: 
+13: ### Codebase Structure
+14: 
+15: The `url_fetch` tool is self-contained within `internal/tool/`:
+16: 
+17: | File | Role |
+18: |------|------|
+19: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+20: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+22: 
+23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: - `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.
+28: - There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).
+29: - A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.
+30: 
+31: ### Decisions Already Made
+32: 
+33: | Decision | Rationale |
+34: |----------|-----------|
+35: | **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+36: | **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |
+37: | **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |
+38: 
+39: ### Approaches Ruled Out — Do Not Re-Evaluate
+40: 
+41: | Approach | Why Rejected |
+42: |----------|-------------|
+43: | Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |
+44: | Configurable timeout per agent | Out of scope. |
+45: 
+46: ### Constraints
+47: 
+48: - **No new public API.** All changes are internal to the `tool` package.
+49: - **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:
+50:   - Most tests use `httptest.NewServer` which responds instantly.
+51:   - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.
+52:   - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.
+53: - **Red/green TDD required.** Write failing tests first, then implement.
+54: - **No new dependencies.** `context.WithTimeout` is stdlib.
+55: 
+56: ---
+57: 
+58: ## Section 2: Requirements
+59: 
+60: ### R1: Per-Request Timeout
+61: 
+62: When `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.
+63: 
+64: - The timeout starts when the HTTP request begins (before TCP connect).
+65: - The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.
+66: - If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.
+67: - If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).
+68: - The shorter deadline always wins. This is the natural behavior of nested Go contexts.
+69: 
+70: ### R2: Timeout Constant
+71: 
+72: The 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.
+73: 
+74: ### R3: Error Behavior on Timeout
+75: 
+76: When the per-request timeout fires:
+77: 
+78: - The result MUST have `IsError: true`.
+79: - The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).
+80: - The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).
+81: - The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).
+82: 
+83: ### R4: No Change to Existing Behavior for Fast Responses
+84: 
+85: Responses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.
+86: 
+87: ### R5: No Change to `maxReadBytes` or Truncation Logic
+88: 
+89: The timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.
+90: 
+91: ---
+92: 
+93: ### Edge Cases
+94: 
+95: | Case | Expected Behavior |
+96: |------|-------------------|
+97: | Server responds in 14.9 seconds | Success. Response returned normally. |
+98: | Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |
+99: | Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |
+100: | Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |
+101: | Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |
+102: | Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |
+103: | Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |
+104: | DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |
+105: 
+106: ---
+107: 
+108: ### Parallelism Notes
+109: 
+110: This milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).
+111: 
+112: However, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.
+
+(End of file - total 112 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md</path>
+<type>file</type>
+<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->
+2: 
+3: # Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool
+4: 
+5: **Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  
+6: **Date:** 2026-03-10  
+7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)
+8: 
+9: ---
+10: 
+11: ## Section 1: Context & Constraints
+12: 
+13: ### Codebase Structure
+14: 
+15: The `url_fetch` tool is self-contained within `internal/tool/`:
+16: 
+17: | File | Role |
+18: |------|------|
+19: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |
+20: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |
+21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |
+22: 
+23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.
+24: 
+25: ### Current Behavior
+26: 
+27: - `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.
+28: - There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).
+29: - A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.
+30: 
+31: ### Decisions Already Made
+32: 
+33: | Decision | Rationale |
+34: |----------|-----------|
+35: | **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |
+36: | **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |
+37: | **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |
+38: 
+39: ### Approaches Ruled Out — Do Not Re-Evaluate
+40: 
+41: | Approach | Why Rejected |
+42: |----------|-------------|
+43: | Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |
+44: | Configurable timeout per agent | Out of scope. |
+45: 
+46: ### Constraints
+47: 
+48: - **No new public API.** All changes are internal to the `tool` package.
+49: - **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:
+50:   - Most tests use `httptest.NewServer` which responds instantly.
+51:   - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.
+52:   - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.
+53: - **Red/green TDD required.** Write failing tests first, then implement.
+54: - **No new dependencies.** `context.WithTimeout` is stdlib.
+55: 
+56: ---
+57: 
+58: ## Section 2: Requirements
+59: 
+60: ### R1: Per-Request Timeout
+61: 
+62: When `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.
+63: 
+64: - The timeout starts when the HTTP request begins (before TCP connect).
+65: - The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.
+66: - If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.
+67: - If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).
+68: - The shorter deadline always wins. This is the natural behavior of nested Go contexts.
+69: 
+70: ### R2: Timeout Constant
+71: 
+72: The 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.
+73: 
+74: ### R3: Error Behavior on Timeout
+75: 
+76: When the per-request timeout fires:
+77: 
+78: - The result MUST have `IsError: true`.
+79: - The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).
+80: - The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).
+81: - The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).
+82: 
+83: ### R4: No Change to Existing Behavior for Fast Responses
+84: 
+85: Responses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.
+86: 
+87: ### R5: No Change to `maxReadBytes` or Truncation Logic
+88: 
+89: The timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.
+90: 
+91: ---
+92: 
+93: ### Edge Cases
+94: 
+95: | Case | Expected Behavior |
+96: |------|-------------------|
+97: | Server responds in 14.9 seconds | Success. Response returned normally. |
+98: | Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |
+99: | Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |
+100: | Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |
+101: | Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |
+102: | Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |
+103: | Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |
+104: | DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |
+105: 
+106: ---
+107: 
+108: ### Parallelism Notes
+109: 
+110: This milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).
+111: 
+112: However, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.
+
+(End of file - total 112 lines)
+</content>

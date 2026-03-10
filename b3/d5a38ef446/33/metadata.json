@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "b3d5a38ef446",
+  "session_id": "ses_327e5a137ffexslFtgVn5mme5m",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-10T16:50:19.747984Z",
+  "branch": "master",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/plans/029_http_request_timeout_implement.md",
+    "docs/plans/029_http_request_timeout_spec.md"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "77666262ed7c",
+  "token_usage": {
+    "input_tokens": 15,
+    "cache_creation_tokens": 44923,
+    "cache_read_tokens": 146770,
+    "output_tokens": 4420,
+    "api_call_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-10T16:50:19.71399Z",
+    "agent_lines": 157,
+    "human_added": 739,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 896,
+    "agent_percentage": 17.522321428571427
+  }
+}

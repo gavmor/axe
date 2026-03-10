@@ -1,0 +1,1140 @@
+{
+  "info": {
+    "id": "ses_327e5a137ffexslFtgVn5mme5m",
+    "slug": "quiet-planet",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "title": "url_fetch: timeout & HTML stripping",
+    "version": "1.2.10",
+    "summary": {
+      "additions": 157,
+      "deletions": 0,
+      "files": 2
+    },
+    "time": {
+      "created": 1773152132808,
+      "updated": 1773157817050
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773152132834
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/029_http_request_timeout_spec.md",
+              "before": "",
+              "after": "<!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n\n# Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context & Constraints\n\n### Codebase Structure\n\nThe `url_fetch` tool is self-contained within `internal/tool/`:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n\nNo other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.\n\n### Current Behavior\n\n- `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.\n- There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).\n- A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.\n\n### Decisions Already Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |\n| **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |\n\n### Approaches Ruled Out — Do Not Re-Evaluate\n\n| Approach | Why Rejected |\n|----------|-------------|\n| Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |\n| Configurable timeout per agent | Out of scope. |\n\n### Constraints\n\n- **No new public API.** All changes are internal to the `tool` package.\n- **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:\n  - Most tests use `httptest.NewServer` which responds instantly.\n  - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.\n  - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.\n- **Red/green TDD required.** Write failing tests first, then implement.\n- **No new dependencies.** `context.WithTimeout` is stdlib.\n\n---\n\n## Section 2: Requirements\n\n### R1: Per-Request Timeout\n\nWhen `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.\n\n- The timeout starts when the HTTP request begins (before TCP connect).\n- The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.\n- If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.\n- If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).\n- The shorter deadline always wins. This is the natural behavior of nested Go contexts.\n\n### R2: Timeout Constant\n\nThe 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.\n\n### R3: Error Behavior on Timeout\n\nWhen the per-request timeout fires:\n\n- The result MUST have `IsError: true`.\n- The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).\n- The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).\n- The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).\n\n### R4: No Change to Existing Behavior for Fast Responses\n\nResponses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.\n\n### R5: No Change to `maxReadBytes` or Truncation Logic\n\nThe timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.\n\n---\n\n### Edge Cases\n\n| Case | Expected Behavior |\n|------|-------------------|\n| Server responds in 14.9 seconds | Success. Response returned normally. |\n| Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |\n| Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |\n| Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |\n| Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |\n| Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |\n| Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |\n| DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |\n\n---\n\n### Parallelism Notes\n\nThis milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).\n\nHowever, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.\n",
+              "additions": 112,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "id": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "file",
+          "mime": "text/plain",
+          "filename": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+          "url": "file:///Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+          "source": {
+            "text": {
+              "value": "@docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+              "start": 6,
+              "end": 72
+            },
+            "type": "file",
+            "path": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md"
+          },
+          "id": "prt_cd81a5ed1001nhnMqvWU5HeZsg",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "text",
+          "text": "{miles}=@docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n\nif {miles} is empty or blank, use current context\nelse create a spec file for the next incomplete milestone in {miles} and it to the top of the new spec document.\n\n## Objective\nCreate a specification document for a single milestone.\n**DO NOT do the work.** ONLY produce the specification document as defined below.\n\n## Requirements\n- Use clear, unambiguous language. No assumptions; be explicit.\n- All edge cases must be documented.\n- Ask questions to the user as needed to be explicit.\n- No implementation details.\n- Specifiy which parts of the spec can be done in parallel.\n- Place the file in `.opencode/plans/` with the name `xxx_nnn_spec.md`\n  - \"xxx\" = A Linear issue ID; ask the user for the ID or if you should use the next highest spec number.\n  - \"nnn\" = task to achieve\n\n## Document Structure\n\n### Section 1: Context & Constraints\nExtract the relevant context from the milestone's **Research Findings** that applies to this milestone:\n- Codebase structure and patterns relevant to this milestone\n- Decisions already made and why\n- Approaches already ruled out (do not re-evaluate these)\n- Constraints and assumptions that apply\n- Open questions resolved during research\n\nThis section must come before requirements. The implementation guide will rely on it — do not omit details.\n\n### Section 2: Requirements\nWhat needs to happen: behaviors, interfaces, data flow, edge cases.\nNo implementation details — what and why, not how or where.\n\n## Post Spec Generation\n1. Once complete, ask the user if there are any changes.\n2. If changes are needed, update the spec to match.",
+          "id": "prt_cd81a5eee001Cwfxm3ZV3lYtKu",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "text",
+          "text": "Called the Read tool with the following input: {\"filePath\":\"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\"}",
+          "synthetic": true,
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "text",
+          "text": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>\n<type>file</type>\n<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n2: \n3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n4: **Date:** 2026-03-10  \n5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n6: \n7: ---\n8: \n9: ## Section 1: Research Findings\n10: \n11: ### Codebase Structure & Relevant Files\n12: \n13: The `url_fetch` tool lives entirely within the `internal/tool/` package:\n14: \n15: | File | Role |\n16: |------|------|\n17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n22: \n23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n31: \n32: ### Key Decisions Made\n33: \n34: | Decision | Rationale |\n35: |----------|-----------|\n36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n42: \n43: ### Approaches Considered & Rejected\n44: \n45: | Approach | Why Rejected |\n46: |----------|-------------|\n47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n51: \n52: ### Constraints & Assumptions\n53: \n54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n60: \n61: ### Open Questions & Answers\n62: \n63: | # | Question | Answer |\n64: |---|----------|--------|\n65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n70: \n71: ---\n72: \n73: ## Section 2: Milestones\n74: \n75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n\n(End of file - total 77 lines)\n</content>",
+          "synthetic": true,
+          "id": "prt_cd81a5eee003F10L6a17JxALx0",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "file",
+          "mime": "text/plain",
+          "filename": "docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+          "url": "file:///Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md",
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "text",
+          "text": "Called the Read tool with the following input: {\"filePath\":\"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\"}",
+          "synthetic": true,
+          "id": "prt_cd81a5eee005AkHshBx8nv0wL5",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        },
+        {
+          "type": "text",
+          "text": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md</path>\n<type>file</type>\n<content>1: # Milestone Plan: url_fetch Tool — Per-Request Timeout & HTML Stripping\n2: \n3: **GitHub Issue:** [#17 — url_fetch tool: add per-request timeout and HTML stripping](https://github.com/jrswab/axe/issues/17)  \n4: **Date:** 2026-03-10  \n5: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n6: \n7: ---\n8: \n9: ## Section 1: Research Findings\n10: \n11: ### Codebase Structure & Relevant Files\n12: \n13: The `url_fetch` tool lives entirely within the `internal/tool/` package:\n14: \n15: | File | Role |\n16: |------|------|\n17: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n18: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n19: | `internal/tool/registry.go` | Registers `url_fetch` via `urlFetchEntry()` |\n20: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n21: | `internal/toolname/` | Constants for tool names (e.g., `toolname.URLFetch`) |\n22: \n23: No other packages reference `url_fetch` internals directly. Changes are fully scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: 1. **HTTP client:** `urlFetchExecute` calls `http.DefaultClient.Do(req)` — no per-request timeout. The only timeout protection is the parent `ctx` passed from the agent runner (default 120s).\n28: 2. **Response handling:** The raw response body is returned verbatim regardless of `Content-Type`. For `text/html` responses, this means full HTML markup including `<script>`, `<style>`, navigation, ads, etc. are sent to the LLM.\n29: 3. **Truncation:** Body is read via `io.LimitReader(resp.Body, maxReadBytes+1)` where `maxReadBytes = 10000`. If the body exceeds 10,000 bytes, it is truncated with a notice appended.\n30: 4. **URL sanitization:** Credentials and query strings are stripped from verbose logs via `sanitizeURL()`.\n31: \n32: ### Key Decisions Made\n33: \n34: | Decision | Rationale |\n35: |----------|-----------|\n36: | **15-second per-request timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n37: | **Use `golang.org/x/net/html` for HTML stripping** | User chose DOM-based parsing over regex. Handles malformed HTML, nested scripts, and edge cases correctly. Adds one dependency (`golang.org/x/net`) but it's a well-maintained Go sub-repo. |\n38: | **Strip `<script>` and `<style>` elements (including children)** | These elements contain code/CSS that is noise for LLMs. The TypeScript implementation strips these same elements. |\n39: | **Detect `text/html` via `Content-Type` header** | Only strip HTML when the server declares the response as HTML. Non-HTML responses (JSON, plain text, XML) are returned verbatim even if they contain angle brackets. |\n40: | **Truncation applies after stripping** | Stripping reduces content size, so truncating after stripping maximizes useful content within the 10,000 character limit. |\n41: | **`maxReadBytes` (10,000) unchanged** | The existing limit matches the TypeScript implementation and is sufficient for LLM consumption. |\n42: \n43: ### Approaches Considered & Rejected\n44: \n45: | Approach | Why Rejected |\n46: |----------|-------------|\n47: | **Regex-based HTML stripping** (`regexp` stdlib) | User explicitly chose DOM parsing. Regex is fragile with malformed HTML, can't properly handle nested `<script>` tags, and fails on edge cases like `<script>` inside attribute values. |\n48: | **Custom HTTP client with transport-level timeout** | Overly complex. `context.WithTimeout` on the request context is the idiomatic Go approach and achieves the same result with less code. |\n49: | **Configurable timeout per agent** | Out of scope for this issue. The 15-second default matches the TypeScript implementation. Can be added later if needed. |\n50: | **Using `x/net/html` `Tokenizer` (streaming)** | The full `html.Parse` tree approach is simpler to reason about for element skipping (script/style) and produces cleaner code. Performance is not a concern at 10KB max input. |\n51: \n52: ### Constraints & Assumptions\n53: \n54: - **No new public API.** All changes are internal to the `tool` package. `stripHTML` is unexported.\n55: - **Existing tests must pass unchanged.** The 13 existing tests cover: success, empty URL, missing URL, unsupported schemes, HTTP error codes, truncation, context cancellation, connection refused, CallID passthrough, empty body, verbose log sanitization. None of these serve `text/html` content, so they are unaffected by HTML stripping.\n56: - **The existing `TestURLFetch_ContextCancellation` test** uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins — this test continues to pass with the new 15-second per-request timeout.\n57: - **Red/green TDD required.** Tests are written first (red), then implementation (green), per project rules.\n58: - **`golang.org/x/net`** is the only new dependency. It's a Go official sub-repository, widely used, and already transitively available via `golang.org/x/oauth2` in the dependency tree.\n59: - **Whitespace collapsing.** After extracting text nodes from the DOM, consecutive whitespace should be collapsed to single spaces and the result trimmed. This prevents large runs of blank lines from wasting the character budget.\n60: \n61: ### Open Questions & Answers\n62: \n63: | # | Question | Answer |\n64: |---|----------|--------|\n65: | 1 | Should the timeout be configurable via TOML? | **No.** Out of scope. The 15-second hardcoded default matches the TypeScript implementation. Can be revisited in a future issue. |\n66: | 2 | Regex or DOM parser for HTML stripping? | **DOM parser** (`golang.org/x/net/html`). User explicitly chose this approach for correctness with malformed HTML. |\n67: | 3 | Should `<noscript>` content be preserved? | **Yes.** Only `<script>` and `<style>` are stripped. `<noscript>` often contains meaningful fallback text. |\n68: | 4 | What about `Content-Type: text/html; charset=utf-8`? | The check uses `strings.HasPrefix` (or `mime.ParseMediaType`) on the Content-Type header, so charset parameters are handled correctly. |\n69: | 5 | Should HTML stripping apply to error responses (non-2xx)? | **Yes.** Error pages are often HTML too. Stripping before returning the error body keeps error messages clean. |\n70: \n71: ---\n72: \n73: ## Section 2: Milestones\n74: \n75: - [ ] 001: Add 15-second per-request HTTP timeout to `url_fetch` tool\n76: - [ ] 002: Add HTML stripping for `text/html` responses using `golang.org/x/net/html`\n77: - [ ] 003: Verify all existing and new tests pass, run vet/lint checks\n\n(End of file - total 77 lines)\n</content>",
+          "synthetic": true,
+          "id": "prt_cd81a5eee006JwCuauBxIit6li",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5ed0001l85dgyFaqjIzBL"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773152132858,
+          "completed": 1773152138054
+        },
+        "parentID": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08680875,
+        "tokens": {
+          "total": 13395,
+          "input": 3,
+          "output": 165,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 13227
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd81a5efa001sU5Dv8WRksFIyM",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd81a67ae001CU5m5gUj70526E",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5efa001sU5Dv8WRksFIyM"
+        },
+        {
+          "type": "text",
+          "text": "\n\nThe milestones file is populated. The first incomplete milestone is **001: Add 15-second per-request HTTP timeout to `url_fetch` tool**.\n\nBefore I create the spec, I need to check what existing spec files are in `.opencode/plans/` and ask you a question:",
+          "time": {
+            "start": 1773152137338,
+            "end": 1773152137338
+          },
+          "id": "prt_cd81a67af001dH3c5k713iIzkw",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5efa001sU5Dv8WRksFIyM"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": ".opencode/plans/*_spec.md",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "No files found",
+            "title": "",
+            "metadata": {
+              "count": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773152137910,
+              "end": 1773152137937
+            }
+          },
+          "id": "prt_cd81a707c001aFjhOfUQDg5XfB",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5efa001sU5Dv8WRksFIyM"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.08680875,
+          "tokens": {
+            "total": 13395,
+            "input": 3,
+            "output": 165,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 13227
+            }
+          },
+          "id": "prt_cd81a72d4001DGhIrzdKEFVA1q",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a5efa001sU5Dv8WRksFIyM"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773152138055,
+          "completed": 1773157510277
+        },
+        "parentID": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01261225,
+        "tokens": {
+          "total": 13605,
+          "input": 1,
+          "output": 194,
+          "reasoning": 0,
+          "cache": {
+            "read": 13227,
+            "write": 183
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd81a7347001F3cj0QmNUCydDt",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd81a842e001M0bARR5SRqEwA2",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a7347001F3cj0QmNUCydDt"
+        },
+        {
+          "type": "text",
+          "text": "No existing spec files. I need the Linear issue ID (or permission to use a sequential number) for the filename.",
+          "time": {
+            "start": 1773152143070,
+            "end": 1773152143070
+          },
+          "id": "prt_cd81a842f001OpqGKF0cThbNw7",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a7347001F3cj0QmNUCydDt"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01QdkMasvn2oM8JfEQDLnZYQ",
+          "tool": "question",
+          "state": {
+            "status": "completed",
+            "input": {
+              "questions": [
+                {
+                  "question": "What Linear issue ID should I use for the spec filename? (e.g., `AXE-42_http_timeout_spec.md`). Or should I just use the next highest number (001)?",
+                  "header": "Linear Issue ID",
+                  "options": [
+                    {
+                      "label": "Use 001",
+                      "description": "No Linear issue — use sequential number 001 as the prefix"
+                    },
+                    {
+                      "label": "Provide Linear ID",
+                      "description": "I'll type in the Linear issue ID to use as the prefix"
+                    }
+                  ]
+                }
+              ]
+            },
+            "output": "User has answered your questions: \"What Linear issue ID should I use for the spec filename? (e.g., `AXE-42_http_timeout_spec.md`). Or should I just use the next highest number (001)?\"=\"look at the docs and find the next number in increasing order\". You can now continue with the user's answers in mind.",
+            "title": "Asked 1 question",
+            "metadata": {
+              "answers": [
+                [
+                  "look at the docs and find the next number in increasing order"
+                ]
+              ],
+              "truncated": false
+            },
+            "time": {
+              "start": 1773152146405,
+              "end": 1773157510186
+            }
+          },
+          "id": "prt_cd81a86df001w7uwIEKQoTBMk8",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a7347001F3cj0QmNUCydDt"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.01261225,
+          "tokens": {
+            "total": 13605,
+            "input": 1,
+            "output": 194,
+            "reasoning": 0,
+            "cache": {
+              "read": 13227,
+              "write": 183
+            }
+          },
+          "id": "prt_cd86c6c2c001oLMkC5pPH09Se3",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd81a7347001F3cj0QmNUCydDt"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157510279,
+          "completed": 1773157513860
+        },
+        "parentID": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0898925,
+        "tokens": {
+          "total": 13870,
+          "input": 1,
+          "output": 171,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 13698
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd86c6c87001ZcICbG16VQERLC",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd86c76c50015xhetrLNRZnttP",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c6c87001ZcICbG16VQERLC"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01NEHANUunhAL9WVLk5rtQKU",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": ".opencode/plans/*",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "No files found",
+            "title": "",
+            "metadata": {
+              "count": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773157513325,
+              "end": 1773157513336
+            }
+          },
+          "id": "prt_cd86c76c6001uGoWDlaisgPROG",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c6c87001ZcICbG16VQERLC"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01N8zkQZTYyY2A87zFpdwWYQ",
+          "tool": "glob",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "docs/plans/*",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/028_opencode_zen_provider_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/028_opencode_zen_provider_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/027_mcp_tool_support_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/027_mcp_tool_support_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/026_web_search_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/025_url_fetch_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/024_refusal_detection_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/023_json_tool_call_details_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/023_json_tool_call_details_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/022_docker_containerization_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/022_docker_containerization_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/021_path_expansion_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/021_path_expansion_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/020_manual_testing_fixes_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/020_manual_testing_fixes_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/017_edit_file_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/017_edit_file_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/018_run_command_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/019_m8_integration_polish_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/018_run_command_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/019_m8_integration_polish_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/014_list_directory_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/016_write_file_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/014_list_directory_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/015_read_file_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/016_write_file_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/015_read_file_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/013_tool_registry_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/012_tools_config_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/011_golden_file_tests_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/013_tool_registry_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/012_tools_config_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/009_mock_provider_integration_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/009_mock_provider_integration_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/010_cli_smoke_tests_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/010_cli_smoke_tests_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/008_i9n_test_infrastructure_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/011_golden_file_tests_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/007_gc_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/007_gc_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/008_i9n_test_infrastructure_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/006_memory_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/005_sub_agents_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/005_sub_agents_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/004_multi_provider_support_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/006_memory_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_tool_call_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_manual_testing.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/000_i9n_milestones.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/004_multi_provider_support_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/003_single_agent_run_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/003_single_agent_run_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/002_agent_config_spec.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/002_agent_config_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/001_skeleton_implement.md\n/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/001_skeleton_spec.md",
+            "title": "",
+            "metadata": {
+              "count": 61,
+              "truncated": false
+            },
+            "time": {
+              "start": 1773157513776,
+              "end": 1773157513788
+            }
+          },
+          "id": "prt_cd86c7871001PlGahuQVcxeeYL",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c6c87001ZcICbG16VQERLC"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.0898925,
+          "tokens": {
+            "total": 13870,
+            "input": 1,
+            "output": 171,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 13698
+            }
+          },
+          "id": "prt_cd86c7a3d001pJGn4AeML8TGE0",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c6c87001ZcICbG16VQERLC"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157513861,
+          "completed": 1773157519841
+        },
+        "parentID": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0286915,
+        "tokens": {
+          "total": 16530,
+          "input": 1,
+          "output": 221,
+          "reasoning": 0,
+          "cache": {
+            "read": 13698,
+            "write": 2610
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd86c7a85001oJ98UIBhCbQ1Xh",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd86c85cd0016upTi6C42d2KE3",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c7a85001oJ98UIBhCbQ1Xh"
+        },
+        {
+          "type": "text",
+          "text": "The highest existing number is **028**. The next number is **029**. The spec file will be placed at `.opencode/plans/029_http_request_timeout_spec.md`.\n\nNow let me also review the current `url_fetch.go` to ensure the spec is grounded in reality:",
+          "time": {
+            "start": 1773157518960,
+            "end": 1773157518960
+          },
+          "id": "prt_cd86c85cd0026IyRL6BFXlLEHH",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c7a85001oJ98UIBhCbQ1Xh"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"net/http\"\n8: \t\"net/url\"\n9: \n10: \t\"github.com/jrswab/axe/internal/provider\"\n11: \t\"github.com/jrswab/axe/internal/toolname\"\n12: )\n13: \n14: const maxReadBytes = 10000\n15: \n16: func truncateURL(urlStr string, maxLen int) string {\n17: \tif len(urlStr) <= maxLen {\n18: \t\treturn urlStr\n19: \t}\n20: \treturn urlStr[:maxLen] + \"...\"\n21: }\n22: \n23: func sanitizeURL(urlStr string) string {\n24: \tparsedURL, err := url.Parse(urlStr)\n25: \tif err != nil {\n26: \t\treturn \"invalid-url\"\n27: \t}\n28: \n29: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n30: \t\treturn \"invalid-url\"\n31: \t}\n32: \n33: \tpath := parsedURL.EscapedPath()\n34: \tif path == \"\" {\n35: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n36: \t}\n37: \n38: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n39: }\n40: \n41: func urlFetchEntry() ToolEntry {\n42: \treturn ToolEntry{\n43: \t\tDefinition: urlFetchDefinition,\n44: \t\tExecute:    urlFetchExecute,\n45: \t}\n46: }\n47: \n48: func urlFetchDefinition() provider.Tool {\n49: \treturn provider.Tool{\n50: \t\tName:        toolname.URLFetch,\n51: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n52: \t\tParameters: map[string]provider.ToolParameter{\n53: \t\t\t\"url\": {\n54: \t\t\t\tType:        \"string\",\n55: \t\t\t\tDescription: \"The URL to fetch.\",\n56: \t\t\t\tRequired:    true,\n57: \t\t\t},\n58: \t\t},\n59: \t}\n60: }\n61: \n62: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n63: \turlStr := call.Arguments[\"url\"]\n64: \tstatusCode := 0\n65: \n66: \tdefer func() {\n67: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n68: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n69: \t\tif statusCode != 0 {\n70: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n71: \t\t} else if result.IsError {\n72: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n73: \t\t}\n74: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n75: \t}()\n76: \n77: \tif urlStr == \"\" {\n78: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n79: \t}\n80: \n81: \tparsedURL, err := url.Parse(urlStr)\n82: \tif err != nil {\n83: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n84: \t}\n85: \n86: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n87: \t\treturn provider.ToolResult{\n88: \t\t\tCallID:  call.ID,\n89: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n90: \t\t\tIsError: true,\n91: \t\t}\n92: \t}\n93: \n94: \treq, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)\n95: \tif err != nil {\n96: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n97: \t}\n98: \n99: \tresp, err := http.DefaultClient.Do(req)\n100: \tif err != nil {\n101: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n102: \t}\n103: \tdefer func() {\n104: \t\t_ = resp.Body.Close()\n105: \t}()\n106: \tstatusCode = resp.StatusCode\n107: \n108: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n109: \tif err != nil {\n110: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n111: \t}\n112: \n113: \tbodyStr := string(body)\n114: \tif len(body) > maxReadBytes {\n115: \t\tbodyStr = string(body[:maxReadBytes]) + \"\\n... [response truncated, exceeded 10000 characters]\"\n116: \t}\n117: \n118: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n119: \t\treturn provider.ToolResult{\n120: \t\t\tCallID:  call.ID,\n121: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n122: \t\t\tIsError: true,\n123: \t\t}\n124: \t}\n125: \n126: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n127: }\n\n(End of file - total 127 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"net/url\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst maxReadBytes = 10000\n\nfunc truncateURL(urlStr string, maxLen int) string {\n\tif len(urlStr) <= maxLen {\n\t\treturn urlStr\n\t}\n\treturn urlStr[:maxLen] + \"...\"",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773157519412,
+              "end": 1773157519425
+            }
+          },
+          "id": "prt_cd86c8e70001OdLl6gK77QG1M3",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c7a85001oJ98UIBhCbQ1Xh"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_017mKuvukYwkpUkMNCP6QCu7",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"net\"\n7: \t\"net/http\"\n8: \t\"net/http/httptest\"\n9: \t\"strings\"\n10: \t\"testing\"\n11: \t\"time\"\n12: \n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: )\n15: \n16: func TestURLFetch_Success(t *testing.T) {\n17: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n18: \t\t_, _ = w.Write([]byte(\"hello world\"))\n19: \t}))\n20: \tdefer ts.Close()\n21: \n22: \tentry := urlFetchEntry()\n23: \tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n24: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n25: \n26: \tif result.IsError {\n27: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n28: \t}\n29: \tif result.Content != \"hello world\" {\n30: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n31: \t}\n32: \tif result.CallID != call.ID {\n33: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n34: \t}\n35: }\n36: \n37: func TestURLFetch_EmptyURL(t *testing.T) {\n38: \tentry := urlFetchEntry()\n39: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n40: \n41: \tif !result.IsError {\n42: \t\tt.Fatal(\"expected IsError true\")\n43: \t}\n44: \tif !strings.Contains(result.Content, \"url is required\") {\n45: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n46: \t}\n47: }\n48: \n49: func TestURLFetch_MissingURLArgument(t *testing.T) {\n50: \tentry := urlFetchEntry()\n51: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n52: \n53: \tif !result.IsError {\n54: \t\tt.Fatal(\"expected IsError true\")\n55: \t}\n56: \tif !strings.Contains(result.Content, \"url is required\") {\n57: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n58: \t}\n59: }\n60: \n61: func TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n62: \tentry := urlFetchEntry()\n63: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n64: \n65: \tif !result.IsError {\n66: \t\tt.Fatal(\"expected IsError true\")\n67: \t}\n68: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n69: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n70: \t}\n71: \tif !strings.Contains(result.Content, \"file\") {\n72: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n73: \t}\n74: }\n75: \n76: func TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n77: \tentry := urlFetchEntry()\n78: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n79: \n80: \tif !result.IsError {\n81: \t\tt.Fatal(\"expected IsError true\")\n82: \t}\n83: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n84: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n85: \t}\n86: \tif !strings.Contains(result.Content, \"ftp\") {\n87: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n88: \t}\n89: }\n90: \n91: func TestURLFetch_NoScheme(t *testing.T) {\n92: \tentry := urlFetchEntry()\n93: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n94: \n95: \tif !result.IsError {\n96: \t\tt.Fatal(\"expected IsError true\")\n97: \t}\n98: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n99: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n100: \t}\n101: }\n102: \n103: func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n104: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n105: \t\tw.WriteHeader(http.StatusNotFound)\n106: \t\t_, _ = w.Write([]byte(\"not found\"))\n107: \t}))\n108: \tdefer ts.Close()\n109: \n110: \tentry := urlFetchEntry()\n111: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n112: \n113: \tif !result.IsError {\n114: \t\tt.Fatal(\"expected IsError true\")\n115: \t}\n116: \tif !strings.Contains(result.Content, \"HTTP 404\") {\n117: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n118: \t}\n119: \tif !strings.Contains(result.Content, \"not found\") {\n120: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n121: \t}\n122: }\n123: \n124: func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n125: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n126: \t\tw.WriteHeader(http.StatusInternalServerError)\n127: \t\t_, _ = w.Write([]byte(\"internal error\"))\n128: \t}))\n129: \tdefer ts.Close()\n130: \n131: \tentry := urlFetchEntry()\n132: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n133: \n134: \tif !result.IsError {\n135: \t\tt.Fatal(\"expected IsError true\")\n136: \t}\n137: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n138: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n139: \t}\n140: \tif !strings.Contains(result.Content, \"internal error\") {\n141: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n142: \t}\n143: }\n144: \n145: func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n146: \tlargeBody := strings.Repeat(\"A\", 20000)\n147: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n148: \t\t_, _ = w.Write([]byte(largeBody))\n149: \t}))\n150: \tdefer ts.Close()\n151: \n152: \tentry := urlFetchEntry()\n153: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n154: \n155: \tif result.IsError {\n156: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n157: \t}\n158: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n159: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n160: \t}\n161: \tif len(result.Content) <= 10000 {\n162: \t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n163: \t}\n164: \tif len(result.Content) >= 20000 {\n165: \t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n166: \t}\n167: }\n168: \n169: func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n170: \texactBody := strings.Repeat(\"B\", 10000)\n171: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n172: \t\t_, _ = w.Write([]byte(exactBody))\n173: \t}))\n174: \tdefer ts.Close()\n175: \n176: \tentry := urlFetchEntry()\n177: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n178: \n179: \tif result.IsError {\n180: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n181: \t}\n182: \tif strings.Contains(result.Content, \"truncated\") {\n183: \t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n184: \t}\n185: \tif len(result.Content) != 10000 {\n186: \t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n187: \t}\n188: }\n189: \n190: func TestURLFetch_ContextCancellation(t *testing.T) {\n191: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n192: \t\ttimer := time.NewTimer(10 * time.Second)\n193: \t\tdefer timer.Stop()\n194: \n195: \t\tselect {\n196: \t\tcase <-r.Context().Done():\n197: \t\t\treturn\n198: \t\tcase <-timer.C:\n199: \t\t\t_, _ = w.Write([]byte(\"too late\"))\n200: \t\t}\n201: \t}))\n202: \tdefer ts.Close()\n203: \n204: \tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n205: \tdefer cancel()\n206: \n207: \tentry := urlFetchEntry()\n208: \tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n209: \n210: \tif !result.IsError {\n211: \t\tt.Fatal(\"expected IsError true\")\n212: \t}\n213: }\n214: \n215: func TestURLFetch_ConnectionRefused(t *testing.T) {\n216: \tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n217: \tif err != nil {\n218: \t\tt.Fatalf(\"net.Listen error: %v\", err)\n219: \t}\n220: \taddr := listener.Addr().String()\n221: \tif err := listener.Close(); err != nil {\n222: \t\tt.Fatalf(\"listener.Close error: %v\", err)\n223: \t}\n224: \n225: \tentry := urlFetchEntry()\n226: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n227: \n228: \tif !result.IsError {\n229: \t\tt.Fatal(\"expected IsError true\")\n230: \t}\n231: \tif result.Content == \"\" {\n232: \t\tt.Fatal(\"expected non-empty error content\")\n233: \t}\n234: }\n235: \n236: func TestURLFetch_CallIDPassthrough(t *testing.T) {\n237: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n238: \t\t_, _ = w.Write([]byte(\"ok\"))\n239: \t}))\n240: \tdefer ts.Close()\n241: \n242: \tentry := urlFetchEntry()\n243: \tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n244: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n245: \n246: \tif result.CallID != \"uf-unique-42\" {\n247: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n248: \t}\n249: }\n250: \n251: func TestURLFetch_EmptyResponseBody(t *testing.T) {\n252: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n253: \t\tw.WriteHeader(http.StatusOK)\n254: \t}))\n255: \tdefer ts.Close()\n256: \n257: \tentry := urlFetchEntry()\n258: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n259: \n260: \tif result.IsError {\n261: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n262: \t}\n263: \tif result.Content != \"\" {\n264: \t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n265: \t}\n266: }\n267: \n268: func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n269: \tlargeBody := strings.Repeat(\"C\", 20000)\n270: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n271: \t\tw.WriteHeader(http.StatusInternalServerError)\n272: \t\t_, _ = w.Write([]byte(largeBody))\n273: \t}))\n274: \tdefer ts.Close()\n275: \n276: \tentry := urlFetchEntry()\n277: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n278: \n279: \tif !result.IsError {\n280: \t\tt.Fatal(\"expected IsError true\")\n281: \t}\n282: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n283: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n284: \t}\n285: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n286: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n287: \t}\n288: }\n289: \n290: func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n291: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n292: \t\t_, _ = w.Write([]byte(\"ok\"))\n293: \t}))\n294: \tdefer ts.Close()\n295: \n296: \ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n297: \n298: \tvar stderr bytes.Buffer\n299: \tentry := urlFetchEntry()\n300: \t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n301: \n302: \tlogOutput := stderr.String()\n303: \tif strings.Contains(logOutput, \"user:pass\") {\n304: \t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n305: \t}\n306: \tif strings.Contains(logOutput, \"token=abc\") {\n307: \t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n308: \t}\n309: \tif strings.Contains(logOutput, \"#frag\") {\n310: \t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n311: \t}\n312: \tif !strings.Contains(logOutput, \"/secret/path\") {\n313: \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n314: \t}\n315: }\n\n(End of file - total 315 lines)\n</content>",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\nfunc TestURLFetch_Success(t *testing.T) {\n\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t_, _ = w.Write([]byte(\"hello world\"))\n\t}))\n\tdefer ts.Close()",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773157519751,
+              "end": 1773157519753
+            }
+          },
+          "id": "prt_cd86c9035001PKozDai3ErTJGz",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c7a85001oJ98UIBhCbQ1Xh"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "cost": 0.0286915,
+          "tokens": {
+            "total": 16530,
+            "input": 1,
+            "output": 221,
+            "reasoning": 0,
+            "cache": {
+              "read": 13698,
+              "write": 2610
+            }
+          },
+          "id": "prt_cd86c9196001as12xy3NRE8iPg",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c7a85001oJ98UIBhCbQ1Xh"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157519842,
+          "completed": 1773157638677
+        },
+        "parentID": "msg_cd81a5ed0001l85dgyFaqjIzBL",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.095909,
+        "tokens": {
+          "total": 24874,
+          "input": 1,
+          "output": 1825,
+          "reasoning": 0,
+          "cache": {
+            "read": 16308,
+            "write": 6740
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd86c91e20018fy1TlOJbuEzam",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "id": "prt_cd86ca836001kAgih7FI1VczAi",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c91e20018fy1TlOJbuEzam"
+        },
+        {
+          "type": "text",
+          "text": "Good. I now have full context. Let me create the spec document for milestone 001 (15-second per-request HTTP timeout).",
+          "time": {
+            "start": 1773157526484,
+            "end": 1773157526484
+          },
+          "id": "prt_cd86ca836002qN3gI3tMmuLJNS",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c91e20018fy1TlOJbuEzam"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "task",
+          "state": {
+            "status": "completed",
+            "input": {
+              "description": "Create timeout spec file",
+              "subagent_type": "general",
+              "prompt": "Create the file `.opencode/plans/029_http_request_timeout_spec.md` with the following exact content. Create the `.opencode/plans/` directory if it doesn't exist.\n\nWrite this exact content to the file:\n\n```markdown\n<!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n\n# Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context & Constraints\n\n### Codebase Structure\n\nThe `url_fetch` tool is self-contained within `internal/tool/`:\n\n| File | Role |\n|------|------|\n| `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n| `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n| `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n\nNo other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.\n\n### Current Behavior\n\n- `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.\n- There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).\n- A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.\n\n### Decisions Already Made\n\n| Decision | Rationale |\n|----------|-----------|\n| **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n| **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |\n| **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |\n\n### Approaches Ruled Out — Do Not Re-Evaluate\n\n| Approach | Why Rejected |\n|----------|-------------|\n| Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |\n| Configurable timeout per agent | Out of scope. |\n\n### Constraints\n\n- **No new public API.** All changes are internal to the `tool` package.\n- **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:\n  - Most tests use `httptest.NewServer` which responds instantly.\n  - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.\n  - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.\n- **Red/green TDD required.** Write failing tests first, then implement.\n- **No new dependencies.** `context.WithTimeout` is stdlib.\n\n---\n\n## Section 2: Requirements\n\n### R1: Per-Request Timeout\n\nWhen `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.\n\n- The timeout starts when the HTTP request begins (before TCP connect).\n- The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.\n- If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.\n- If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).\n- The shorter deadline always wins. This is the natural behavior of nested Go contexts.\n\n### R2: Timeout Constant\n\nThe 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.\n\n### R3: Error Behavior on Timeout\n\nWhen the per-request timeout fires:\n\n- The result MUST have `IsError: true`.\n- The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).\n- The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).\n- The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).\n\n### R4: No Change to Existing Behavior for Fast Responses\n\nResponses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.\n\n### R5: No Change to `maxReadBytes` or Truncation Logic\n\nThe timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.\n\n---\n\n### Edge Cases\n\n| Case | Expected Behavior |\n|------|-------------------|\n| Server responds in 14.9 seconds | Success. Response returned normally. |\n| Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |\n| Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |\n| Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |\n| Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |\n| Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |\n| Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |\n| DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |\n\n---\n\n### Parallelism Notes\n\nThis milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).\n\nHowever, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.\n```\n\nAfter creating the file, verify it exists by reading the first 5 lines. Return the full file path and confirmation that it was created."
+            },
+            "output": "task_id: ses_32792bebcffeJ7VRMaL9A29Zvx (for resuming to continue this task if needed)\n\n<task_result>\nFile created successfully.\n\n**Note:** `.opencode/plans` is a symlink to `docs/plans`, so the file lives at the real path:\n\n- **Real path:** `docs/plans/029_http_request_timeout_spec.md`\n- **Symlink path:** `.opencode/plans/029_http_request_timeout_spec.md`\n\nBoth paths resolve to the same file. The first 5 lines confirm it was written correctly with the milestone comment and spec title intact.\n</task_result>",
+            "title": "Create timeout spec file",
+            "metadata": {
+              "sessionId": "ses_32792bebcffeJ7VRMaL9A29Zvx",
+              "model": {
+                "providerID": "anthropic",
+                "modelID": "claude-sonnet-4-6"
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773157564736,
+              "end": 1773157638598
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c91e20018fy1TlOJbuEzam"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "cost": 0.095909,
+          "tokens": {
+            "total": 24874,
+            "input": 1,
+            "output": 1825,
+            "reasoning": 0,
+            "cache": {
+              "read": 16308,
+              "write": 6740
+            }
+          },
+          "id": "prt_cd86e61c70016eDAub698HibZC",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c91e20018fy1TlOJbuEzam"
+        },
+        {
+          "type": "patch",
+          "hash": "fea455b56676c3d14850467cdc547c951fe3ab6a",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md"
+          ],
+          "id": "prt_cd86e6213001ztytygWVScN45b",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86c91e20018fy1TlOJbuEzam"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773157567741
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "id": "msg_cd86d4cf6001W5QOObDBhMRjcN",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "We need `029_http_request_timeout_spec.md` to live in @docs/plans/ ",
+          "id": "prt_cd86d4cf7001OUH2RMp213yU1N",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86d4cf6001W5QOObDBhMRjcN"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157638678,
+          "completed": 1773157644488
+        },
+        "parentID": "msg_cd86d4cf6001W5QOObDBhMRjcN",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0286265,
+        "tokens": {
+          "total": 25275,
+          "input": 3,
+          "output": 170,
+          "reasoning": 0,
+          "cache": {
+            "read": 23048,
+            "write": 2054
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd86e6216001V0tfpaG6mUbPh7",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "id": "prt_cd86e6e1a001Ud2eR3iejW7uof",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e6216001V0tfpaG6mUbPh7"
+        },
+        {
+          "type": "text",
+          "text": "\n\nThe file was actually already created at `docs/plans/029_http_request_timeout_spec.md` — the subagent confirmed that `.opencode/plans` is a symlink to `docs/plans`, so the file is already in the right place. Let me verify:",
+          "time": {
+            "start": 1773157643538,
+            "end": 1773157643538
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e6216001V0tfpaG6mUbPh7"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01B1nsPub6qAcMc6UWp9NV1H",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md",
+              "limit": 5
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md</path>\n<type>file</type>\n<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n2: \n3: # Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n4: \n5: **Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  \n\n(Showing lines 1-5 of 112. Use offset=6 to continue.)\n</content>",
+            "title": "docs/plans/029_http_request_timeout_spec.md",
+            "metadata": {
+              "preview": "<!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n\n# Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  ",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1773157644338,
+              "end": 1773157644342
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e6216001V0tfpaG6mUbPh7"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "cost": 0.0286265,
+          "tokens": {
+            "total": 25275,
+            "input": 3,
+            "output": 170,
+            "reasoning": 0,
+            "cache": {
+              "read": 23048,
+              "write": 2054
+            }
+          },
+          "id": "prt_cd86e7850001dntN93gsoK6GsT",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e6216001V0tfpaG6mUbPh7"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157644490,
+          "completed": 1773157648042
+        },
+        "parentID": "msg_cd86d4cf6001W5QOObDBhMRjcN",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01694575,
+        "tokens": {
+          "total": 25521,
+          "input": 1,
+          "output": 77,
+          "reasoning": 0,
+          "cache": {
+            "read": 25044,
+            "write": 399
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd86e78ca001OuzPa8N4TM85co",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "id": "prt_cd86e8073001DUcFOv7T318DNi",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e78ca001OuzPa8N4TM85co"
+        },
+        {
+          "type": "text",
+          "text": "The file already exists at `docs/plans/029_http_request_timeout_spec.md`. It's been there since creation — `.opencode/plans/` is a symlink pointing to `docs/plans/`, so writing to either path lands the file in the same location.\n\nAre there any changes you'd like made to the spec?",
+          "time": {
+            "start": 1773157647895,
+            "end": 1773157647895
+          },
+          "id": "prt_cd86e8073002HCSzFDx0RIMRTz",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e78ca001OuzPa8N4TM85co"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "cost": 0.01694575,
+          "tokens": {
+            "total": 25521,
+            "input": 1,
+            "output": 77,
+            "reasoning": 0,
+            "cache": {
+              "read": 25044,
+              "write": 399
+            }
+          },
+          "id": "prt_cd86e862b001agxZh9YY6Mlx5t",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd86e78ca001OuzPa8N4TM85co"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1773157770882
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/029_http_request_timeout_implement.md",
+              "before": "",
+              "after": "<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n",
+              "additions": 45,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "id": "msg_cd870667d001p7071ZI0v1cgWO",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "file",
+          "mime": "text/plain",
+          "filename": "docs/plans/029_http_request_timeout_spec.md",
+          "url": "file:///Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md",
+          "source": {
+            "text": {
+              "value": "@docs/plans/029_http_request_timeout_spec.md",
+              "start": 11,
+              "end": 55
+            },
+            "type": "file",
+            "path": "docs/plans/029_http_request_timeout_spec.md"
+          },
+          "id": "prt_cd870667e001xT7P6eSsR21rsh",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "text",
+          "text": "## Objective\nCreate an implementation guide from a specification document.\n**DO NOT do the work.** ONLY produce the implementation guide as defined below.\n\n## Requirements\n- If @docs/plans/029_http_request_timeout_spec.md is empty or omitted, pull the latest `*_spec.md` from `docs/plans/` and verify it with the user.\n- Read the spec's **Context & Constraints** before writing tasks. Do not re-derive or re-evaluate decisions already made there.\n- Each task must reference the exact file path and function/method (e.g. `internal/handler/auth.go: UpdateUser()`).\n- Each task must be implementable and testable in isolation.\n- Tasks ordered by dependency and priority.\n- If anything is unclear, ask — then update the spec to match.\n- Specifiy which parts of the implementation checklist can be done in parallel.\n- Place the file in `docs/plans/` with the name `xxx_nnn_implement.md`\n  - \"xxx\" = number matching the spec file\n  - \"nnn\" = task to achieve\n\n## Testing Rules\n- Test real code, not mocks. If deleting the code under test doesn't break the test, the test adds no value.\n- Mock at the router level only for auth gating, input validation, and error propagation.\n\n## Document Structure\n\n### Section 1: Context Summary\nOne paragraph summarizing the *why* behind this implementation, drawn from the spec's Context & Constraints. Anchors the executing agent without needing to re-read the spec.\n\n### Section 2: Implementation Checklist\n- `- [ ] {Task description}` format\n- Exact file path and function/method on each task\n- Include test tasks alongside implementation tasks",
+          "id": "prt_cd8706686001xkFLCtBd9N9WJR",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "text",
+          "text": "Called the Read tool with the following input: {\"filePath\":\"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md\"}",
+          "synthetic": true,
+          "id": "prt_cd8706686002LWgLcBVNKFjeag",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "text",
+          "text": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md</path>\n<type>file</type>\n<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n2: \n3: # Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n4: \n5: **Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  \n6: **Date:** 2026-03-10  \n7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n8: \n9: ---\n10: \n11: ## Section 1: Context & Constraints\n12: \n13: ### Codebase Structure\n14: \n15: The `url_fetch` tool is self-contained within `internal/tool/`:\n16: \n17: | File | Role |\n18: |------|------|\n19: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n20: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n22: \n23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: - `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.\n28: - There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).\n29: - A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.\n30: \n31: ### Decisions Already Made\n32: \n33: | Decision | Rationale |\n34: |----------|-----------|\n35: | **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n36: | **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |\n37: | **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |\n38: \n39: ### Approaches Ruled Out — Do Not Re-Evaluate\n40: \n41: | Approach | Why Rejected |\n42: |----------|-------------|\n43: | Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |\n44: | Configurable timeout per agent | Out of scope. |\n45: \n46: ### Constraints\n47: \n48: - **No new public API.** All changes are internal to the `tool` package.\n49: - **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:\n50:   - Most tests use `httptest.NewServer` which responds instantly.\n51:   - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.\n52:   - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.\n53: - **Red/green TDD required.** Write failing tests first, then implement.\n54: - **No new dependencies.** `context.WithTimeout` is stdlib.\n55: \n56: ---\n57: \n58: ## Section 2: Requirements\n59: \n60: ### R1: Per-Request Timeout\n61: \n62: When `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.\n63: \n64: - The timeout starts when the HTTP request begins (before TCP connect).\n65: - The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.\n66: - If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.\n67: - If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).\n68: - The shorter deadline always wins. This is the natural behavior of nested Go contexts.\n69: \n70: ### R2: Timeout Constant\n71: \n72: The 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.\n73: \n74: ### R3: Error Behavior on Timeout\n75: \n76: When the per-request timeout fires:\n77: \n78: - The result MUST have `IsError: true`.\n79: - The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).\n80: - The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).\n81: - The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).\n82: \n83: ### R4: No Change to Existing Behavior for Fast Responses\n84: \n85: Responses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.\n86: \n87: ### R5: No Change to `maxReadBytes` or Truncation Logic\n88: \n89: The timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.\n90: \n91: ---\n92: \n93: ### Edge Cases\n94: \n95: | Case | Expected Behavior |\n96: |------|-------------------|\n97: | Server responds in 14.9 seconds | Success. Response returned normally. |\n98: | Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |\n99: | Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |\n100: | Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |\n101: | Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |\n102: | Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |\n103: | Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |\n104: | DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |\n105: \n106: ---\n107: \n108: ### Parallelism Notes\n109: \n110: This milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).\n111: \n112: However, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.\n\n(End of file - total 112 lines)\n</content>",
+          "synthetic": true,
+          "id": "prt_cd8706686003194mN61XwoT59K",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "file",
+          "mime": "text/plain",
+          "filename": "docs/plans/029_http_request_timeout_spec.md",
+          "url": "file:///Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md",
+          "id": "prt_cd8706686004BvvKyd0wQDWBAV",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "text",
+          "text": "Called the Read tool with the following input: {\"filePath\":\"/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md\"}",
+          "synthetic": true,
+          "id": "prt_cd8706686005uc73a6xTjvtG8p",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        },
+        {
+          "type": "text",
+          "text": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_spec.md</path>\n<type>file</type>\n<content>1: <!-- milestone: docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md — 001 -->\n2: \n3: # Spec 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n4: \n5: **Milestone:** 001 from `docs/plans/000_url_fetch_timeout_and_html_stripping_milestones.md`  \n6: **Date:** 2026-03-10  \n7: **Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n8: \n9: ---\n10: \n11: ## Section 1: Context & Constraints\n12: \n13: ### Codebase Structure\n14: \n15: The `url_fetch` tool is self-contained within `internal/tool/`:\n16: \n17: | File | Role |\n18: |------|------|\n19: | `internal/tool/url_fetch.go` (127 lines) | Tool definition + execution logic |\n20: | `internal/tool/url_fetch_test.go` (315 lines) | 13 existing test cases |\n21: | `internal/tool/tool.go` | `ToolEntry` type, `ExecContext` struct, `toolVerboseLog` |\n22: \n23: No other packages reference `url_fetch` internals. All changes are scoped to `internal/tool/`.\n24: \n25: ### Current Behavior\n26: \n27: - `urlFetchExecute` creates an HTTP request via `http.NewRequestWithContext(ctx, ...)` and executes it with `http.DefaultClient.Do(req)`.\n28: - There is **no per-request timeout**. The only timeout protection is the parent `ctx` passed from the agent runner (default 120 seconds).\n29: - A slow server that trickles data or delays the response will block the agent for up to 120 seconds before the parent context cancels.\n30: \n31: ### Decisions Already Made\n32: \n33: | Decision | Rationale |\n34: |----------|-----------|\n35: | **15-second hardcoded timeout** | Matches the TypeScript implementation's `AbortSignal.timeout(15000)`. Long enough for slow servers, short enough to not block an agent run. |\n36: | **Use `context.WithTimeout` on the request context** | Idiomatic Go. Wraps the incoming `ctx` with a 15-second deadline. The shorter of the two deadlines (parent vs. per-request) wins automatically. |\n37: | **Timeout is NOT configurable via TOML** | Out of scope for this issue. Can be revisited in a future issue. |\n38: \n39: ### Approaches Ruled Out — Do Not Re-Evaluate\n40: \n41: | Approach | Why Rejected |\n42: |----------|-------------|\n43: | Custom HTTP client with transport-level timeout | Overly complex. `context.WithTimeout` achieves the same result with less code. |\n44: | Configurable timeout per agent | Out of scope. |\n45: \n46: ### Constraints\n47: \n48: - **No new public API.** All changes are internal to the `tool` package.\n49: - **All 13 existing tests must pass unchanged.** None of them are affected by a 15-second timeout because:\n50:   - Most tests use `httptest.NewServer` which responds instantly.\n51:   - `TestURLFetch_ContextCancellation` uses a 50ms parent timeout. Since `min(50ms, 15s) = 50ms`, the parent timeout still wins.\n52:   - `TestURLFetch_ConnectionRefused` fails at TCP connect, before any timeout applies.\n53: - **Red/green TDD required.** Write failing tests first, then implement.\n54: - **No new dependencies.** `context.WithTimeout` is stdlib.\n55: \n56: ---\n57: \n58: ## Section 2: Requirements\n59: \n60: ### R1: Per-Request Timeout\n61: \n62: When `urlFetchExecute` makes an HTTP request, the request MUST be governed by a 15-second timeout **in addition to** the parent context's deadline.\n63: \n64: - The timeout starts when the HTTP request begins (before TCP connect).\n65: - The timeout covers the entire request lifecycle: DNS resolution, TCP connect, TLS handshake, sending the request, and reading the response headers.\n66: - If the 15-second timeout fires before the parent context's deadline, the request MUST be cancelled and an error returned.\n67: - If the parent context's deadline fires before the 15-second timeout, the request MUST be cancelled and an error returned (existing behavior, unchanged).\n68: - The shorter deadline always wins. This is the natural behavior of nested Go contexts.\n69: \n70: ### R2: Timeout Constant\n71: \n72: The 15-second timeout value MUST be defined as a package-level constant (unexported) for clarity and testability. It MUST NOT be a magic number inline.\n73: \n74: ### R3: Error Behavior on Timeout\n75: \n76: When the per-request timeout fires:\n77: \n78: - The result MUST have `IsError: true`.\n79: - The result MUST contain the error message from the context cancellation (Go's `context.DeadlineExceeded` surfaces through `http.Client.Do`).\n80: - The `CallID` MUST be set to the incoming `call.ID` (existing behavior, unchanged).\n81: - The verbose log MUST still fire via the existing `defer` block (existing behavior, unchanged).\n82: \n83: ### R4: No Change to Existing Behavior for Fast Responses\n84: \n85: Responses that complete within 15 seconds MUST behave identically to today. No observable difference in output, error handling, truncation, or verbose logging.\n86: \n87: ### R5: No Change to `maxReadBytes` or Truncation Logic\n88: \n89: The timeout governs the HTTP request lifecycle only. The existing `maxReadBytes` (10,000) limit and truncation logic are unrelated and MUST NOT change.\n90: \n91: ---\n92: \n93: ### Edge Cases\n94: \n95: | Case | Expected Behavior |\n96: |------|-------------------|\n97: | Server responds in 14.9 seconds | Success. Response returned normally. |\n98: | Server responds in 15.1 seconds | Error. Per-request timeout fires. `IsError: true`. |\n99: | Parent context has 5-second deadline, server responds in 6 seconds | Error. Parent context fires first (existing behavior). |\n100: | Parent context has 5-second deadline, server responds in 4 seconds | Success. Both deadlines are satisfied. |\n101: | Parent context has no deadline, server never responds | Error. Per-request 15-second timeout fires. |\n102: | Server sends headers quickly but trickles body over 20 seconds | The timeout covers the full request. If `http.Client.Do` returns before the timeout (it returns after headers), the body read via `io.ReadAll` is governed by the same context. The request is cancelled at 15 seconds. |\n103: | Connection refused (TCP RST) | Error returned immediately, before any timeout. Unchanged behavior. |\n104: | DNS resolution fails | Error returned immediately or quickly, before the 15-second timeout. Unchanged behavior. |\n105: \n106: ---\n107: \n108: ### Parallelism Notes\n109: \n110: This milestone is a single, focused change. There are no independent sub-tasks that benefit from parallel execution. The test(s) and implementation are sequential (red/green TDD).\n111: \n112: However, this milestone (001) is **independent of milestone 002** (HTML stripping). They can be developed on the same branch sequentially but do not depend on each other.\n\n(End of file - total 112 lines)\n</content>",
+          "synthetic": true,
+          "id": "prt_cd8706686006PDAbfPCc97WmU4",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870667d001p7071ZI0v1cgWO"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157770892,
+          "completed": 1773157816960
+        },
+        "parentID": "msg_cd870667d001p7071ZI0v1cgWO",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.07405525,
+        "tokens": {
+          "total": 31318,
+          "input": 3,
+          "output": 1313,
+          "reasoning": 0,
+          "cache": {
+            "read": 25443,
+            "write": 4559
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cd870668c001ypMvH9gMETfZgM",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "id": "prt_cd8707084001h6ivWj8LY30Wmn",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870668c001ypMvH9gMETfZgM"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI have the full spec. Now let me create the implementation guide.",
+          "time": {
+            "start": 1773157773866,
+            "end": 1773157773866
+          },
+          "id": "prt_cd87070840020xx6tLd7vE2ieb",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870668c001ypMvH9gMETfZgM"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_012tgeN1tNwQgirxXxFLKfSS",
+          "tool": "task",
+          "state": {
+            "status": "completed",
+            "input": {
+              "description": "Create implement guide file",
+              "subagent_type": "general",
+              "prompt": "Create the file `docs/plans/029_http_request_timeout_implement.md` with the following exact content. The working directory is `/Users/jaronswab/go/src/github.com/jrswab/axe`.\n\nWrite this exact content to the file:\n\n```markdown\n<!-- spec: docs/plans/029_http_request_timeout_spec.md -->\n\n# Implement 029: Add 15-Second Per-Request HTTP Timeout to `url_fetch` Tool\n\n**Spec:** `docs/plans/029_http_request_timeout_spec.md`  \n**Date:** 2026-03-10  \n**Branch:** `issue-17-url-fetch-timeout-html-strip` (off `develop`)\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` tool currently relies solely on the parent agent-runner context (default 120s) for timeout protection. A slow or unresponsive server can block an entire agent run for up to two minutes. This implementation adds a 15-second per-request timeout using `context.WithTimeout`, matching the TypeScript implementation's behavior. The approach is idiomatic Go — nested contexts where the shorter deadline wins automatically. No new dependencies, no public API changes, no configuration surface. All work is scoped to `internal/tool/url_fetch.go` and its test file.\n\n---\n\n## Section 2: Implementation Checklist\n\nRed/green TDD — tests first (red), then implementation (green). All tasks are sequential; there are no independent sub-tasks that benefit from parallel execution within this milestone.\n\n### Phase 1: Tests (Red)\n\n- [ ] **Add test `TestURLFetch_PerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_PerRequestTimeout`. Stand up an `httptest.NewServer` whose handler sleeps longer than the per-request timeout (e.g., blocks for 2 seconds). Pass a `context.Background()` (no parent deadline) so only the per-request timeout can fire. Use a short timeout override (see Phase 2 task on the constant) to keep the test fast. Assert: `result.IsError == true`, `result.CallID` matches the input `call.ID`, and `result.Content` is non-empty.\n\n- [ ] **Add test `TestURLFetch_ParentContextWinsOverPerRequestTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_ParentContextWinsOverPerRequestTimeout`. Stand up an `httptest.NewServer` whose handler blocks for 2 seconds. Pass a parent context with a deadline shorter than the per-request timeout (e.g., 50ms). Assert: `result.IsError == true`. This confirms the parent context still wins when its deadline is shorter. (This overlaps with the existing `TestURLFetch_ContextCancellation` but explicitly documents the interaction between the two timeouts.)\n\n- [ ] **Add test `TestURLFetch_FastResponseUnaffectedByTimeout`** — `internal/tool/url_fetch_test.go`: new test function `TestURLFetch_FastResponseUnaffectedByTimeout`. Stand up an `httptest.NewServer` that responds immediately with `\"fast response\"`. Pass `context.Background()`. Assert: `result.IsError == false`, `result.Content == \"fast response\"`. Confirms the timeout does not interfere with normal fast responses.\n\n### Phase 2: Implementation (Green)\n\n- [ ] **Define the timeout constant** — `internal/tool/url_fetch.go`: add an unexported package-level constant `urlFetchTimeout = 15 * time.Second` near the existing `maxReadBytes` constant. Import `\"time\"` if not already imported.\n\n- [ ] **Wrap the request context with `context.WithTimeout`** — `internal/tool/url_fetch.go`: in `urlFetchExecute()`, immediately after the scheme validation block (line ~93) and before `http.NewRequestWithContext`, create a derived context: `reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)` followed by `defer cancel()`. Pass `reqCtx` (not `ctx`) to `http.NewRequestWithContext`. This ensures the timeout governs DNS, TCP connect, TLS, request send, and header read. The `io.ReadAll` on `resp.Body` is also governed because the body reader inherits the request's context.\n\n### Phase 3: Verify\n\n- [ ] **Run all existing tests** — `internal/tool/url_fetch_test.go`: execute `go test ./internal/tool/ -run TestURLFetch -v -count=1`. All 13 existing tests plus the 3 new tests must pass. Zero failures.\n\n- [ ] **Run vet** — execute `go vet ./internal/tool/`. Zero findings.\n\n---\n\n### Parallelism Notes\n\nAll tasks within this milestone are sequential (TDD order). However, this entire milestone (001) is independent of milestone 002 (HTML stripping) and can be developed concurrently on separate branches if desired.\n```\n\nAfter creating the file, verify it exists by reading the first 5 lines. Return the full file path and confirmation."
+            },
+            "output": "task_id: ses_3278f33f9ffefi3r2taZ85Yt5m (for resuming to continue this task if needed)\n\n<task_result>\nFile created and verified.\n\n**Full path:** `/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md`\n\nThe file exists with the correct content — first 5 lines match the spec link comment, title, and metadata exactly.\n</task_result>",
+            "title": "Create implement guide file",
+            "metadata": {
+              "sessionId": "ses_3278f33f9ffefi3r2taZ85Yt5m",
+              "model": {
+                "providerID": "anthropic",
+                "modelID": "claude-sonnet-4-6"
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1773157796867,
+              "end": 1773157816894
+            }
+          },
+          "id": "prt_cd870722b001rtIm4D5Nkc0wt1",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870668c001ypMvH9gMETfZgM"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "f3dfdf62e91013f90589b3a0d3e2809f085a7122",
+          "cost": 0.07405525,
+          "tokens": {
+            "total": 31318,
+            "input": 3,
+            "output": 1313,
+            "reasoning": 0,
+            "cache": {
+              "read": 25443,
+              "write": 4559
+            }
+          },
+          "id": "prt_cd8711a3e001Dyc1U4RSbWsvV7",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870668c001ypMvH9gMETfZgM"
+        },
+        {
+          "type": "patch",
+          "hash": "650882382234e2b95ca2fe59cb24687e9e41f9c1",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/029_http_request_timeout_implement.md"
+          ],
+          "id": "prt_cd8711a7e001TW4964Cs9tw9e9",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd870668c001ypMvH9gMETfZgM"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773157816962,
+          "completed": 1773157824430
+        },
+        "parentID": "msg_cd870667d001p7071ZI0v1cgWO",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03118725,
+        "tokens": {
+          "total": 31740,
+          "input": 1,
+          "output": 284,
+          "reasoning": 0,
+          "cache": {
+            "read": 30002,
+            "write": 1453
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cd8711a820018F2k65wwMPnshn",
+        "sessionID": "ses_327e5a137ffexslFtgVn5mme5m"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "f3dfdf62e91013f90589b3a0d3e2809f085a7122",
+          "id": "prt_cd87127a80016C7yuq5db6fK8D",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd8711a820018F2k65wwMPnshn"
+        },
+        {
+          "type": "text",
+          "text": "The implementation guide is ready at `docs/plans/029_http_request_timeout_implement.md`.\n\nHere's a summary of the checklist:\n\n**Phase 1 — Tests (Red)**\n1. `TestURLFetch_PerRequestTimeout` — server blocks beyond timeout, no parent deadline, assert error\n2. `TestURLFetch_ParentContextWinsOverPerRequestTimeout` — parent deadline shorter than 15s, assert parent wins\n3. `TestURLFetch_FastResponseUnaffectedByTimeout` — instant response, assert success unaffected\n\n**Phase 2 — Implementation (Green)**\n4. Define `urlFetchTimeout = 15 * time.Second` constant in `url_fetch.go`\n5. Wrap request context with `context.WithTimeout` in `urlFetchExecute()`\n\n**Phase 3 — Verify**\n6. Run all tests (`go test ./internal/tool/ -run TestURLFetch -v -count=1`)\n7. Run `go vet ./internal/tool/`\n\nAll tasks are sequential (TDD order). No parallelism within this milestone, but it's independent of milestone 002 (HTML stripping).\n\nAre there any changes you'd like made?",
+          "time": {
+            "start": 1773157824285,
+            "end": 1773157824285
+          },
+          "id": "prt_cd87127a8002Cl3SxH6LM16ChY",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd8711a820018F2k65wwMPnshn"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "f3dfdf62e91013f90589b3a0d3e2809f085a7122",
+          "cost": 0.03118725,
+          "tokens": {
+            "total": 31740,
+            "input": 1,
+            "output": 284,
+            "reasoning": 0,
+            "cache": {
+              "read": 30002,
+              "write": 1453
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_327e5a137ffexslFtgVn5mme5m",
+          "messageID": "msg_cd8711a820018F2k65wwMPnshn"
+        }
+      ]
+    }
+  ]
+}
