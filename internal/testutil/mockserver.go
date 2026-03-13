@@ -187,6 +187,32 @@ func SlowResponse(delay time.Duration) MockLLMResponse {
 	return MockLLMResponse{StatusCode: -1, Body: delay.String()}
 }
 
+// GeminiResponse returns a MockLLMResponse with a valid Gemini generateContent response.
+func GeminiResponse(text string) MockLLMResponse {
+	body := fmt.Sprintf(`{"candidates":[{"content":{"role":"model","parts":[{"text":%s}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":5,"totalTokenCount":15}}`, jsonString(text))
+	return MockLLMResponse{StatusCode: 200, Body: body}
+}
+
+// GeminiToolCallResponse returns a MockLLMResponse with a Gemini response containing text and functionCall parts.
+func GeminiToolCallResponse(text string, toolCalls []MockToolCall) MockLLMResponse {
+	var parts []string
+	if text != "" {
+		parts = append(parts, fmt.Sprintf(`{"text":%s}`, jsonString(text)))
+	}
+	for _, tc := range toolCalls {
+		argsJSON, _ := json.Marshal(tc.Input)
+		parts = append(parts, fmt.Sprintf(`{"functionCall":{"name":%s,"args":%s}}`, jsonString(tc.Name), string(argsJSON)))
+	}
+	body := fmt.Sprintf(`{"candidates":[{"content":{"role":"model","parts":[%s]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":20,"totalTokenCount":30}}`, strings.Join(parts, ","))
+	return MockLLMResponse{StatusCode: 200, Body: body}
+}
+
+// GeminiErrorResponse returns a MockLLMResponse with a Gemini error shape.
+func GeminiErrorResponse(statusCode int, message string) MockLLMResponse {
+	body := fmt.Sprintf(`{"error":{"code":%d,"message":%s,"status":"ERROR"}}`, statusCode, jsonString(message))
+	return MockLLMResponse{StatusCode: statusCode, Body: body}
+}
+
 // jsonString returns a JSON-encoded string value (with quotes and escaping).
 func jsonString(s string) string {
 	b, _ := json.Marshal(s)

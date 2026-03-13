@@ -278,3 +278,35 @@ func TestAPIKeyEnvVar_OpenCode(t *testing.T) {
 		t.Errorf("expected OPENCODE_API_KEY, got %q", got)
 	}
 }
+
+func TestAPIKeyEnvVar_Google(t *testing.T) {
+	if got := APIKeyEnvVar("google"); got != "GEMINI_API_KEY" {
+		t.Errorf("expected GEMINI_API_KEY, got %q", got)
+	}
+}
+
+func TestResolveAPIKey_Google(t *testing.T) {
+	// Env var takes precedence over config file.
+	t.Setenv("GEMINI_API_KEY", "gemini-key-from-env")
+	cfg := &GlobalConfig{
+		Providers: map[string]ProviderConfig{
+			"google": {APIKey: "gemini-key-from-config"},
+		},
+	}
+	if got := cfg.ResolveAPIKey("google"); got != "gemini-key-from-env" {
+		t.Errorf("expected 'gemini-key-from-env', got %q", got)
+	}
+
+	// Config file value used when env var is empty.
+	t.Setenv("GEMINI_API_KEY", "")
+	if got := cfg.ResolveAPIKey("google"); got != "gemini-key-from-config" {
+		t.Errorf("expected 'gemini-key-from-config', got %q", got)
+	}
+
+	// Empty string when neither is set.
+	t.Setenv("GEMINI_API_KEY", "")
+	emptyCfg := &GlobalConfig{Providers: map[string]ProviderConfig{}}
+	if got := emptyCfg.ResolveAPIKey("google"); got != "" {
+		t.Errorf("expected empty string, got %q", got)
+	}
+}
