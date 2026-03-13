@@ -32,7 +32,8 @@ reinventing scheduling or workflow orchestration.
 - **Dry-run mode** — inspect resolved context without calling the LLM
 - **JSON output** — structured output with metadata for scripting
 - **Built-in tools** — file operations (read, write, edit, list), shell command execution, all sandboxed to the agent's working directory
-- **Minimal dependencies** — two direct dependencies (cobra, toml); all LLM calls use the standard library
+- **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport
+- **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library
 
 ## Installation
 
@@ -311,6 +312,12 @@ enabled = true
 last_n = 10         # load last N entries into context
 max_entries = 100   # warn when exceeded
 
+[[mcp_servers]]
+name = "my-tools"
+url = "https://my-mcp-server.example.com/sse"
+transport = "sse"
+headers = { Authorization = "Bearer ${MY_TOKEN}" }
+
 [params]
 temperature = 0.3
 max_tokens = 4096
@@ -355,6 +362,33 @@ symlink escapes are rejected.
 When an LLM returns multiple tool calls in a single turn, they run concurrently
 by default. This applies to both built-in tools and sub-agent calls. Disable
 with `parallel = false` in `[sub_agents_config]`.
+
+### MCP Tools
+
+Agents can use tools from external [MCP](https://modelcontextprotocol.io/)
+servers. Declare servers in the agent TOML with `[[mcp_servers]]`:
+
+```toml
+[[mcp_servers]]
+name = "my-tools"
+url = "https://my-mcp-server.example.com/sse"
+transport = "sse"
+headers = { Authorization = "Bearer ${MY_TOKEN}" }
+```
+
+At startup, axe connects to each declared server, discovers available tools via
+`tools/list`, and makes them available to the LLM alongside built-in tools.
+
+| Field | Required | Description |
+|---|---|---|
+| `name` | Yes | Human-readable identifier for the server |
+| `url` | Yes | MCP server endpoint URL |
+| `transport` | Yes | `"sse"` or `"streamable-http"` |
+| `headers` | No | HTTP headers; values support `${ENV_VAR}` interpolation |
+
+MCP tools are controlled entirely by `[[mcp_servers]]` — they are not listed in
+the `tools` field. If an MCP tool has the same name as an enabled built-in tool,
+the built-in takes precedence.
 
 ## Skills
 
