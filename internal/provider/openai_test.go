@@ -260,7 +260,7 @@ func TestOpenAI_Send_OmitsZeroMaxTokens(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
 		_ = json.Unmarshal(body, &raw)
-		_, hasMaxTokens = raw["max_tokens"]
+		_, hasMaxTokens = raw["max_completion_tokens"]
 
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
@@ -280,7 +280,7 @@ func TestOpenAI_Send_OmitsZeroMaxTokens(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if hasMaxTokens {
-		t.Error("expected max_tokens to be omitted when 0")
+		t.Error("expected max_completion_tokens to be omitted when 0")
 	}
 }
 
@@ -291,7 +291,7 @@ func TestOpenAI_Send_IncludesMaxTokens(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		var raw map[string]json.RawMessage
 		_ = json.Unmarshal(body, &raw)
-		_, hasMaxTokens = raw["max_tokens"]
+		_, hasMaxTokens = raw["max_completion_tokens"]
 
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"model":   "gpt-4o",
@@ -311,7 +311,7 @@ func TestOpenAI_Send_IncludesMaxTokens(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !hasMaxTokens {
-		t.Error("expected max_tokens to be present")
+		t.Error("expected max_completion_tokens to be present")
 	}
 }
 
