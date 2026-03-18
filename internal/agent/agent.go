@@ -27,6 +27,14 @@ type ParamsConfig struct {
 	MaxTokens   int     `toml:"max_tokens"`
 }
 
+// RetryConfig holds retry sub-configuration for an agent.
+type RetryConfig struct {
+	MaxRetries     int    `toml:"max_retries"`
+	Backoff        string `toml:"backoff"`
+	InitialDelayMs int    `toml:"initial_delay_ms"`
+	MaxDelayMs     int    `toml:"max_delay_ms"`
+}
+
 // SubAgentsConfig holds sub-agent execution configuration for an agent.
 type SubAgentsConfig struct {
 	MaxDepth int   `toml:"max_depth"`
@@ -57,6 +65,7 @@ type AgentConfig struct {
 	SubAgentsConf SubAgentsConfig   `toml:"sub_agents_config"`
 	Memory        MemoryConfig      `toml:"memory"`
 	Params        ParamsConfig      `toml:"params"`
+	Retry         RetryConfig       `toml:"retry"`
 }
 
 // Validate checks that required fields are present in the agent configuration.
@@ -117,6 +126,23 @@ func Validate(cfg *AgentConfig) error {
 		}
 		seenMCPNames[server.Name] = struct{}{}
 	}
+
+	if cfg.Retry.MaxRetries < 0 {
+		return errors.New("retry.max_retries must be non-negative")
+	}
+	if cfg.Retry.Backoff != "" && cfg.Retry.Backoff != "exponential" && cfg.Retry.Backoff != "linear" && cfg.Retry.Backoff != "fixed" {
+		return errors.New("retry.backoff must be one of: exponential, linear, fixed")
+	}
+	if cfg.Retry.InitialDelayMs < 0 {
+		return errors.New("retry.initial_delay_ms must be non-negative")
+	}
+	if cfg.Retry.MaxDelayMs < 0 {
+		return errors.New("retry.max_delay_ms must be non-negative")
+	}
+	if cfg.Retry.InitialDelayMs > 0 && cfg.Retry.MaxDelayMs > 0 && cfg.Retry.MaxDelayMs < cfg.Retry.InitialDelayMs {
+		return errors.New("retry.max_delay_ms must be >= retry.initial_delay_ms")
+	}
+
 	return nil
 }
 
@@ -238,6 +264,12 @@ model = "provider/model-name"
 # [params]
 # temperature = 0.3
 # max_tokens = 4096
+
+# [retry]
+# max_retries = 0
+# backoff = "exponential"
+# initial_delay_ms = 500
+# max_delay_ms = 30000
 `
 	return tmpl, nil
 }

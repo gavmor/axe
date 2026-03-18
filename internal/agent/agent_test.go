@@ -1216,3 +1216,291 @@ func TestScaffold_IncludesMCPServersExample(t *testing.T) {
 		}
 	}
 }
+
+// --- Retry Config tests ---
+
+func TestValidate_RetryConfig_Valid(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			MaxRetries:     3,
+			Backoff:        "exponential",
+			InitialDelayMs: 500,
+			MaxDelayMs:     30000,
+		},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestValidate_RetryMaxRetries_Negative(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{MaxRetries: -1},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for negative max_retries, got nil")
+	}
+	want := "retry.max_retries must be non-negative"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryBackoff_Invalid(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{Backoff: "invalid"},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for invalid backoff, got nil")
+	}
+	want := "retry.backoff must be one of: exponential, linear, fixed"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryBackoff_WrongCase(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{Backoff: "EXPONENTIAL"},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for wrong-case backoff, got nil")
+	}
+	want := "retry.backoff must be one of: exponential, linear, fixed"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryBackoff_Empty(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{Backoff: ""},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error for empty backoff, got %v", err)
+	}
+}
+
+func TestValidate_RetryBackoff_Linear(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{Backoff: "linear"},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error for linear backoff, got %v", err)
+	}
+}
+
+func TestValidate_RetryBackoff_Fixed(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{Backoff: "fixed"},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error for fixed backoff, got %v", err)
+	}
+}
+
+func TestValidate_RetryInitialDelayMs_Negative(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{InitialDelayMs: -1},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for negative initial_delay_ms, got nil")
+	}
+	want := "retry.initial_delay_ms must be non-negative"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryMaxDelayMs_Negative(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{MaxDelayMs: -1},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for negative max_delay_ms, got nil")
+	}
+	want := "retry.max_delay_ms must be non-negative"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryConfig_ZeroValues(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error for zero-valued retry config, got %v", err)
+	}
+}
+
+func TestRetryConfig_TOMLParsing(t *testing.T) {
+	input := `
+name = "test"
+model = "anthropic/claude-sonnet-4-20250514"
+
+[retry]
+max_retries = 3
+backoff = "exponential"
+initial_delay_ms = 500
+max_delay_ms = 30000
+`
+	var cfg AgentConfig
+	if _, err := tomlDecode(input, &cfg); err != nil {
+		t.Fatalf("failed to decode TOML: %v", err)
+	}
+	if cfg.Retry.MaxRetries != 3 {
+		t.Errorf("MaxRetries = %d, want 3", cfg.Retry.MaxRetries)
+	}
+	if cfg.Retry.Backoff != "exponential" {
+		t.Errorf("Backoff = %q, want %q", cfg.Retry.Backoff, "exponential")
+	}
+	if cfg.Retry.InitialDelayMs != 500 {
+		t.Errorf("InitialDelayMs = %d, want 500", cfg.Retry.InitialDelayMs)
+	}
+	if cfg.Retry.MaxDelayMs != 30000 {
+		t.Errorf("MaxDelayMs = %d, want 30000", cfg.Retry.MaxDelayMs)
+	}
+}
+
+func TestRetryConfig_TOMLParsing_Absent(t *testing.T) {
+	input := `
+name = "test"
+model = "anthropic/claude-sonnet-4-20250514"
+`
+	var cfg AgentConfig
+	if _, err := tomlDecode(input, &cfg); err != nil {
+		t.Fatalf("failed to decode TOML: %v", err)
+	}
+	if cfg.Retry.MaxRetries != 0 {
+		t.Errorf("MaxRetries = %d, want 0", cfg.Retry.MaxRetries)
+	}
+	if cfg.Retry.Backoff != "" {
+		t.Errorf("Backoff = %q, want empty", cfg.Retry.Backoff)
+	}
+	if cfg.Retry.InitialDelayMs != 0 {
+		t.Errorf("InitialDelayMs = %d, want 0", cfg.Retry.InitialDelayMs)
+	}
+	if cfg.Retry.MaxDelayMs != 0 {
+		t.Errorf("MaxDelayMs = %d, want 0", cfg.Retry.MaxDelayMs)
+	}
+}
+
+func TestValidate_RetryMaxDelayMs_LessThanInitialDelayMs(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			InitialDelayMs: 500,
+			MaxDelayMs:     100,
+		},
+	}
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error when max_delay_ms < initial_delay_ms, got nil")
+	}
+	want := "retry.max_delay_ms must be >= retry.initial_delay_ms"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func TestValidate_RetryMaxDelayMs_EqualToInitialDelayMs(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			InitialDelayMs: 500,
+			MaxDelayMs:     500,
+		},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error when max_delay_ms == initial_delay_ms, got %v", err)
+	}
+}
+
+func TestValidate_RetryMaxDelayMs_GreaterThanInitialDelayMs(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			InitialDelayMs: 500,
+			MaxDelayMs:     1000,
+		},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error when max_delay_ms > initial_delay_ms, got %v", err)
+	}
+}
+
+func TestValidate_RetryMaxDelayMs_ZeroWithInitialDelayMsSet(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			InitialDelayMs: 500,
+			MaxDelayMs:     0,
+		},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error when max_delay_ms=0 (use default), got %v", err)
+	}
+}
+
+func TestValidate_RetryInitialDelayMs_ZeroWithMaxDelayMsSet(t *testing.T) {
+	cfg := &AgentConfig{
+		Name:  "test",
+		Model: "anthropic/claude-sonnet-4-20250514",
+		Retry: RetryConfig{
+			InitialDelayMs: 0,
+			MaxDelayMs:     100,
+		},
+	}
+	if err := Validate(cfg); err != nil {
+		t.Fatalf("expected no error when initial_delay_ms=0 (use default), got %v", err)
+	}
+}
+
+func TestScaffold_IncludesRetryConfig(t *testing.T) {
+	out, err := Scaffold("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	checks := []string{
+		"# [retry]",
+		"# max_retries = 0",
+		`# backoff = "exponential"`,
+		"# initial_delay_ms = 500",
+		"# max_delay_ms = 30000",
+	}
+	for _, check := range checks {
+		if !strings.Contains(out, check) {
+			t.Errorf("scaffold output missing %q\nfull output:\n%s", check, out)
+		}
+	}
+}

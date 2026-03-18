@@ -29,6 +29,7 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand
 - **JSON output** — structured output with metadata for scripting
 - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search
 - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport
+- **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)
 - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library
 
 ## Installation
@@ -265,7 +266,7 @@ Config is read-write because `axe config init` and `axe agents init` write into 
 | `--workdir <path>` | from TOML or cwd | Override the working directory |
 | `--timeout <seconds>` | 120 | Request timeout |
 | `--dry-run` | false | Show resolved context without calling the LLM |
-| `--verbose` / `-v` | false | Print debug info (model, timing, tokens) to stderr |
+| `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |
 | `--json` | false | Wrap output in a JSON envelope with metadata |
 
 ## Agent Configuration
@@ -303,6 +304,12 @@ headers = { Authorization = "Bearer ${MY_TOKEN}" }
 temperature = 0.3
 max_tokens = 4096
 
+[retry]
+max_retries = 3           # retry up to 3 times on transient errors
+backoff = "exponential"   # "exponential", "linear", or "fixed"
+initial_delay_ms = 500    # base delay before first retry
+max_delay_ms = 30000      # maximum delay cap
+
 [[mcp_servers]]
 name = "filesystem"
 transport = "stdio"
@@ -311,6 +318,23 @@ args = ["--root", "/home/user/projects"]
 ```
 
 All fields except `name` and `model` are optional.
+
+### Retry
+
+Agents can retry on transient LLM provider errors — rate limits (429), server
+errors (5xx), and timeouts. Retry is opt-in and disabled by default.
+
+| Field | Default | Description |
+|---|---|---|
+| `max_retries` | 0 | Number of retry attempts after the initial request. 0 disables retry. |
+| `backoff` | `"exponential"` | Strategy: `"exponential"` (with jitter), `"linear"`, or `"fixed"` |
+| `initial_delay_ms` | 500 | Base delay in milliseconds before the first retry |
+| `max_delay_ms` | 30000 | Maximum delay cap in milliseconds |
+
+Only transient errors are retried. Authentication errors (401/403) and bad
+requests (400) are never retried. When `--verbose` is enabled, each retry
+attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`
+field for observability.
 
 ## Tools
 
