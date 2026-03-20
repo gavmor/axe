@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "cb0362e898b3",
+  "session_id": "ses_2f374dc67ffeO68m1g9YvJ34nE",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T18:41:27.197274Z",
+  "branch": "master",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/skills/release/SKILL.md"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "653a0d334337",
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 22053,
+    "cache_read_tokens": 90317,
+    "output_tokens": 2246,
+    "api_call_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T18:41:27.178933Z",
+    "agent_lines": 60,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 60,
+    "agent_percentage": 100
+  }
+}
