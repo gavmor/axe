@@ -13,7 +13,7 @@
     },
     "time": {
       "created": 1774015353359,
-      "updated": 1774020830096
+      "updated": 1774020910770
     }
   },
   "messages": [
@@ -2738,6 +2738,14 @@
               "after": "package cmd\n\nimport (\n\t\"context\"\n\t\"encoding/json\"\n\t\"errors\"\n\t\"fmt\"\n\t\"io\"\n\t\"os\"\n\t\"strings\"\n\t\"time\"\n\t\"unicode/utf8\"\n\n\t\"github.com/jrswab/axe/internal/agent\"\n\t\"github.com/jrswab/axe/internal/budget\"\n\t\"github.com/jrswab/axe/internal/config\"\n\t\"github.com/jrswab/axe/internal/mcpclient\"\n\t\"github.com/jrswab/axe/internal/memory\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/refusal\"\n\t\"github.com/jrswab/axe/internal/resolve\"\n\t\"github.com/jrswab/axe/internal/tool\"\n\t\"github.com/jrswab/axe/internal/xdg\"\n\t\"github.com/spf13/cobra\"\n)\n\n// defaultUserMessage is sent when no stdin content is piped.\nconst defaultUserMessage = \"Execute the task described in your instructions.\"\n\n// maxConversationTurns is the safety limit for the conversation loop.\nconst maxConversationTurns = 50\n\nconst maxToolOutputBytes = 1024\n\ntype toolCallDetail struct {\n\tName    string            `json:\"name\"`\n\tInput   map[string]string `json:\"input\"`\n\tOutput  string            `json:\"output\"`\n\tIsError bool              `json:\"is_error\"`\n}\n\nvar runCmd = &cobra.Command{\n\tUse:   \"run <agent>\",\n\tShort: \"Run an agent\",\n\tLong: `Run an agent by loading its TOML configuration, resolving all runtime\ncontext (working directory, file globs, skill, stdin), building a prompt,\ncalling the LLM provider, and printing the response.`,\n\tArgs: exactArgs(1),\n\tRunE: runAgent,\n}\n\nfunc init() {\n\trunCmd.Flags().String(\"skill\", \"\", \"Override the agent's default skill path\")\n\trunCmd.Flags().String(\"workdir\", \"\", \"Override the working directory\")\n\trunCmd.Flags().String(\"agents-dir\", \"\", \"Additional agents directory to search before global config\")\n\trunCmd.Flags().String(\"model\", \"\", \"Override the model (provider/model-name format)\")\n\trunCmd.Flags().Int(\"timeout\", 120, \"Request timeout in seconds\")\n\trunCmd.Flags().Bool(\"dry-run\", false, \"Show resolved context without calling the LLM\")\n\trunCmd.Flags().BoolP(\"verbose\", \"v\", false, \"Print debug info to stderr\")\n\trunCmd.Flags().Bool(\"json\", false, \"Wrap output in JSON with metadata\")\n\trunCmd.Flags().Int(\"max-tokens\", 0, \"Maximum total tokens (input+output) for the entire run (0 = unlimited)\")\n\trootCmd.AddCommand(runCmd)\n}\n\n// parseModel splits a \"provider/model-name\" string into provider and model parts.\nfunc parseModel(model string) (providerName, modelName string, err error) {\n\tidx := strings.Index(model, \"/\")\n\tif idx < 0 {\n\t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: expected provider/model-name\", model)\n\t}\n\n\tproviderName = model[:idx]\n\tmodelName = model[idx+1:]\n\n\tif providerName == \"\" {\n\t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: empty provider\", model)\n\t}\n\tif modelName == \"\" {\n\t\treturn \"\", \"\", fmt.Errorf(\"invalid model format %q: empty model name\", model)\n\t}\n\n\treturn providerName, modelName, nil\n}\n\nfunc truncateOutput(s string) string {\n\tif len(s) <= maxToolOutputBytes {\n\t\treturn s\n\t}\n\n\t// Backtrack from the byte limit to avoid splitting a multi-byte UTF-8 rune.\n\ti := maxToolOutputBytes\n\tfor i > 0 && !utf8.RuneStart(s[i]) {\n\t\ti--\n\t}\n\n\treturn s[:i] + \"... (truncated)\"\n}\n\nfunc runAgent(cmd *cobra.Command, args []string) error {\n\tagentName := args[0]\n\n\t// Get the agents-dir flag early (before workdir resolution)\n\tflagAgentsDir, _ := cmd.Flags().GetString(\"agents-dir\")\n\n\t// Get current working directory for initial agent search\n\tcwd, err := os.Getwd()\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: fmt.Errorf(\"failed to get working directory: %w\", err)}\n\t}\n\n\t// Build search directories using cwd as base (workdir not resolved yet)\n\tsearchDirs := agent.BuildSearchDirs(flagAgentsDir, cwd)\n\n\t// Step 1: Load agent config\n\tcfg, err := agent.Load(agentName, searchDirs)\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\t// Step 2-3: Apply flag overrides\n\tflagModel, _ := cmd.Flags().GetString(\"model\")\n\tif flagModel != \"\" {\n\t\tcfg.Model = flagModel\n\t}\n\n\tflagSkill, _ := cmd.Flags().GetString(\"skill\")\n\tif flagSkill != \"\" {\n\t\tcfg.Skill = flagSkill\n\t}\n\n\t// Step 4-5: Parse model and validate provider\n\tprovName, modelName, err := parseModel(cfg.Model)\n\tif err != nil {\n\t\treturn &ExitError{Code: 1, Err: err}\n\t}\n\n\t// Step 5b: Load global config\n\tglobalCfg, err := config.Load()\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\t// Step 6: Resolve working directory\n\tflagWorkdir, _ := cmd.Flags().GetString(\"workdir\")\n\tworkdir, err := resolve.Workdir(flagWorkdir, cfg.Workdir)\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\t// Step 7: Resolve file globs\n\tfiles, err := resolve.Files(cfg.Files, workdir)\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\t// Step 8: Load skill\n\tconfigDir, err := xdg.GetConfigDir()\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\tskillPath := cfg.Skill\n\tskillContent, err := resolve.Skill(skillPath, configDir)\n\tif err != nil {\n\t\treturn &ExitError{Code: 2, Err: err}\n\t}\n\n\t// Step 9: Read stdin\n\t// If cmd.InOrStdin() was overridden (e.g. in tests), read from it directly.\n\t// Otherwise, use resolve.Stdin() which checks if os.Stdin is piped.\n\tvar stdinContent string\n\tif cmdIn := cmd.InOrStdin(); cmdIn != os.Stdin {\n\t\tdata, readErr := io.ReadAll(cmdIn)\n\t\tif readErr != nil {\n\t\t\treturn &ExitError{Code: 1, Err: fmt.Errorf(\"failed to read stdin: %w\", readErr)}\n\t\t}\n\t\tstdinContent = string(data)\n\t} else {\n\t\tstdinContent, err = resolve.Stdin()\n\t\tif err != nil {\n\t\t\treturn &ExitError{Code: 1, Err: err}\n\t\t}\n\t}\n\n\t// Step 10: Build system prompt\n\tsystemPrompt := resolve.BuildSystemPrompt(cfg.SystemPrompt, skillContent, files)\n\n\t// Step 10b: Memory — load entries into system prompt\n\tvar memoryEntries string\n\tvar memoryPath string\n\tvar memoryCount int\n\tif cfg.Memory.Enabled {\n\t\tvar memErr error\n\t\tmemoryPath, memErr = memory.FilePath(agentName, cfg.Memory.Path)\n\t\tif memErr != nil {\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: failed to load memory for %q: %v\\n\", agentName, memErr)\n\t\t} else {\n\t\t\tmemoryEntries, memErr = memory.LoadEntries(memoryPath, cfg.Memory.LastN)\n\t\t\tif memErr != nil {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: failed to load memory for %q: %v\\n\", agentName, memErr)\n\t\t\t} else if memoryEntries != \"\" {\n\t\t\t\tsystemPrompt += \"\\n\\n---\\n\\n## Memory\\n\\n\" + memoryEntries\n\t\t\t}\n\n\t\t\tmemoryCount, memErr = memory.CountEntries(memoryPath)\n\t\t\tif memErr != nil {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: failed to load memory for %q: %v\\n\", agentName, memErr)\n\t\t\t} else if cfg.Memory.MaxEntries > 0 && memoryCount >= cfg.Memory.MaxEntries {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\\n\", agentName, memoryCount, cfg.Memory.MaxEntries, agentName)\n\t\t\t}\n\t\t}\n\t}\n\n\t// Flags\n\ttimeout, _ := cmd.Flags().GetInt(\"timeout\")\n\tdryRun, _ := cmd.Flags().GetBool(\"dry-run\")\n\tverbose, _ := cmd.Flags().GetBool(\"verbose\")\n\tjsonOutput, _ := cmd.Flags().GetBool(\"json\")\n\n\t// Resolve effective budget\n\tflagMaxTokens, _ := cmd.Flags().GetInt(\"max-tokens\")\n\teffectiveMaxTokens := cfg.Budget.MaxTokens\n\tif flagMaxTokens > 0 {\n\t\teffectiveMaxTokens = flagMaxTokens\n\t}\n\ttracker := budget.New(effectiveMaxTokens)\n\n\t// Step 11: Dry-run mode\n\tif dryRun {\n\t\treturn printDryRun(cmd, cfg, provName, modelName, workdir, timeout, systemPrompt, skillContent, files, stdinContent, memoryEntries, effectiveMaxTokens)\n\t}\n\n\tctx, cancel := context.WithTimeout(cmd.Context(), time.Duration(timeout)*time.Second)\n\tdefer cancel()\n\n\t// Step 12-13: Resolve API key and validate\n\tapiKey := globalCfg.ResolveAPIKey(provName)\n\tbaseURL := globalCfg.ResolveBaseURL(provName)\n\tregion := globalCfg.ResolveRegion(provName)\n\n\t// For bedrock, use region as apiKey parameter and clear baseURL\n\tif provName == \"bedrock\" {\n\t\tif region == \"\" {\n\t\t\treturn &ExitError{Code: 2, Err: fmt.Errorf(\"region for provider %q is not configured (set AWS_REGION or add to config.toml)\", provName)}\n\t\t}\n\t\tapiKey = region\n\t\tbaseURL = \"\" // Don't pass baseURL to bedrock\n\t}\n\n\t// Check for missing API key only for supported providers that require one.\n\t// Unsupported providers fall through to provider.New() which returns a clear error.\n\tif provider.Supported(provName) && provName != \"ollama\" && provName != \"bedrock\" && apiKey == \"\" {\n\t\tenvVar := config.APIKeyEnvVar(provName)\n\t\treturn &ExitError{Code: 2, Err: fmt.Errorf(\"API key for provider %q is not configured (set %s or add to config.toml)\", provName, envVar)}\n\t}\n\n\t// Step 14: Create provider\n\tprov, err := provider.New(provName, apiKey, baseURL)\n\tif err != nil {\n\t\treturn &ExitError{Code: 1, Err: err}\n\t}\n\n\t// Step 14b: Wrap provider with retry decorator\n\tretryProv := provider.NewRetry(prov, provider.RetryConfig{\n\t\tMaxRetries:     cfg.Retry.MaxRetries,\n\t\tBackoff:        cfg.Retry.Backoff,\n\t\tInitialDelayMs: cfg.Retry.InitialDelayMs,\n\t\tMaxDelayMs:     cfg.Retry.MaxDelayMs,\n\t\tVerbose:        verbose,\n\t\tStderr:         cmd.ErrOrStderr(),\n\t})\n\tprov = retryProv\n\n\t// Step 15: Build user message\n\tuserMessage := defaultUserMessage\n\tif strings.TrimSpace(stdinContent) != \"\" {\n\t\tuserMessage = stdinContent\n\t}\n\n\t// Step 16: Build request\n\treq := &provider.Request{\n\t\tModel:       modelName,\n\t\tSystem:      systemPrompt,\n\t\tMessages:    []provider.Message{{Role: \"user\", Content: userMessage}},\n\t\tTemperature: cfg.Params.Temperature,\n\t\tMaxTokens:   cfg.Params.MaxTokens,\n\t}\n\n\t// Step 16b: Create tool registry and resolve configured tools\n\tregistry := tool.NewRegistry()\n\ttool.RegisterAll(registry)\n\tdepth := 0\n\teffectiveMaxDepth := 3 // system default\n\tif cfg.SubAgentsConf.MaxDepth > 0 && cfg.SubAgentsConf.MaxDepth <= 5 {\n\t\teffectiveMaxDepth = cfg.SubAgentsConf.MaxDepth\n\t}\n\n\t// Inject configured tools first (from cfg.Tools)\n\tif len(cfg.Tools) > 0 {\n\t\tresolvedTools, resolveErr := registry.Resolve(cfg.Tools)\n\t\tif resolveErr != nil {\n\t\t\treturn &ExitError{Code: 1, Err: fmt.Errorf(\"failed to resolve tools: %w\", resolveErr)}\n\t\t}\n\t\treq.Tools = append(req.Tools, resolvedTools...)\n\t}\n\n\t// Then inject call_agent if agent has sub_agents\n\tif len(cfg.SubAgents) > 0 && depth < effectiveMaxDepth {\n\t\treq.Tools = append(req.Tools, tool.CallAgentTool(cfg.SubAgents))\n\t}\n\n\tvar mcpRouter *mcpclient.Router\n\tif len(cfg.MCPServers) > 0 {\n\t\tmcpRouter = mcpclient.NewRouter()\n\t\tdefer func() { _ = mcpRouter.Close() }()\n\n\t\tbuiltinNames := make(map[string]bool, len(req.Tools))\n\t\tfor _, t := range req.Tools {\n\t\t\tbuiltinNames[t.Name] = true\n\t\t}\n\n\t\tfor _, serverCfg := range cfg.MCPServers {\n\t\t\tif verbose {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"[mcp] Connecting to %q at %s (%s)\\n\", serverCfg.Name, serverCfg.URL, serverCfg.Transport)\n\t\t\t}\n\n\t\t\tclient, connErr := mcpclient.Connect(ctx, serverCfg)\n\t\t\tif connErr != nil {\n\t\t\t\tcode := 3\n\t\t\t\tif strings.Contains(connErr.Error(), \"environment variable\") || strings.Contains(connErr.Error(), \"unsupported MCP transport\") {\n\t\t\t\t\tcode = 2\n\t\t\t\t}\n\t\t\t\treturn &ExitError{Code: code, Err: fmt.Errorf(\"failed to connect MCP server %q: %w\", serverCfg.Name, connErr)}\n\t\t\t}\n\n\t\t\tmcpTools, listErr := client.ListTools(ctx)\n\t\t\tif listErr != nil {\n\t\t\t\t_ = client.Close()\n\t\t\t\treturn &ExitError{Code: 3, Err: fmt.Errorf(\"failed to list tools from MCP server %q: %w\", serverCfg.Name, listErr)}\n\t\t\t}\n\n\t\t\tfiltered, registerErr := mcpRouter.Register(client, mcpTools, builtinNames)\n\t\t\tif registerErr != nil {\n\t\t\t\t_ = client.Close()\n\t\t\t\treturn &ExitError{Code: 2, Err: fmt.Errorf(\"failed to register MCP tools from %q: %w\", serverCfg.Name, registerErr)}\n\t\t\t}\n\n\t\t\tif verbose {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"[mcp] %q discovered %d tool(s), registered %d\\n\", serverCfg.Name, len(mcpTools), len(filtered))\n\t\t\t\tfor _, discovered := range mcpTools {\n\t\t\t\t\tif builtinNames[discovered.Name] {\n\t\t\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"[mcp] Skipping %q from %q (conflicts with built-in tool)\\n\", discovered.Name, serverCfg.Name)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\treq.Tools = append(req.Tools, filtered...)\n\t\t}\n\t}\n\n\t// Verbose: pre-call info\n\tif verbose {\n\t\tskillDisplay := skillPath\n\t\tif skillDisplay == \"\" {\n\t\t\tskillDisplay = \"(none)\"\n\t\t}\n\t\tstdinDisplay := \"no\"\n\t\tif strings.TrimSpace(stdinContent) != \"\" {\n\t\t\tstdinDisplay = \"yes\"\n\t\t}\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Model:    %s/%s\\n\", provName, modelName)\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Workdir:  %s\\n\", workdir)\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Skill:    %s\\n\", skillDisplay)\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Files:    %d file(s)\\n\", len(files))\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Stdin:    %s\\n\", stdinDisplay)\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Timeout:  %ds\\n\", timeout)\n\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Params:   temperature=%g, max_tokens=%d\\n\", cfg.Params.Temperature, cfg.Params.MaxTokens)\n\t\tif cfg.Memory.Enabled {\n\t\t\tif memoryCount > 0 {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Memory:   %d entries loaded from %s\\n\", memoryCount, memoryPath)\n\t\t\t} else {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Memory:   0 entries (no memory file)\\n\")\n\t\t\t}\n\t\t}\n\t}\n\n\t// Step 18: Call provider (conversation loop when tools are present)\n\tstart := time.Now()\n\n\t// Determine parallel execution setting.\n\t// Default is true (per spec). Only false if explicitly set via TOML.\n\t// Using *bool allows distinguishing \"not set\" (nil) from \"set to false\".\n\tparallel := true\n\tif cfg.SubAgentsConf.Parallel != nil {\n\t\tparallel = *cfg.SubAgentsConf.Parallel\n\t}\n\n\tvar resp *provider.Response\n\tvar totalInputTokens int\n\tvar totalOutputTokens int\n\tvar totalToolCalls int\n\tvar allToolCallDetails []toolCallDetail\n\tvar budgetExceeded bool\n\n\tif len(req.Tools) == 0 {\n\t\t// Single-shot: no tools, no conversation loop (identical to M4)\n\t\tresp, err = prov.Send(ctx, req)\n\t\tif err != nil {\n\t\t\tdurationMs := time.Since(start).Milliseconds()\n\t\t\tif verbose {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Duration: %dms\\n\", durationMs)\n\t\t\t}\n\t\t\treturn mapProviderError(err)\n\t\t}\n\t\ttotalInputTokens = resp.InputTokens\n\t\ttotalOutputTokens = resp.OutputTokens\n\t\ttracker.Add(resp.InputTokens, resp.OutputTokens)\n\n\t\tif tracker.Exceeded() {\n\t\t\tbudgetExceeded = true\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"budget exceeded: used %d of %d tokens\\n\", tracker.Used(), tracker.Max())\n\t\t}\n\n\t\tif verbose {\n\t\t\tdurationMs := time.Since(start).Milliseconds()\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Duration: %dms\\n\", durationMs)\n\t\t\tif tracker.Max() > 0 {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Tokens:   %d input, %d output (cumulative, budget: %d/%d)\\n\", resp.InputTokens, resp.OutputTokens, tracker.Used(), tracker.Max())\n\t\t\t} else {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Tokens:   %d input, %d output\\n\", resp.InputTokens, resp.OutputTokens)\n\t\t\t}\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Stop:     %s\\n\", resp.StopReason)\n\t\t}\n\t} else {\n\t\t// Conversation loop: handle tool calls\n\t\tfor turn := 0; turn < maxConversationTurns; turn++ {\n\t\t\t// Check budget before making LLM call\n\t\t\tif tracker.Exceeded() {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\tif verbose {\n\t\t\t\tpendingToolCalls := 0\n\t\t\t\tfor _, m := range req.Messages {\n\t\t\t\t\tif m.Role == \"tool\" {\n\t\t\t\t\t\tpendingToolCalls += len(m.ToolResults)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"[turn %d] Sending request (%d messages, %d tool calls pending)\\n\", turn+1, len(req.Messages), pendingToolCalls)\n\t\t\t}\n\n\t\t\tresp, err = prov.Send(ctx, req)\n\t\t\tif err != nil {\n\t\t\t\tdurationMs := time.Since(start).Milliseconds()\n\t\t\t\tif verbose {\n\t\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Duration: %dms\\n\", durationMs)\n\t\t\t\t}\n\t\t\t\treturn mapProviderError(err)\n\t\t\t}\n\n\t\t\ttotalInputTokens += resp.InputTokens\n\t\t\ttotalOutputTokens += resp.OutputTokens\n\t\t\ttracker.Add(resp.InputTokens, resp.OutputTokens)\n\n\t\t\tif verbose {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"[turn %d] Received response: %s (%d tool calls)\\n\", turn+1, resp.StopReason, len(resp.ToolCalls))\n\t\t\t}\n\n\t\t\t// No tool calls: conversation is done\n\t\t\tif len(resp.ToolCalls) == 0 {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\t// Stop before executing tools if budget is exceeded\n\t\t\tif tracker.Exceeded() {\n\t\t\t\tbreak\n\t\t\t}\n\n\t\t\t// Append assistant message with tool calls\n\t\t\tassistantMsg := provider.Message{\n\t\t\t\tRole:      \"assistant\",\n\t\t\t\tContent:   resp.Content,\n\t\t\t\tToolCalls: resp.ToolCalls,\n\t\t\t}\n\t\t\treq.Messages = append(req.Messages, assistantMsg)\n\n\t\t\t// Execute tool calls\n\t\t\tresults := executeToolCalls(ctx, resp.ToolCalls, cfg, globalCfg, registry, mcpRouter, depth, effectiveMaxDepth, parallel, verbose, cmd.ErrOrStderr(), workdir, tracker, flagAgentsDir, workdir)\n\t\t\ttotalToolCalls += len(resp.ToolCalls)\n\n\t\t\tif jsonOutput {\n\t\t\t\tfor i, tc := range resp.ToolCalls {\n\t\t\t\t\tinput := tc.Arguments\n\t\t\t\t\tif input == nil {\n\t\t\t\t\t\tinput = map[string]string{}\n\t\t\t\t\t}\n\n\t\t\t\t\tallToolCallDetails = append(allToolCallDetails, toolCallDetail{\n\t\t\t\t\t\tName:    tc.Name,\n\t\t\t\t\t\tInput:   input,\n\t\t\t\t\t\tOutput:  truncateOutput(results[i].Content),\n\t\t\t\t\t\tIsError: results[i].IsError,\n\t\t\t\t\t})\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t// Append tool result message\n\t\t\ttoolMsg := provider.Message{\n\t\t\t\tRole:        \"tool\",\n\t\t\t\tToolResults: results,\n\t\t\t}\n\t\t\treq.Messages = append(req.Messages, toolMsg)\n\t\t}\n\n\t\t// Check if we exhausted turns\n\t\tif resp != nil && len(resp.ToolCalls) > 0 {\n\t\t\treturn &ExitError{Code: 1, Err: fmt.Errorf(\"agent exceeded maximum conversation turns (%d)\", maxConversationTurns)}\n\t\t}\n\n\t\t// Check if budget was exceeded\n\t\tif tracker.Exceeded() {\n\t\t\tbudgetExceeded = true\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"budget exceeded: used %d of %d tokens\\n\", tracker.Used(), tracker.Max())\n\t\t}\n\n\t\tif verbose {\n\t\t\tdurationMs := time.Since(start).Milliseconds()\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Duration: %dms\\n\", durationMs)\n\t\t\tif tracker.Max() > 0 {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Tokens:   %d input, %d output (cumulative, budget: %d/%d)\\n\", totalInputTokens, totalOutputTokens, tracker.Used(), tracker.Max())\n\t\t\t} else {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Tokens:   %d input, %d output (cumulative)\\n\", totalInputTokens, totalOutputTokens)\n\t\t\t}\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Stop:     %s\\n\", resp.StopReason)\n\t\t}\n\t}\n\n\tdurationMs := time.Since(start).Milliseconds()\n\n\t// Step 19: JSON output\n\tif jsonOutput {\n\t\tif allToolCallDetails == nil {\n\t\t\tallToolCallDetails = make([]toolCallDetail, 0)\n\t\t}\n\n\t\tenvelope := map[string]interface{}{\n\t\t\t\"model\":             resp.Model,\n\t\t\t\"content\":           resp.Content,\n\t\t\t\"input_tokens\":      totalInputTokens,\n\t\t\t\"output_tokens\":     totalOutputTokens,\n\t\t\t\"stop_reason\":       resp.StopReason,\n\t\t\t\"duration_ms\":       durationMs,\n\t\t\t\"tool_calls\":        totalToolCalls,\n\t\t\t\"tool_call_details\": allToolCallDetails,\n\t\t\t\"refused\":           refusal.Detect(resp.Content),\n\t\t\t\"retry_attempts\":    retryProv.Attempts(),\n\t\t}\n\t\tif tracker.Max() > 0 {\n\t\t\tenvelope[\"budget_max_tokens\"] = tracker.Max()\n\t\t\tenvelope[\"budget_used_tokens\"] = tracker.Used()\n\t\t\tenvelope[\"budget_exceeded\"] = tracker.Exceeded()\n\t\t}\n\t\tdata, err := json.Marshal(envelope)\n\t\tif err != nil {\n\t\t\treturn &ExitError{Code: 1, Err: fmt.Errorf(\"failed to marshal JSON output: %w\", err)}\n\t\t}\n\t\t_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(data))\n\t} else {\n\t\t// Step 20: Default output\n\t\t_, _ = fmt.Fprint(cmd.OutOrStdout(), resp.Content)\n\t}\n\n\t// Return exit code 4 if budget was exceeded (before memory append)\n\tif budgetExceeded {\n\t\treturn &ExitError{Code: 4, Err: fmt.Errorf(\"budget exceeded: used %d of %d tokens\", tracker.Used(), tracker.Max())}\n\t}\n\n\t// Step 21: Append memory entry after successful response\n\tif cfg.Memory.Enabled {\n\t\tappendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)\n\t\tif appendErr != nil {\n\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n\t\t} else {\n\t\t\tif appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {\n\t\t\t\t_, _ = fmt.Fprintf(cmd.ErrOrStderr(), \"Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n\t\t\t}\n\t\t}\n\t}\n\n\treturn nil\n}\n\nfunc printDryRun(cmd *cobra.Command, cfg *agent.AgentConfig, provName, modelName, workdir string, timeout int, systemPrompt, skillContent string, files []resolve.FileContent, stdinContent string, memoryEntries string, maxTokens int) error {\n\tout := cmd.OutOrStdout()\n\n\t_, _ = fmt.Fprintln(out, \"=== Dry Run ===\")\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintf(out, \"Model:    %s/%s\\n\", provName, modelName)\n\t_, _ = fmt.Fprintf(out, \"Workdir:  %s\\n\", workdir)\n\t_, _ = fmt.Fprintf(out, \"Timeout:  %ds\\n\", timeout)\n\t_, _ = fmt.Fprintf(out, \"Params:   temperature=%g, max_tokens=%d\\n\", cfg.Params.Temperature, cfg.Params.MaxTokens)\n\t_, _ = fmt.Fprintf(out, \"Budget:   %d tokens (0 = unlimited)\\n\", maxTokens)\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- System Prompt ---\")\n\t_, _ = fmt.Fprintln(out, systemPrompt)\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- Skill ---\")\n\tif skillContent != \"\" {\n\t\t_, _ = fmt.Fprintln(out, skillContent)\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintf(out, \"--- Files (%d) ---\\n\", len(files))\n\tif len(files) > 0 {\n\t\tfor _, f := range files {\n\t\t\t_, _ = fmt.Fprintln(out, f.Path)\n\t\t}\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- Stdin ---\")\n\tif strings.TrimSpace(stdinContent) != \"\" {\n\t\t_, _ = fmt.Fprintln(out, stdinContent)\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\tif cfg.Memory.Enabled {\n\t\t_, _ = fmt.Fprintln(out)\n\t\t_, _ = fmt.Fprintln(out, \"--- Memory ---\")\n\t\tif memoryEntries != \"\" {\n\t\t\t_, _ = fmt.Fprintln(out, memoryEntries)\n\t\t} else {\n\t\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t\t}\n\t}\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- Tools ---\")\n\tif len(cfg.Tools) > 0 {\n\t\t_, _ = fmt.Fprintln(out, strings.Join(cfg.Tools, \", \"))\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- MCP Servers ---\")\n\tif len(cfg.MCPServers) > 0 {\n\t\tfor _, srv := range cfg.MCPServers {\n\t\t\t_, _ = fmt.Fprintf(out, \"%s: %s (%s)\\n\", srv.Name, srv.URL, srv.Transport)\n\t\t}\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\t_, _ = fmt.Fprintln(out)\n\t_, _ = fmt.Fprintln(out, \"--- Sub-Agents ---\")\n\tif len(cfg.SubAgents) > 0 {\n\t\t_, _ = fmt.Fprintln(out, strings.Join(cfg.SubAgents, \", \"))\n\t\teffectiveMaxDepth := 3\n\t\tif cfg.SubAgentsConf.MaxDepth > 0 && cfg.SubAgentsConf.MaxDepth <= 5 {\n\t\t\teffectiveMaxDepth = cfg.SubAgentsConf.MaxDepth\n\t\t}\n\t\tparallelVal := \"yes\"\n\t\tif cfg.SubAgentsConf.Parallel != nil && !*cfg.SubAgentsConf.Parallel {\n\t\t\tparallelVal = \"no\"\n\t\t}\n\t\ttimeoutVal := cfg.SubAgentsConf.Timeout\n\t\t_, _ = fmt.Fprintf(out, \"Max Depth: %d\\n\", effectiveMaxDepth)\n\t\t_, _ = fmt.Fprintf(out, \"Parallel:  %s\\n\", parallelVal)\n\t\t_, _ = fmt.Fprintf(out, \"Timeout:   %ds\\n\", timeoutVal)\n\t} else {\n\t\t_, _ = fmt.Fprintln(out, \"(none)\")\n\t}\n\n\treturn nil\n}\n\n// executeToolCalls dispatches tool calls and returns results.\n// When parallel is true and there are multiple calls, they run concurrently.\nfunc executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *agent.AgentConfig, globalCfg *config.GlobalConfig, registry *tool.Registry, mcpRouter *mcpclient.Router, depth, maxDepth int, parallel, verbose bool, stderr io.Writer, workdir string, budgetTracker *budget.BudgetTracker, agentsDir string, agentsBase string) []provider.ToolResult {\n\tresults := make([]provider.ToolResult, len(toolCalls))\n\n\texecOpts := tool.ExecuteOptions{\n\t\tAllowedAgents: cfg.SubAgents,\n\t\tParentModel:   cfg.Model,\n\t\tDepth:         depth,\n\t\tMaxDepth:      maxDepth,\n\t\tTimeout:       cfg.SubAgentsConf.Timeout,\n\t\tGlobalConfig:  globalCfg,\n\t\tMCPRouter:     mcpRouter,\n\t\tVerbose:       verbose,\n\t\tStderr:        stderr,\n\t\tBudgetTracker: budgetTracker,\n\t\tAgentsDir:     agentsDir,\n\t\tAgentsBase:    agentsBase,\n\t\tAllowedHosts:  cfg.AllowedHosts,\n\t}\n\n\tif len(toolCalls) == 1 || !parallel {\n\t\t// Sequential execution (also used for single call)\n\t\tfor i, tc := range toolCalls {\n\t\t\tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n\t\t\t} else if tc.Name == tool.CallAgentToolName {\n\t\t\t\tresults[i] = tool.ExecuteCallAgent(ctx, tc, execOpts)\n\t\t\t} else {\n\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n\t\t\t}\n\t\t}\n\t} else {\n\t\t// Parallel execution\n\t\ttype indexedResult struct {\n\t\t\tindex  int\n\t\t\tresult provider.ToolResult\n\t\t}\n\t\tch := make(chan indexedResult, len(toolCalls))\n\t\tfor i, tc := range toolCalls {\n\t\t\tgo func(idx int, call provider.ToolCall) {\n\t\t\t\tvar res provider.ToolResult\n\t\t\t\tif mcpRouter != nil && mcpRouter.Has(call.Name) {\n\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n\t\t\t\t} else if call.Name == tool.CallAgentToolName {\n\t\t\t\t\tres = tool.ExecuteCallAgent(ctx, call, execOpts)\n\t\t\t\t} else {\n\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n\t\t\t\t}\n\t\t\t\tch <- indexedResult{index: idx, result: res}\n\t\t\t}(i, tc)\n\t\t}\n\t\tfor range toolCalls {\n\t\t\tir := <-ch\n\t\t\tresults[ir.index] = ir.result\n\t\t}\n\t}\n\n\treturn results\n}\n\nfunc dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string) provider.ToolResult {\n\tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n\t\tif verbose && stderr != nil {\n\t\t\tif serverName, ok := mcpRouter.ServerName(tc.Name); ok {\n\t\t\t\t_, _ = fmt.Fprintf(stderr, \"[mcp] Routing tool %q to server %q\\n\", tc.Name, serverName)\n\t\t\t}\n\t\t}\n\t\tresult, err := mcpRouter.Dispatch(ctx, tc)\n\t\tif err != nil {\n\t\t\treturn provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}\n\t\t}\n\t\treturn result\n\t}\n\n\tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose, AllowedHosts: allowedHosts})\n\tif dispatchErr != nil {\n\t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\n\t}\n\treturn result\n}\n\n// mapProviderError converts a provider error to an ExitError with the correct exit code.\nfunc mapProviderError(err error) error {\n\tvar provErr *provider.ProviderError\n\tif errors.As(err, &provErr) {\n\t\tswitch provErr.Category {\n\t\tcase provider.ErrCategoryAuth, provider.ErrCategoryRateLimit,\n\t\t\tprovider.ErrCategoryTimeout, provider.ErrCategoryOverloaded,\n\t\t\tprovider.ErrCategoryServer:\n\t\t\treturn &ExitError{Code: 3, Err: provErr}\n\t\tcase provider.ErrCategoryBadRequest:\n\t\t\treturn &ExitError{Code: 1, Err: provErr}\n\t\t}\n\t}\n\treturn &ExitError{Code: 1, Err: err}\n}\n",
               "additions": 7,
               "deletions": 6,
+              "status": "modified"
+            },
+            {
+              "file": "docs/plans/040_output_allowlist_implement.md",
+              "before": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [ ] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [ ] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [ ] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [ ] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [ ] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [ ] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [ ] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [ ] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [ ] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [ ] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [ ] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [ ] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [ ] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+              "after": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [ ] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+              "additions": 12,
+              "deletions": 12,
               "status": "modified"
             },
             {
@@ -5652,7 +5660,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774020829774
+          "created": 1774020829774,
+          "completed": 1774020904020
         },
         "parentID": "msg_d0bd19b23001uNcyBCBB4r3Tyz",
         "modelID": "claude-opus-4-6",
@@ -5663,16 +5672,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0751645,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 120252,
+          "input": 1,
+          "output": 516,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 119319,
+            "write": 416
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d0be1a24e002zzcHXlMmn74d0v",
         "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD"
       },
@@ -5700,27 +5711,346 @@
           "callID": "REDACTED",
           "tool": "task",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "description": "Update checklist and commit",
               "prompt": "You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.\n\n## Task 1: Update the implementation checklist\n\nIn `docs/plans/040_output_allowlist_implement.md`, change all `- [ ]` checkboxes to `- [x]` for the following completed tasks:\n- Task 1a\n- Task 1b\n- Task 2\n- Task 2b\n- Task 3\n- Task 4\n- Task 4b\n- Task 5\n- Task 6a\n- Task 6b\n- Task 6c\n- Task 6d\n\nLeave Task 7 (Integration tests) as `- [ ]` since it's not done yet.\n\n## Task 2: Commit all changes\n\nRun these commands:\n```bash\ncd /Users/jaronswab/go/src/github.com/jrswab/axe\ngit add -A\ngit commit -m \"feat: add output allowlist for outgoing connections (ISS-24)\n\nAdd per-agent allowed_hosts TOML field that gates url_fetch requests\nby hostname. Includes unconditional private IP blocking (RFC 1918,\nloopback, link-local, CGNAT, IPv6 ULA) with DNS rebinding protection\nvia IP-pinned connections.\n\n- New internal/hostcheck package for host validation logic\n- AllowedHosts field on AgentConfig, ExecContext, ExecuteOptions\n- Sub-agent inheritance: sub-agent's own list wins, else parent's\n- Redirect validation (spec E9)\n- 33+ new test cases across hostcheck and url_fetch\"\n```\n\nReturn the commit output.",
               "subagent_type": "general"
             },
+            "output": "task_id: ses_2f41e31bdffeL4EJG4j1E1cS3u (for resuming to continue this task if needed)\n\n<task_result>\nCommit successful:\n\n```\n[ISS-24/allow-list-connections 02b6781] feat: add output allowlist for outgoing connections (ISS-24)\n 11 files changed, 1047 insertions(+), 11 deletions(-)\n create mode 100644 docs/plans/040_output_allowlist_implement.md\n create mode 100644 docs/plans/040_output_allowlist_spec.md\n create mode 100644 internal/hostcheck/hostcheck.go\n create mode 100644 internal/hostcheck/hostcheck_test.go\n```\n\n11 files changed, 1047 insertions. Tasks 1a through 6d are marked complete in the checklist; Task 7 (integration tests) remains `- [ ]`.\n</task_result>",
             "title": "Update checklist and commit",
             "metadata": {
               "sessionId": "ses_2f41e31bdffeL4EJG4j1E1cS3u",
               "model": {
                 "providerID": "anthropic",
                 "modelID": "claude-sonnet-4-6"
-              }
+              },
+              "truncated": false
             },
             "time": {
-              "start": 1774020841028
+              "start": 1774020841026,
+              "end": 1774020903929
             }
           },
           "id": "prt_d0be1afe40016Dktwi9dYGFH7N",
           "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
           "messageID": "msg_d0be1a24e002zzcHXlMmn74d0v"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "ea56a298b8a0e4b654a41b0410b0925166fc5243",
+          "cost": 0.0751645,
+          "tokens": {
+            "total": 120252,
+            "input": 1,
+            "output": 516,
+            "reasoning": 0,
+            "cache": {
+              "read": 119319,
+              "write": 416
+            }
+          },
+          "id": "prt_d0be2c3fa001v2gEIqFaTtI22I",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be1a24e002zzcHXlMmn74d0v"
+        },
+        {
+          "type": "patch",
+          "hash": "d080e2e3be312ee2d68c271072f515d0c6ac965c",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md"
+          ],
+          "id": "prt_d0be2c45100128vx1eDoIh4Al2",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be1a24e002zzcHXlMmn74d0v"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020904024,
+          "completed": 1774020910413
+        },
+        "parentID": "msg_d0bd19b23001uNcyBCBB4r3Tyz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.07641625,
+        "tokens": {
+          "total": 120973,
+          "input": 1,
+          "output": 470,
+          "reasoning": 0,
+          "cache": {
+            "read": 119735,
+            "write": 767
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0be2c458002bnN9U3p3GbE0BK",
+        "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "ea56a298b8a0e4b654a41b0410b0925166fc5243",
+          "id": "prt_d0be2d1d90017llMVVweMwdbFU",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2c458002bnN9U3p3GbE0BK"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "todowrite",
+          "state": {
+            "status": "completed",
+            "input": {
+              "todos": [
+                {
+                  "content": "Task 1a+1b: Create internal/hostcheck/ package + tests (TDD)",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 2+2b: Add AllowedHosts to AgentConfig + TOML decode tests",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 3: Add AllowedHosts to ExecContext",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 4+4b: Gate url_fetch with hostcheck + tests",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 5: Thread AllowedHosts into ExecContext in cmd/run.go",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 6a-6d: ExecuteOptions + sub-agent propagation in tool.go + cmd/run.go",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 7: Integration tests",
+                  "status": "pending",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Fix: DNS rebinding - pin to resolved IP in DialContext",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Fix: Add fc00::/7 to private ranges",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Fix: Add Timeout to http.Client",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Fix: Add redirect-to-disallowed-host test",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "make check-diff",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Update implement checklist + commit",
+                  "status": "completed",
+                  "priority": "medium"
+                }
+              ]
+            },
+            "output": "[\n  {\n    \"content\": \"Task 1a+1b: Create internal/hostcheck/ package + tests (TDD)\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 2+2b: Add AllowedHosts to AgentConfig + TOML decode tests\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 3: Add AllowedHosts to ExecContext\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 4+4b: Gate url_fetch with hostcheck + tests\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 5: Thread AllowedHosts into ExecContext in cmd/run.go\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 6a-6d: ExecuteOptions + sub-agent propagation in tool.go + cmd/run.go\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Task 7: Integration tests\",\n    \"status\": \"pending\",\n    \"priority\": \"medium\"\n  },\n  {\n    \"content\": \"Fix: DNS rebinding - pin to resolved IP in DialContext\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Fix: Add fc00::/7 to private ranges\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Fix: Add Timeout to http.Client\",\n    \"status\": \"completed\",\n    \"priority\": \"medium\"\n  },\n  {\n    \"content\": \"Fix: Add redirect-to-disallowed-host test\",\n    \"status\": \"completed\",\n    \"priority\": \"medium\"\n  },\n  {\n    \"content\": \"make check-diff\",\n    \"status\": \"completed\",\n    \"priority\": \"medium\"\n  },\n  {\n    \"content\": \"Update implement checklist + commit\",\n    \"status\": \"completed\",\n    \"priority\": \"medium\"\n  }\n]",
+            "title": "1 todos",
+            "metadata": {
+              "todos": [
+                {
+                  "content": "Task 1a+1b: Create internal/hostcheck/ package + tests (TDD)",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 2+2b: Add AllowedHosts to AgentConfig + TOML decode tests",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 3: Add AllowedHosts to ExecContext",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 4+4b: Gate url_fetch with hostcheck + tests",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 5: Thread AllowedHosts into ExecContext in cmd/run.go",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 6a-6d: ExecuteOptions + sub-agent propagation in tool.go + cmd/run.go",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Task 7: Integration tests",
+                  "status": "pending",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Fix: DNS rebinding - pin to resolved IP in DialContext",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Fix: Add fc00::/7 to private ranges",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Fix: Add Timeout to http.Client",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Fix: Add redirect-to-disallowed-host test",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "make check-diff",
+                  "status": "completed",
+                  "priority": "medium"
+                },
+                {
+                  "content": "Update implement checklist + commit",
+                  "status": "completed",
+                  "priority": "medium"
+                }
+              ],
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020910193,
+              "end": 1774020910195
+            }
+          },
+          "id": "prt_d0be2d1d9002y3tTaSlfRe4PAy",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2c458002bnN9U3p3GbE0BK"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "ea56a298b8a0e4b654a41b0410b0925166fc5243",
+          "cost": 0.07641625,
+          "tokens": {
+            "total": 120973,
+            "input": 1,
+            "output": 470,
+            "reasoning": 0,
+            "cache": {
+              "read": 119735,
+              "write": 767
+            }
+          },
+          "id": "prt_d0be2dc96001hcz2tfinhoFFGJ",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2c458002bnN9U3p3GbE0BK"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020910418,
+          "completed": 1774020923590
+        },
+        "parentID": "msg_d0bd19b23001uNcyBCBB4r3Tyz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08291225,
+        "tokens": {
+          "total": 122193,
+          "input": 1,
+          "output": 645,
+          "reasoning": 0,
+          "cache": {
+            "read": 120502,
+            "write": 1045
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0be2dd5200199PN2Rqo740BWa",
+        "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "ea56a298b8a0e4b654a41b0410b0925166fc5243",
+          "id": "prt_d0be2eafa001RnW23XzYD3qAO6",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2dd5200199PN2Rqo740BWa"
+        },
+        {
+          "type": "text",
+          "text": "Committed and stopping as instructed (changes exceeded 500 lines with untracked files included in the commit — 1047 insertions total).\n\n---\n\n## Summary of what was done\n\n**Branch:** `ISS-24/allow-list-connections` (commit `02b6781`)\n\n### Completed (12 of 13 tasks):\n\n| Task | Status |\n|---|---|\n| **1a/1b** — `internal/hostcheck/` package + 33 tests | ✅ |\n| **2/2b** — `AllowedHosts` on `AgentConfig` + TOML tests | ✅ |\n| **3** — `AllowedHosts` on `ExecContext` | ✅ |\n| **4/4b** — Gate `url_fetch` with hostcheck + 6 new tests | ✅ |\n| **5** — Thread through `cmd/run.go` dispatch chain | ✅ |\n| **6a-6d** — `ExecuteOptions` + sub-agent propagation | ✅ |\n| **Review fixes** — DNS rebinding pin, fc00::/7, timeout, redirect test | ✅ |\n| **7** — Integration tests | ⬜ Remaining |\n\n### Security features implemented:\n- **Allowlist gating** — `url_fetch` blocked for non-allowlisted hosts when `allowed_hosts` is configured\n- **Private IP blocking** — unconditional, covers RFC 1918, loopback, link-local, CGNAT, IPv6 ULA (`fc00::/7`)\n- **DNS rebinding protection** — connections pinned to pre-validated IP via custom `DialContext`\n- **Redirect validation** — each redirect target checked against allowlist + private IP ranges\n- **Sub-agent inheritance** — sub-agent's own `allowed_hosts` wins, else parent's list inherited\n\n### Files changed:\n- `internal/hostcheck/hostcheck.go` — **new** (100 lines)\n- `internal/hostcheck/hostcheck_test.go` — **new** (tests)\n- `internal/agent/agent.go` — +1 field\n- `internal/agent/agent_test.go` — +47 lines\n- `internal/tool/registry.go` — +1 field\n- `internal/tool/url_fetch.go` — +40 lines (host check + pinned client)\n- `internal/tool/url_fetch_test.go` — +200 lines (6 new tests + skipHostCheck helper)\n- `internal/tool/tool.go` — +11 lines (propagation)\n- `cmd/run.go` — +13 lines (wiring)",
+          "time": {
+            "start": 1774020923367,
+            "end": 1774020923367
+          },
+          "id": "prt_d0be2eafb001Uum7FJYURApxQ8",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2dd5200199PN2Rqo740BWa"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "ea56a298b8a0e4b654a41b0410b0925166fc5243",
+          "cost": 0.08291225,
+          "tokens": {
+            "total": 122193,
+            "input": 1,
+            "output": 645,
+            "reasoning": 0,
+            "cache": {
+              "read": 120502,
+              "write": 1045
+            }
+          },
+          "id": "prt_d0be31016001vIkqcKfim5laAs",
+          "sessionID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+          "messageID": "msg_d0be2dd5200199PN2Rqo740BWa"
         }
       ]
     }
