@@ -1,0 +1,75 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Fix two security/correctness issues in `internal/tool/url_fetch.go`:
+
+1. **DNS rebinding vulnerability**: The resolved IP from `CheckHost` is discarded (line 140 uses `_`). The HTTP client then does its own DNS resolution, creating a TOCTOU gap. Fix by capturing the resolved IP and pinning the connection to it via a custom `DialContext`.
+
+2. **Missing Timeout on http.Client**: Add `Timeout: urlFetchTimeout` to the `http.Client` as defense-in-depth.
+
+## Exact changes to `internal/tool/url_fetch.go`
+
+### Change 1: Capture the resolved IP (line 140)
+
+**Before:**
+```go
+	if _, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver); hostErr != nil {
+```
+
+**After:**
+```go
+	safeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+	if hostErr != nil {
+```
+
+### Change 2: Replace the http.Client with one that pins to the resolved IP (lines 152-162)
+
+**Before:**
+```go
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if _, err := urlFetchCheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver); err != nil {
+				return err
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+```
+
+**After:**
+```go
+	client := &http.Client{
+		Timeout: urlFetchTimeout,
+		Transport: &http.Transport{
+			DialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {
+				_, port, _ := net.SplitHostPort(addr)
+				if safeIP != nil && port != "" {
+					return (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(safeIP.String(), port))
+				}
+				return (&net.Dialer{}).DialContext(dialCtx, network, addr)
+			},
+		},
+		CheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {
+			_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+			if err != nil {
+				return err
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+```
+
+## Important note about tests
+The existing tests use `skipHostCheck(t)` which overrides `urlFetchCheckHost` to return `net.ParseIP("127.0.0.1"), nil`. This means `safeIP` will be `127.0.0.1` in tests, and the `DialContext` will pin to `127.0.0.1` — which is exactly where `httptest.NewServer` is listening. So the existing tests should continue to work.
+
+## Verification
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./...`
+2. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -v ./internal/tool/` — all tests must pass
+
+Return the build output, test output, and confirm the exact changes made.
