@@ -1,0 +1,54 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Add the missing IPv6 Unique Local Address range `fc00::/7` to the private IP ranges in `internal/hostcheck/hostcheck.go`, and add test cases.
+
+## Change 1: `internal/hostcheck/hostcheck.go`
+
+In the `init()` function, add `"fc00::/7"` to the `cidrs` slice. Place it after the `"fe80::/10"` entry (line 27):
+
+**Before:**
+```go
+	cidrs := []string{
+		"0.0.0.0/8",      // "this" network
+		"10.0.0.0/8",     // RFC 1918
+		"100.64.0.0/10",  // CGNAT
+		"127.0.0.0/8",    // loopback
+		"169.254.0.0/16", // link-local
+		"172.16.0.0/12",  // RFC 1918
+		"192.168.0.0/16", // RFC 1918
+		"::1/128",        // IPv6 loopback
+		"fe80::/10",      // IPv6 link-local
+	}
+```
+
+**After:**
+```go
+	cidrs := []string{
+		"0.0.0.0/8",      // "this" network
+		"10.0.0.0/8",     // RFC 1918
+		"100.64.0.0/10",  // CGNAT
+		"127.0.0.0/8",    // loopback
+		"169.254.0.0/16", // link-local
+		"172.16.0.0/12",  // RFC 1918
+		"192.168.0.0/16", // RFC 1918
+		"::1/128",        // IPv6 loopback
+		"fc00::/7",       // IPv6 unique local
+		"fe80::/10",      // IPv6 link-local
+	}
+```
+
+## Change 2: `internal/hostcheck/hostcheck_test.go`
+
+Add test cases to the `TestIsPrivateIP` table for the new range. Add these entries to the test table:
+
+```go
+{"unique local IPv6 fd00", "fd00::1", true},
+{"unique local IPv6 fc00", "fc00::1", true},
+```
+
+## Verification
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -v ./internal/hostcheck/`
+2. Confirm all tests pass including the new ones.
+
+Return the test output.
