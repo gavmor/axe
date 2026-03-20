@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774029256411,
-      "updated": 1774029259787
+      "updated": 1774029275772
     }
   },
   "messages": [
@@ -187,7 +187,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774029259758
+          "created": 1774029259758,
+          "completed": 1774029268660
         },
         "parentID": "msg_d0c6236df001Qi5imRg3qk5QNt",
         "modelID": "claude-sonnet-4-6",
@@ -198,16 +199,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0113832,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 14354,
+          "input": 1,
+          "output": 347,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 13434,
+            "write": 572
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d0c6243ee001ZVsPby4eZNJ0vW",
         "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4"
       },
@@ -235,19 +238,294 @@
           "callID": "REDACTED",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add docs/plans/040_output_allowlist_spec.md internal/tool/tool.go internal/tool/tool_test.go internal/tool/url_fetch.go internal/tool/url_fetch_test.go && git commit -m \"refactor: inject url_fetch deps, extract EffectiveAllowedHosts helper\n\n- Replace mutable package-level vars (urlFetchTimeout, urlFetchResolver,\n  urlFetchCheckHost) with urlFetcher struct for per-instance dependency\n  injection. Tests construct isolated instances instead of mutating globals.\n- Extract EffectiveAllowedHosts() from inline logic in ExecuteCallAgent\n  so the sub-agent inheritance rule is tested against production code.\n- Strengthen TestEffectiveAllowedHosts with reflect.DeepEqual for\n  nil-aware full slice comparison (replaces length-only checks).\n- Update spec with R14 and R15 documenting these refinements.\"",
               "description": "Stage all changed files and commit",
               "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
             },
+            "output": "[ISS-24/allow-list-connections a336cbf] refactor: inject url_fetch deps, extract EffectiveAllowedHosts helper\n 5 files changed, 184 insertions(+), 194 deletions(-)\n",
+            "title": "Stage all changed files and commit",
+            "metadata": {
+              "output": "[ISS-24/allow-list-connections a336cbf] refactor: inject url_fetch deps, extract EffectiveAllowedHosts helper\n 5 files changed, 184 insertions(+), 194 deletions(-)\n",
+              "exit": 0,
+              "description": "Stage all changed files and commit",
+              "truncated": false
+            },
             "time": {
-              "start": 1774029263690
+              "start": 1774029263690,
+              "end": 1774029268571
             }
           },
           "id": "REDACTED",
           "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
           "messageID": "msg_d0c6243ee001ZVsPby4eZNJ0vW"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.0113832,
+          "tokens": {
+            "total": 14354,
+            "input": 1,
+            "output": 347,
+            "reasoning": 0,
+            "cache": {
+              "read": 13434,
+              "write": 572
+            }
+          },
+          "id": "prt_d0c62665c00182rqraKWiRQz3G",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c6243ee001ZVsPby4eZNJ0vW"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774029268661,
+          "completed": 1774029272120
+        },
+        "parentID": "msg_d0c6236df001Qi5imRg3qk5QNt",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00746355,
+        "tokens": {
+          "total": 14537,
+          "input": 1,
+          "output": 113,
+          "reasoning": 0,
+          "cache": {
+            "read": 14006,
+            "write": 417
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c6266b4001eYcbvI36eVHxpW",
+        "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "id": "prt_d0c626c39001HLMOPRFUwgM10t",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c6266b4001eYcbvI36eVHxpW"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push",
+              "description": "Push to remote tracking branch",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   4d6344b..a336cbf  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+            "title": "Push to remote tracking branch",
+            "metadata": {
+              "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   4d6344b..a336cbf  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+              "exit": 0,
+              "description": "Push to remote tracking branch",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774029270349,
+              "end": 1774029272017
+            }
+          },
+          "id": "prt_d0c626c39002HELj3AQ7d6kvRp",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c6266b4001eYcbvI36eVHxpW"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.00746355,
+          "tokens": {
+            "total": 14537,
+            "input": 1,
+            "output": 113,
+            "reasoning": 0,
+            "cache": {
+              "read": 14006,
+              "write": 417
+            }
+          },
+          "id": "prt_d0c6273d30013xHvtuSbSHWDxa",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c6266b4001eYcbvI36eVHxpW"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774029272121,
+          "completed": 1774029275745
+        },
+        "parentID": "msg_d0c6236df001Qi5imRg3qk5QNt",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0074949,
+        "tokens": {
+          "total": 14773,
+          "input": 1,
+          "output": 165,
+          "reasoning": 0,
+          "cache": {
+            "read": 14423,
+            "write": 184
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "id": "REDACTED",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git log -1 --format=\"%H%n%an <%ae>%n%cd%n%n%s%n%n%b\" --date=format:\"%Y-%m-%d %H:%M:%S\"",
+              "description": "Show full details of latest commit",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "a336cbfb583f743135593ae0be6afa813bf852ae\nJaron Swab <jswab@gloo.us>\n2026-03-20 13:54:23\n\nrefactor: inject url_fetch deps, extract EffectiveAllowedHosts helper\n\n- Replace mutable package-level vars (urlFetchTimeout, urlFetchResolver,\n  urlFetchCheckHost) with urlFetcher struct for per-instance dependency\n  injection. Tests construct isolated instances instead of mutating globals.\n- Extract EffectiveAllowedHosts() from inline logic in ExecuteCallAgent\n  so the sub-agent inheritance rule is tested against production code.\n- Strengthen TestEffectiveAllowedHosts with reflect.DeepEqual for\n  nil-aware full slice comparison (replaces length-only checks).\n- Update spec with R14 and R15 documenting these refinements.\n\nEntire-Checkpoint: 81384dcb8323\n\n",
+            "title": "Show full details of latest commit",
+            "metadata": {
+              "output": "a336cbfb583f743135593ae0be6afa813bf852ae\nJaron Swab <jswab@gloo.us>\n2026-03-20 13:54:23\n\nrefactor: inject url_fetch deps, extract EffectiveAllowedHosts helper\n\n- Replace mutable package-level vars (urlFetchTimeout, urlFetchResolver,\n  urlFetchCheckHost) with urlFetcher struct for per-instance dependency\n  injection. Tests construct isolated instances instead of mutating globals.\n- Extract EffectiveAllowedHosts() from inline logic in ExecuteCallAgent\n  so the sub-agent inheritance rule is tested against production code.\n- Strengthen TestEffectiveAllowedHosts with reflect.DeepEqual for\n  nil-aware full slice comparison (replaces length-only checks).\n- Update spec with R14 and R15 documenting these refinements.\n\nEntire-Checkpoint: 81384dcb8323\n\n",
+              "exit": 0,
+              "description": "Show full details of latest commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774029275558,
+              "end": 1774029275591
+            }
+          },
+          "id": "prt_d0c6279450023bkWG5n0VM6b3H",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.0074949,
+          "tokens": {
+            "total": 14773,
+            "input": 1,
+            "output": 165,
+            "reasoning": 0,
+            "cache": {
+              "read": 14423,
+              "write": 184
+            }
+          },
+          "id": "prt_d0c6281fe001Y4ez32LoIGXPLs",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774029275745,
+          "completed": 1774029277980
+        },
+        "parentID": "msg_d0c6236df001Qi5imRg3qk5QNt",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0072576,
+        "tokens": {
+          "total": 15104,
+          "input": 1,
+          "output": 90,
+          "reasoning": 0,
+          "cache": {
+            "read": 14607,
+            "write": 406
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c628261001zC68vyN5ruOM7w",
+        "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "id": "prt_d0c6287d200172hZYoV30pOgE2",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c628261001zC68vyN5ruOM7w"
+        },
+        {
+          "type": "text",
+          "text": "Committed and pushed successfully.\n\n**Commit:** `a336cbf`  \n**Branch:** `ISS-24/allow-list-connections` → `origin/ISS-24/allow-list-connections`  \n**Range:** `4d6344b..a336cbf`\n\n5 files changed, 184 insertions(+), 194 deletions(-).",
+          "time": {
+            "start": 1774029277839,
+            "end": 1774029277839
+          },
+          "id": "prt_d0c6287d3001aeMW2EC72HG2iF",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c628261001zC68vyN5ruOM7w"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.0072576,
+          "tokens": {
+            "total": 15104,
+            "input": 1,
+            "output": 90,
+            "reasoning": 0,
+            "cache": {
+              "read": 14607,
+              "write": 406
+            }
+          },
+          "id": "prt_d0c628aae0016O1X5yLVPLIOAk",
+          "sessionID": "ses_2f39dc925ffeJhl5o9tbxCfRr4",
+          "messageID": "msg_d0c628261001zC68vyN5ruOM7w"
         }
       ]
     }
