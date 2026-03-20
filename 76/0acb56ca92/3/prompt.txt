@@ -1,0 +1,152 @@
+In the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe, update README.md to document the three new features in v1.5.0. Here are the EXACT changes to make:
+
+---
+
+## 1. Features list (around lines 19-33)
+
+Add these three bullet points to the existing features list. Insert them in logical positions:
+
+- After the "Built-in tools" bullet (line 30), add:
+  ```
+  - **Output allowlist** — restrict `url_fetch` and `web_search` to specific hostnames; private/reserved IPs are always blocked (SSRF protection)
+  - **Token budgets** — cap cumulative token usage per agent run via `[budget]` config or `--max-tokens` flag
+  ```
+
+- After the "Stdin piping" bullet (line 27), add:
+  ```
+  - **Local agent directories** — auto-discovers agents from `<cwd>/axe/agents/` before the global config, or use `--agents-dir` to point anywhere
+  ```
+
+## 2. Run Flags table (around lines 262-271)
+
+Add these two new rows to the Run Flags table:
+
+| `--max-tokens <int>` | 0 (unlimited) | Cap cumulative token usage for the run (exit code 4 if exceeded) |
+| `--agents-dir <path>` | (auto-discover) | Override agent search directory |
+
+Insert `--max-tokens` after the `--timeout` row and `--agents-dir` after `--json`.
+
+## 3. Agent Configuration example TOML block (around lines 276-318)
+
+In the example TOML block, add these two new sections. Add the `allowed_hosts` field as a top-level field (after the `sub_agents` line, before `[sub_agents_config]`):
+
+```toml
+allowed_hosts = ["api.example.com", "docs.example.com"]
+```
+
+Add the `[budget]` section after the `[params]` section and before the `[[mcp_servers]]` sections:
+
+```toml
+[budget]
+max_tokens = 50000    # 0 = unlimited (default)
+```
+
+## 4. New section: "Output Allowlist" — add AFTER the "Retry" section (after line ~337) and BEFORE "## Tools"
+
+```markdown
+### Output Allowlist
+
+Agents that use `url_fetch` or `web_search` can be restricted to specific hostnames with the `allowed_hosts` field:
+
+```toml
+allowed_hosts = ["api.example.com", "docs.example.com"]
+```
+
+| Behavior | Detail |
+|---|---|
+| Empty or absent | All public hostnames allowed |
+| Non-empty list | Only exact hostname matches permitted (case-insensitive, no wildcard subdomains) |
+| Private IPs | Always blocked regardless of allowlist — loopback, link-local, RFC 1918, CGNAT, IPv6 private |
+| Redirects | Each redirect destination is re-validated against the allowlist and private IP check |
+| Sub-agents | Inherit the parent's `allowed_hosts` unless the sub-agent TOML explicitly sets its own |
+```
+
+## 5. New section: "Token Budget" — add AFTER the new "Output Allowlist" section and BEFORE "## Tools"
+
+```markdown
+### Token Budget
+
+Cap cumulative token usage (input + output, across all turns and sub-agent calls) for a single run:
+
+```toml
+[budget]
+max_tokens = 50000   # 0 = unlimited (default)
+```
+
+Or override via flag:
+
+```bash
+axe run my-agent --max-tokens 10000
+```
+
+The flag takes precedence over TOML when set to a value greater than zero.
+
+When the budget is exceeded, the current response is returned but no further tool calls execute. The process exits with **code 4**. Memory is not appended on a budget-exceeded run.
+
+With `--verbose`, each turn logs cumulative usage to stderr. With `--json`, the output envelope includes `budget_max_tokens`, `budget_used_tokens`, and `budget_exceeded` fields (omitted when unlimited).
+```
+
+## 6. New section: "Local Agent Directories" — add AFTER "## Skills" section (after line ~435) and BEFORE "## Providers"
+
+```markdown
+## Local Agent Directories
+
+By default, agents are loaded from `$XDG_CONFIG_HOME/axe/agents/`. Axe also supports project-local agent directories for per-repo agent definitions.
+
+### Auto-Discovery
+
+If `<cwd>/axe/agents/` exists, axe searches it before the global config directory. A local agent with the same name as a global agent shadows the global one.
+
+```
+my-project/
+└── axe/
+    └── agents/
+        └── my-agent.toml   ← found automatically
+```
+
+### Explicit Override
+
+Use `--agents-dir` to point to any directory:
+
+```bash
+axe run my-agent --agents-dir ./custom/agents
+```
+
+This flag is available on all commands: `run`, `agents list`, `agents show`, `agents init`, `agents edit`, and `gc`.
+
+### Resolution Order
+
+1. `--agents-dir` (if provided)
+2. `<cwd>/axe/agents/` (auto-discovered)
+3. `$XDG_CONFIG_HOME/axe/agents/` (global fallback)
+
+The first directory containing a matching `<name>.toml` wins.
+
+### Smart Scaffolding
+
+`axe agents init <name>` writes to `<cwd>/axe/agents/` if that directory already exists, otherwise falls back to the global config directory.
+```
+
+## 7. Exit Codes table — add as a new section AFTER "## CLI Reference" > "### Run Flags" table (after the run flags table, before "## Agent Configuration")
+
+```markdown
+### Exit Codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | Runtime error |
+| 2 | Configuration error |
+| 3 | Provider/network error |
+| 4 | Token budget exceeded |
+```
+
+---
+
+IMPORTANT RULES:
+- Do NOT remove or modify any existing content except where inserting new content
+- Keep the existing markdown style consistent (use `---` separators only if the file already uses them — it doesn't)
+- Make sure all markdown tables are properly formatted
+- After making all changes, read the full file back and return the line count so I can verify
+
+Do NOT change anything about the MCP stdio documentation (lines 313-318 area) — that's a known pre-existing issue being handled separately.
