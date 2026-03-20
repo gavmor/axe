@@ -1,0 +1,104 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Create the `internal/hostcheck/` package using red/green TDD. Write the tests FIRST, then write the implementation to make them pass.
+
+## Step 1: Write tests first — `internal/hostcheck/hostcheck_test.go`
+
+Create the file with these test cases:
+
+### Tests for `IsAllowed(hostname string, allowlist []string) bool`:
+- Table-driven tests:
+  - Empty allowlist returns `true` for any hostname (e.g. "anything.com")
+  - Non-empty allowlist: exact match returns `true` ("api.example.com" in ["api.example.com"])
+  - Non-empty allowlist: non-match returns `false` ("other.com" in ["api.example.com"])
+  - Case-insensitive: "API.Example.COM" matches entry "api.example.com"
+  - Subdomain does not match: "sub.api.example.com" does not match "api.example.com"
+  - Parent domain does not match: "example.com" does not match "api.example.com"
+
+### Tests for `IsPrivateIP(ip net.IP) bool`:
+- Table-driven tests covering each blocked range with at least one positive case:
+  - `127.0.0.1` → true (loopback)
+  - `::1` → true (IPv6 loopback)
+  - `10.0.0.1` → true (RFC 1918)
+  - `172.16.0.1` → true (RFC 1918)
+  - `192.168.1.1` → true (RFC 1918)
+  - `169.254.1.1` → true (link-local)
+  - `fe80::1` → true (IPv6 link-local)
+  - `0.0.0.1` → true (this network)
+  - `100.64.0.1` → true (CGNAT)
+  - `8.8.8.8` → false (public)
+  - `2001:4860:4860::8888` → false (public IPv6)
+  - Boundary: `172.15.255.255` → false (just below RFC 1918)
+  - Boundary: `172.16.0.0` → true (start of RFC 1918)
+  - Boundary: `172.31.255.255` → true (end of RFC 1918)
+  - Boundary: `172.32.0.0` → false (just above RFC 1918)
+
+### Tests for `CheckHost(ctx, hostname, allowlist, resolver) (net.IP, error)`:
+- Create a fake resolver type in the test file:
+  ```go
+  type fakeResolver struct {
+      addrs []net.IPAddr
+      err   error
+  }
+  func (f *fakeResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {
+      return f.addrs, f.err
+  }
+  ```
+- Table-driven tests:
+  - Allowlist non-empty, hostname not in list → error containing "not in allowed_hosts"
+  - Allowlist non-empty, hostname in list, resolves to public IP (8.8.8.8) → nil error, returns the public IP
+  - Allowlist non-empty, hostname in list, resolves to private IP (10.0.0.1) → error containing "private address"
+  - Allowlist empty, resolves to public IP → nil error
+  - Allowlist empty, resolves to private IP → error containing "private address"
+  - Raw IP literal "192.168.1.1" as hostname → error (private), no DNS lookup (resolver should not be called — use a resolver that panics or returns error to verify)
+  - Raw public IP literal "8.8.8.8" with empty allowlist → nil error, returns that IP
+  - Raw public IP literal "8.8.8.8" with non-empty allowlist ["example.com"] → error (IPs don't match hostname entries)
+  - Hostname resolves to mixed IPs [8.8.8.8, 10.0.0.1] → error (any private = blocked)
+  - DNS resolution error → returns that error (not silently allowed)
+
+## Step 2: Run the tests — they should all FAIL (red phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/hostcheck/` and confirm they fail because the package doesn't exist yet.
+
+## Step 3: Write implementation — `internal/hostcheck/hostcheck.go`
+
+Create the file with:
+
+```go
+package hostcheck
+```
+
+### `Resolver` interface:
+```go
+type Resolver interface {
+    LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)
+}
+```
+
+### `IsAllowed(hostname string, allowlist []string) bool`:
+- If `allowlist` is empty (len == 0), return `true`.
+- Otherwise, iterate allowlist entries and compare case-insensitively using `strings.EqualFold`. Return `true` on first match, `false` if none match.
+
+### `IsPrivateIP(ip net.IP) bool`:
+- Define package-level `var privateRanges []*net.IPNet` containing all 9 CIDR ranges from the spec. Parse them with `net.ParseCIDR` in an `init()` function.
+- Iterate ranges, return `true` if any `Contains(ip)`.
+- IMPORTANT: call `ip.To4()` first — if non-nil use the 4-byte form, otherwise use the original. This ensures IPv4-mapped IPv6 addresses are handled correctly by `net.IPNet.Contains`.
+
+### `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) (net.IP, error)`:
+- Step 1: If allowlist is non-empty and `!IsAllowed(hostname, allowlist)`, return `nil, fmt.Errorf("host %q is not in allowed_hosts", hostname)`.
+- Step 2: Check if hostname is a raw IP literal with `net.ParseIP(hostname)`. If it is:
+  - If `IsPrivateIP(ip)`, return `nil, fmt.Errorf("address %s is a private/reserved IP", hostname)`.
+  - If allowlist is non-empty, return `nil, fmt.Errorf("host %q is not in allowed_hosts (raw IP addresses cannot match hostname entries)", hostname)`. Wait — this case is already caught by Step 1 since a raw IP like "8.8.8.8" won't match hostname entries like "example.com". So Step 1 handles it. Just return `ip, nil` for public raw IPs with empty allowlist.
+  - Actually re-read the logic: Step 1 checks `IsAllowed` which returns true for empty allowlist. So for raw IP + empty allowlist, Step 1 passes. Then Step 2 parses the IP, checks private, and if public returns `ip, nil`. For raw IP + non-empty allowlist, Step 1 already rejects it (IP won't match hostname entries). Correct.
+- Step 3: Resolve hostname via `resolver.LookupIPAddr(ctx, hostname)`. If error, return `nil, err`.
+- Step 4: Iterate resolved IPs. If any `IsPrivateIP(addr.IP)`, return `nil, fmt.Errorf("host %q resolves to private address %s", hostname, addr.IP)`.
+- Step 5: Return the first resolved IP and nil error. If no IPs were resolved, return `nil, fmt.Errorf("host %q resolved to no addresses", hostname)`.
+
+## Step 4: Run the tests — they should all PASS (green phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -v ./internal/hostcheck/` and confirm all tests pass.
+
+## What to return
+Return:
+1. The exact test output from the red phase (confirming tests fail)
+2. The exact test output from the green phase (confirming all tests pass)
+3. The number of tests that passed
