@@ -1,0 +1,251 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Write integration tests for the allowlist feature in `cmd/run_integration_test.go`. Use red/green TDD.
+
+## Context
+- Integration tests are in `package cmd` and call `rootCmd.Execute()` in-process.
+- They use `testutil.NewMockLLMServer()` to mock the LLM provider.
+- They use `writeAgentConfig()` to create temp agent TOML files.
+- They use `testutil.SetupXDGDirs()` for isolated XDG directories.
+- They use `resetRunCmd(t)` to reset global state.
+- `urlFetchCheckHost` is unexported and cannot be overridden from `cmd` package.
+- `httptest.NewServer` binds to `127.0.0.1` which is blocked by private IP check.
+- The mock LLM server returns responses in order: first a tool call response, then a text response.
+
+## Key patterns from existing tests
+
+The canonical tool integration test pattern (from TestIntegration_Tools_ReadOnly):
+```go
+func TestIntegration_Tools_ReadOnly(t *testing.T) {
+    resetRunCmd(t)
+    mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+        testutil.AnthropicToolUseResponse("Let me read the file.", []testutil.MockToolCall{
+            {ID: "tc_rf1", Name: "read_file", Input: map[string]string{"path": "hello.txt"}},
+        }),
+        testutil.AnthropicResponse("The file says: Hello, World!"),
+    })
+    configDir, _ := testutil.SetupXDGDirs(t)
+    writeAgentConfig(t, configDir, "ro-tools", `name = "ro-tools"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["read_file", "list_directory"]
+`)
+    t.Setenv("ANTHROPIC_API_KEY", "test-key")
+    t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+    buf := new(bytes.Buffer)
+    rootCmd.SetOut(buf)
+    rootCmd.SetErr(new(bytes.Buffer))
+    rootCmd.SetArgs([]string{"run", "ro-tools", "--workdir", t.TempDir()})
+    err := rootCmd.Execute()
+    // assertions...
+}
+```
+
+## Tests to write
+
+Append these tests to the END of `cmd/run_integration_test.go`. Find the last test function in the file and add after it.
+
+### Test 1: Allowlist blocks non-matching host
+
+The LLM calls `url_fetch` with a URL whose hostname is NOT in `allowed_hosts`. The tool should return an error containing "not in allowed_hosts". The LLM then gets this error as a tool result and responds with text.
+
+```go
+func TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {
+	resetRunCmd(t)
+
+	// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts
+	// Turn 2: LLM receives the error and responds with text
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		testutil.AnthropicToolUseResponse("Let me fetch that URL.", []testutil.MockToolCall{
+			{ID: "tc_uf1", Name: "url_fetch", Input: map[string]string{"url": "https://blocked.example.com/data"}},
+		}),
+		testutil.AnthropicResponse("The URL was blocked by the allowlist."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "fetch-blocked", `name = "fetch-blocked"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["url_fetch"]
+allowed_hosts = ["api.example.com"]
+`)
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(new(bytes.Buffer))
+	rootCmd.SetArgs([]string{"run", "fetch-blocked"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the mock received 2 requests (tool call + final response)
+	if mock.RequestCount() != 2 {
+		t.Fatalf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	// The second request should contain the tool error result
+	body := mock.Requests[1].Body
+	if !strings.Contains(body, "not in allowed_hosts") {
+		t.Errorf("expected tool result to contain 'not in allowed_hosts', got request body:\n%s", body)
+	}
+}
+```
+
+### Test 2: Private IP blocking (unconditional, no allowlist)
+
+The LLM calls `url_fetch` with a private IP URL. Even without `allowed_hosts`, the private IP check blocks it.
+
+```go
+func TestIntegration_AllowedHosts_BlocksPrivateIP(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		testutil.AnthropicToolUseResponse("Let me check the metadata.", []testutil.MockToolCall{
+			{ID: "tc_uf2", Name: "url_fetch", Input: map[string]string{"url": "http://169.254.169.254/latest/meta-data/"}},
+		}),
+		testutil.AnthropicResponse("The request was blocked."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	// No allowed_hosts — private IP blocking is unconditional
+	writeAgentConfig(t, configDir, "fetch-private", `name = "fetch-private"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["url_fetch"]
+`)
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(new(bytes.Buffer))
+	rootCmd.SetArgs([]string{"run", "fetch-private"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Fatalf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	// The second request should contain the private IP error
+	body := mock.Requests[1].Body
+	if !strings.Contains(body, "private") {
+		t.Errorf("expected tool result to mention 'private', got request body:\n%s", body)
+	}
+}
+```
+
+### Test 3: Empty allowlist preserves backwards compatibility
+
+The LLM calls `url_fetch` with a non-private URL. With no `allowed_hosts`, the allowlist check passes. The URL won't actually connect (it's a fake domain), but the error should be a DNS/connection error, NOT an allowlist error.
+
+```go
+func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		testutil.AnthropicToolUseResponse("Let me fetch that.", []testutil.MockToolCall{
+			{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "https://nonexistent.example.com/data"}},
+		}),
+		testutil.AnthropicResponse("Got a DNS error, as expected."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	// No allowed_hosts — should not block based on hostname
+	writeAgentConfig(t, configDir, "fetch-open", `name = "fetch-open"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["url_fetch"]
+`)
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(new(bytes.Buffer))
+	rootCmd.SetArgs([]string{"run", "fetch-open"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Fatalf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	// The error should be a DNS/connection error, NOT an allowlist error
+	body := mock.Requests[1].Body
+	if strings.Contains(body, "not in allowed_hosts") {
+		t.Errorf("empty allowlist should not produce 'not in allowed_hosts' error, got:\n%s", body)
+	}
+}
+```
+
+### Test 4: Allowlist blocks loopback even when allowlisted
+
+The LLM calls `url_fetch` with `http://127.0.0.1/data`. Even if `127.0.0.1` were somehow in the allowlist, the private IP check blocks it. (Raw IP won't match hostname entries anyway, but this tests the unconditional private IP blocking.)
+
+```go
+func TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		testutil.AnthropicToolUseResponse("Fetching localhost.", []testutil.MockToolCall{
+			{ID: "tc_uf4", Name: "url_fetch", Input: map[string]string{"url": "http://127.0.0.1:8080/secret"}},
+		}),
+		testutil.AnthropicResponse("Blocked."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "fetch-loopback", `name = "fetch-loopback"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["url_fetch"]
+allowed_hosts = ["api.example.com"]
+`)
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(new(bytes.Buffer))
+	rootCmd.SetArgs([]string{"run", "fetch-loopback"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Fatalf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	body := mock.Requests[1].Body
+	// Should be blocked — either by allowlist (raw IP doesn't match hostname) or by private IP check
+	if !strings.Contains(body, "not in allowed_hosts") && !strings.Contains(body, "private") {
+		t.Errorf("expected allowlist or private IP error, got:\n%s", body)
+	}
+}
+```
+
+## Step 1: Write the tests first
+Append all 4 tests to the end of `cmd/run_integration_test.go`.
+
+## Step 2: Run the tests (red phase — but these should actually PASS since the implementation is done)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run "TestIntegration_AllowedHosts" -v ./cmd/`
+
+## Step 3: Run ALL cmd tests to verify no regressions
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./cmd/`
+
+## What to return
+1. The test output from step 2 (verbose)
+2. The test output from step 3 (full suite)
+3. How many of the 4 new tests passed
