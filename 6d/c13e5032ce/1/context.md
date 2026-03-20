@@ -1,0 +1,25 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+You are in the repo at /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-36/docker-build-in-goreleaser.
+
+Edit the file `.github/workflows/release.yml`. The only change needed is to add `needs: [goreleaser]` to the `docker` job so it waits for the goreleaser job to succeed before running.
+
+Currently lines 39-40 look like:
+```yaml
+  docker:
+    runs-on: ubuntu-latest
+```
+
+Change them to:
+```yaml
+  docker:
+    needs: [goreleaser]
+    runs-on: ubuntu-latest
+```
+
+Do NOT change anything e...
+

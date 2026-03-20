@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "6dc13e5032ce",
+  "session_id": "ses_2f4a17f1fffe0e0aDHrRUmkPmR",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T13:15:37.053261Z",
+  "branch": "ISS-36/docker-build-in-goreleaser",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/release.yml"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "9e77aaba0e2a",
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 3608,
+    "cache_read_tokens": 53884,
+    "output_tokens": 350,
+    "api_call_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T13:15:37.043935Z",
+    "agent_lines": 7,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 7,
+    "agent_percentage": 100
+  }
+}
