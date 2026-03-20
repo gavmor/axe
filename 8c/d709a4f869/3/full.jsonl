@@ -1,0 +1,907 @@
+{
+  "info": {
+    "id": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+    "slug": "cosmic-planet",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+    "title": "Auto-review fixes (@review subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774025158441,
+      "updated": 1774025195160
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774025158448
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "review",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are reviewing code changes in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.\n\n## Steps\n\n1. Run `git diff HEAD` to get the diff of changes since the last commit.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it's intended to do.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.\n    - Check for bugs, security issues, code drift, performance bottlenecks, poor maintainability.\n    - Avoid nitpicks that block progress unless they are critical.\n3. Return your review as a markdown list. Each item must include:\n    - A prompt for an LLM coding agent to fix the code. This prompt MUST be specific and only address the fix needed.\n    - Mention the file name prepended with `@` in the prompt.\n4. If there are no issues, return \"No issues found.\"",
+          "id": "prt_d0c23af310012ifn22BNOIyAeY",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23af2f001yAIk3BQvQcSial"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025158454,
+          "completed": 1774025161640
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08009625,
+        "tokens": {
+          "total": 12543,
+          "input": 3,
+          "output": 91,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 12449
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c23af36001Rg1tNTcbG4mU4Z",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c23b783001exC74fyyj7sDe6",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23af36001Rg1tNTcbG4mU4Z"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI'll start by getting the diff of changes on this branch.",
+          "time": {
+            "start": 1774025161216,
+            "end": 1774025161216
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23af36001Rg1tNTcbG4mU4Z"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get diff of changes since last commit"
+            },
+            "output": "diff --git a/docs/plans/040_output_allowlist_spec.md b/docs/plans/040_output_allowlist_spec.md\nindex 7c06a95..112fc60 100644\n--- a/docs/plans/040_output_allowlist_spec.md\n+++ b/docs/plans/040_output_allowlist_spec.md\n@@ -192,7 +192,7 @@ If the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`\n \n ### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n \n-An `allowed_hosts = []` in a sub-agent TOML is treated as \"not defined\" — the parent's list is inherited. This is consistent with TOML semantics where an omitted field and an empty list are functionally equivalent for this feature. The inheritance rule triggers on \"empty at load time,\" regardless of whether the field was explicitly set or defaulted.\n+An omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n \n ### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n \ndiff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 546c874..dda0ef1 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -320,6 +320,9 @@ model = \"provider/model-name\"\n # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n+# Restrict url_fetch to these hostnames (optional, empty = allow all)\n+# allowed_hosts = []\n+\n # Sub-agents this agent can invoke (optional)\n # sub_agents = []\n \ndiff --git a/internal/hostcheck/hostcheck.go b/internal/hostcheck/hostcheck.go\nindex cb7e55d..29ed767 100644\n--- a/internal/hostcheck/hostcheck.go\n+++ b/internal/hostcheck/hostcheck.go\n@@ -81,9 +81,12 @@ func CheckHost(ctx context.Context, hostname string, allowlist []string, resolve\n \t}\n \n \t// Step 3: DNS resolution.\n+\tif resolver == nil {\n+\t\treturn nil, fmt.Errorf(\"no DNS resolver configured for host %q\", hostname)\n+\t}\n \taddrs, err := resolver.LookupIPAddr(ctx, hostname)\n \tif err != nil {\n-\t\treturn nil, err\n+\t\treturn nil, fmt.Errorf(\"failed to resolve %q: %w\", hostname, err)\n \t}\n \n \t// Step 4: reject if any resolved address is private.\ndiff --git a/internal/hostcheck/hostcheck_test.go b/internal/hostcheck/hostcheck_test.go\nindex da081e2..d576017 100644\n--- a/internal/hostcheck/hostcheck_test.go\n+++ b/internal/hostcheck/hostcheck_test.go\n@@ -230,11 +230,18 @@ func TestCheckHost(t *testing.T) {\n \t\t\twantErr: \"private address\",\n \t\t},\n \t\t{\n-\t\t\tname:      \"DNS resolution error is returned\",\n+\t\t\tname:      \"nil resolver returns error\",\n+\t\t\thostname:  \"example.com\",\n+\t\t\tallowlist: []string{},\n+\t\t\tresolver:  nil,\n+\t\t\twantErr:   \"no DNS resolver configured\",\n+\t\t},\n+\t\t{\n+\t\t\tname:      \"DNS resolution error is returned with hostname\",\n \t\t\thostname:  \"bad.example.com\",\n \t\t\tallowlist: []string{},\n \t\t\tresolver:  &fakeResolver{err: fmt.Errorf(\"dns timeout\")},\n-\t\t\twantErr:   \"dns timeout\",\n+\t\t\twantErr:   \"failed to resolve\",\n \t\t},\n \t}\n \ndiff --git a/internal/tool/tool.go b/internal/tool/tool.go\nindex f43065b..33cacff 100644\n--- a/internal/tool/tool.go\n+++ b/internal/tool/tool.go\n@@ -146,9 +146,10 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n \t}\n \n-\t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n+\t// Compute effective allowed hosts: sub-agent's own list wins (even if empty),\n+\t// else inherit parent's when not explicitly set (nil).\n \teffectiveAllowedHosts := cfg.AllowedHosts\n-\tif len(effectiveAllowedHosts) == 0 {\n+\tif effectiveAllowedHosts == nil {\n \t\teffectiveAllowedHosts = opts.AllowedHosts\n \t}\n \ndiff --git a/internal/tool/tool_test.go b/internal/tool/tool_test.go\nindex 7deb122..8ec7000 100644\n--- a/internal/tool/tool_test.go\n+++ b/internal/tool/tool_test.go\n@@ -835,6 +835,86 @@ enabled = true\n \t}\n }\n \n+// TestExecuteCallAgent_AllowedHostsInheritance verifies nil vs empty-slice semantics.\n+// When cfg.AllowedHosts is nil (no field in TOML), the parent's list is inherited.\n+// When cfg.AllowedHosts is []string{} (explicit empty list), it is used as-is.\n+func TestExecuteCallAgent_AllowedHostsInheritance(t *testing.T) {\n+\tagentsDir := setupToolTestAgentsDir(t)\n+\n+\tvar capturedAllowedHosts []string\n+\tserver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tresp := map[string]interface{}{\n+\t\t\t\"id\":    \"msg_ah\",\n+\t\t\t\"type\":  \"message\",\n+\t\t\t\"model\": \"claude-sonnet-4-20250514\",\n+\t\t\t\"role\":  \"assistant\",\n+\t\t\t\"content\": []map[string]interface{}{\n+\t\t\t\t{\"type\": \"text\", \"text\": \"done\"},\n+\t\t\t},\n+\t\t\t\"stop_reason\": \"end_turn\",\n+\t\t\t\"usage\":       map[string]int{\"input_tokens\": 10, \"output_tokens\": 5},\n+\t\t}\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\t_ = json.NewEncoder(w).Encode(resp)\n+\t}))\n+\tdefer server.Close()\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", server.URL)\n+\n+\tparentHosts := []string{\"parent.example.com\"}\n+\n+\tt.Run(\"nil AllowedHosts inherits parent list\", func(t *testing.T) {\n+\t\t// Agent TOML without allowed_hosts field → cfg.AllowedHosts == nil\n+\t\twriteToolTestAgent(t, agentsDir, \"nil-hosts-agent\", `name = \"nil-hosts-agent\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+`)\n+\t\tcall := provider.ToolCall{\n+\t\t\tID:        \"test-ah-nil\",\n+\t\t\tName:      CallAgentToolName,\n+\t\t\tArguments: map[string]string{\"agent\": \"nil-hosts-agent\", \"task\": \"do something\"},\n+\t\t}\n+\t\topts := ExecuteOptions{\n+\t\t\tAllowedAgents: []string{\"nil-hosts-agent\"},\n+\t\t\tMaxDepth:      3,\n+\t\t\tDepth:         0,\n+\t\t\tGlobalConfig:  &config.GlobalConfig{},\n+\t\t\tAllowedHosts:  parentHosts,\n+\t\t}\n+\t\tresult := ExecuteCallAgent(context.Background(), call, opts)\n+\t\tif result.IsError {\n+\t\t\tt.Fatalf(\"expected success, got error: %s\", result.Content)\n+\t\t}\n+\t\t// We can't directly inspect what was passed; absence of error confirms the\n+\t\t// logic path ran. The unit-level assertion is: if nil, parent list is used.\n+\t\t_ = capturedAllowedHosts\n+\t})\n+\n+\tt.Run(\"empty AllowedHosts clears parent list\", func(t *testing.T) {\n+\t\t// Agent TOML with explicit allowed_hosts = [] → cfg.AllowedHosts == []string{}\n+\t\twriteToolTestAgent(t, agentsDir, \"empty-hosts-agent\", `name = \"empty-hosts-agent\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+allowed_hosts = []\n+`)\n+\t\tcall := provider.ToolCall{\n+\t\t\tID:        \"test-ah-empty\",\n+\t\t\tName:      CallAgentToolName,\n+\t\t\tArguments: map[string]string{\"agent\": \"empty-hosts-agent\", \"task\": \"do something\"},\n+\t\t}\n+\t\topts := ExecuteOptions{\n+\t\t\tAllowedAgents: []string{\"empty-hosts-agent\"},\n+\t\t\tMaxDepth:      3,\n+\t\t\tDepth:         0,\n+\t\t\tGlobalConfig:  &config.GlobalConfig{},\n+\t\t\tAllowedHosts:  parentHosts,\n+\t\t}\n+\t\tresult := ExecuteCallAgent(context.Background(), call, opts)\n+\t\tif result.IsError {\n+\t\t\tt.Fatalf(\"expected success, got error: %s\", result.Content)\n+\t\t}\n+\t})\n+}\n+\n // TestExecuteCallAgent_LocalDirPropagated verifies that when AgentsBase is set,\n // sub-agent configs are loaded from AgentsBase/axe/agents/ before falling back to global config.\n func TestExecuteCallAgent_LocalDirPropagated(t *testing.T) {\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex b3c81ac..4fe8e24 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -137,15 +137,15 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n \t// Host allowlist and private IP check.\n-\tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n+\t_, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n \tif hostErr != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n \t}\n \n-\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n-\tdefer cancel()\n-\n \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n@@ -155,18 +155,21 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\tTimeout: urlFetchTimeout,\n \t\tTransport: &http.Transport{\n \t\t\tDialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {\n-\t\t\t\t_, port, _ := net.SplitHostPort(addr)\n-\t\t\t\tif safeIP != nil && port != \"\" {\n-\t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(safeIP.String(), port))\n+\t\t\t\thost, port, splitErr := net.SplitHostPort(addr)\n+\t\t\t\tif splitErr != nil {\n+\t\t\t\t\treturn nil, splitErr\n+\t\t\t\t}\n+\t\t\t\tdialIP, checkErr := urlFetchCheckHost(dialCtx, host, ec.AllowedHosts, urlFetchResolver)\n+\t\t\t\tif checkErr != nil {\n+\t\t\t\t\treturn nil, checkErr\n+\t\t\t\t}\n+\t\t\t\tif dialIP != nil && port != \"\" {\n+\t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(dialIP.String(), port))\n \t\t\t\t}\n \t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, addr)\n \t\t\t},\n \t\t},\n \t\tCheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {\n-\t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n-\t\t\tif err != nil {\n-\t\t\t\treturn err\n-\t\t\t}\n \t\t\tif len(via) >= 10 {\n \t\t\t\treturn fmt.Errorf(\"too many redirects\")\n \t\t\t}\n",
+            "title": "Get diff of changes since last commit",
+            "metadata": {
+              "output": "diff --git a/docs/plans/040_output_allowlist_spec.md b/docs/plans/040_output_allowlist_spec.md\nindex 7c06a95..112fc60 100644\n--- a/docs/plans/040_output_allowlist_spec.md\n+++ b/docs/plans/040_output_allowlist_spec.md\n@@ -192,7 +192,7 @@ If the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`\n \n ### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n \n-An `allowed_hosts = []` in a sub-agent TOML is treated as \"not defined\" — the parent's list is inherited. This is consistent with TOML semantics where an omitted field and an empty list are functionally equivalent for this feature. The inheritance rule triggers on \"empty at load time,\" regardless of whether the field was explicitly set or defaulted.\n+An omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n \n ### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n \ndiff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 546c874..dda0ef1 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -320,6 +320,9 @@ model = \"provider/model-name\"\n # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search\n # tools = []\n \n+# Restrict url_fetch to these hostnames (optional, empty = allow all)\n+# allowed_hosts = []\n+\n # Sub-agents this agent can invoke (optional)\n # sub_agents = []\n \ndiff --git a/internal/hostcheck/hostcheck.go b/internal/hostcheck/hostcheck.go\nindex cb7e55d..29ed767 100644\n--- a/internal/hostcheck/hostcheck.go\n+++ b/internal/hostcheck/hostcheck.go\n@@ -81,9 +81,12 @@ func CheckHost(ctx context.Context, hostname string, allowlist []string, resolve\n \t}\n \n \t// Step 3: DNS resolution.\n+\tif resolver == nil {\n+\t\treturn nil, fmt.Errorf(\"no DNS resolver configured for host %q\", hostname)\n+\t}\n \taddrs, err := resolver.LookupIPAddr(ctx, hostname)\n \tif err != nil {\n-\t\treturn nil, err\n+\t\treturn nil, fmt.Errorf(\"failed to resolve %q: %w\", hostname, err)\n \t}\n \n \t// Step 4: reject if any resolved address is private.\ndiff --git a/internal/hostcheck/hostcheck_test.go b/internal/hostcheck/hostcheck_test.go\nindex da081e2..d576017 100644\n--- a/internal/hostcheck/hostcheck_test.go\n+++ b/internal/hostcheck/hostcheck_test.go\n@@ -230,11 +230,18 @@ func TestCheckHost(t *testing.T) {\n \t\t\twantErr: \"private address\",\n \t\t},\n \t\t{\n-\t\t\tname:      \"DNS resolution error is returned\",\n+\t\t\tname:      \"nil resolver returns error\",\n+\t\t\thostname:  \"example.com\",\n+\t\t\tallowlist: []string{},\n+\t\t\tresolver:  nil,\n+\t\t\twantErr:   \"no DNS resolver configured\",\n+\t\t},\n+\t\t{\n+\t\t\tname:      \"DNS resolution error is returned with hostname\",\n \t\t\thostname:  \"bad.example.com\",\n \t\t\tallowlist: []string{},\n \t\t\tresolver:  &fakeResolver{err: fmt.Errorf(\"dns timeout\")},\n-\t\t\twantErr:   \"dns timeout\",\n+\t\t\twantErr:   \"failed to resolve\",\n \t\t},\n \t}\n \ndiff --git a/internal/tool/tool.go b/internal/tool/tool.go\nindex f43065b..33cacff 100644\n--- a/internal/tool/tool.go\n+++ b/internal/tool/tool.go\n@@ -146,9 +146,10 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n \t}\n \n-\t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n+\t// Compute effective allowed hosts: sub-agent's own list wins (even if empty),\n+\t// else inherit parent's when not explicitly set (nil).\n \teffectiveAllowedHosts := cfg.AllowedHosts\n-\tif len(effectiveAllowedHosts) == 0 {\n+\tif effectiveAllowedHosts == nil {\n \t\teffectiveAllowedHosts = opts.AllowedHosts\n \t}\n \ndiff --git a/internal/tool/tool_test.go b/internal/tool/tool_test.go\nindex 7deb122..8ec7000 100644\n--- a/internal/tool/tool_test.go\n+++ b/internal/tool/tool_test.go\n@@ -835,6 +835,86 @@ enabled = true\n \t}\n }\n \n+// TestExecuteCallAgent_AllowedHostsInheritance verifies nil vs empty-slice semantics.\n+// When cfg.AllowedHosts is nil (no field in TOML), the parent's list is inherited.\n+// When cfg.AllowedHosts is []string{} (explicit empty list), it is used as-is.\n+func TestExecuteCallAgent_AllowedHostsInheritance(t *testing.T) {\n+\tagentsDir := setupToolTestAgentsDir(t)\n+\n+\tvar capturedAllowedHosts []string\n+\tserver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tresp := map[string]interface{}{\n+\t\t\t\"id\":    \"msg_ah\",\n+\t\t\t\"type\":  \"message\",\n+\t\t\t\"model\": \"claude-sonnet-4-20250514\",\n+\t\t\t\"role\":  \"assistant\",\n+\t\t\t\"content\": []map[string]interface{}{\n+\t\t\t\t{\"type\": \"text\", \"text\": \"done\"},\n+\t\t\t},\n+\t\t\t\"stop_reason\": \"end_turn\",\n+\t\t\t\"usage\":       map[string]int{\"input_tokens\": 10, \"output_tokens\": 5},\n+\t\t}\n+\t\tw.Header().Set(\"Content-Type\", \"application/json\")\n+\t\t_ = json.NewEncoder(w).Encode(resp)\n+\t}))\n+\tdefer server.Close()\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", server.URL)\n+\n+\tparentHosts := []string{\"parent.example.com\"}\n+\n+\tt.Run(\"nil AllowedHosts inherits parent list\", func(t *testing.T) {\n+\t\t// Agent TOML without allowed_hosts field → cfg.AllowedHosts == nil\n+\t\twriteToolTestAgent(t, agentsDir, \"nil-hosts-agent\", `name = \"nil-hosts-agent\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+`)\n+\t\tcall := provider.ToolCall{\n+\t\t\tID:        \"test-ah-nil\",\n+\t\t\tName:      CallAgentToolName,\n+\t\t\tArguments: map[string]string{\"agent\": \"nil-hosts-agent\", \"task\": \"do something\"},\n+\t\t}\n+\t\topts := ExecuteOptions{\n+\t\t\tAllowedAgents: []string{\"nil-hosts-agent\"},\n+\t\t\tMaxDepth:      3,\n+\t\t\tDepth:         0,\n+\t\t\tGlobalConfig:  &config.GlobalConfig{},\n+\t\t\tAllowedHosts:  parentHosts,\n+\t\t}\n+\t\tresult := ExecuteCallAgent(context.Background(), call, opts)\n+\t\tif result.IsError {\n+\t\t\tt.Fatalf(\"expected success, got error: %s\", result.Content)\n+\t\t}\n+\t\t// We can't directly inspect what was passed; absence of error confirms the\n+\t\t// logic path ran. The unit-level assertion is: if nil, parent list is used.\n+\t\t_ = capturedAllowedHosts\n+\t})\n+\n+\tt.Run(\"empty AllowedHosts clears parent list\", func(t *testing.T) {\n+\t\t// Agent TOML with explicit allowed_hosts = [] → cfg.AllowedHosts == []string{}\n+\t\twriteToolTestAgent(t, agentsDir, \"empty-hosts-agent\", `name = \"empty-hosts-agent\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+allowed_hosts = []\n+`)\n+\t\tcall := provider.ToolCall{\n+\t\t\tID:        \"test-ah-empty\",\n+\t\t\tName:      CallAgentToolName,\n+\t\t\tArguments: map[string]string{\"agent\": \"empty-hosts-agent\", \"task\": \"do something\"},\n+\t\t}\n+\t\topts := ExecuteOptions{\n+\t\t\tAllowedAgents: []string{\"empty-hosts-agent\"},\n+\t\t\tMaxDepth:      3,\n+\t\t\tDepth:         0,\n+\t\t\tGlobalConfig:  &config.GlobalConfig{},\n+\t\t\tAllowedHosts:  parentHosts,\n+\t\t}\n+\t\tresult := ExecuteCallAgent(context.Background(), call, opts)\n+\t\tif result.IsError {\n+\t\t\tt.Fatalf(\"expected success, got error: %s\", result.Content)\n+\t\t}\n+\t})\n+}\n+\n // TestExecuteCallAgent_LocalDirPropagated verifies that when AgentsBase is set,\n // sub-agent configs are loaded from AgentsBase/axe/agents/ before falling back to global config.\n func TestExecuteCallAgent_LocalDirPropagated(t *testing.T) {\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex b3c81ac..4fe8e24 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -137,15 +137,15 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n+\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n+\tdefer cancel()\n+\n \t// Host allowlist and private IP check.\n-\tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n+\t_, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n \tif hostErr != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n \t}\n \n-\treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n-\tdefer cancel()\n-\n \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n@@ -155,18 +155,21 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\tTimeout: urlFetchTimeout,\n \t\tTransport: &http.Transport{\n \t\t\tDialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {\n-\t\t\t\t_, port, _ := net.SplitHostPort(addr)\n-\t\t\t\tif safeIP != nil && port != \"\" {\n-\t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(safeIP.String(), port))\n+\t\t\t\thost, port, splitErr := net.SplitHostPort(addr)\n+\t\t\t\tif splitErr != nil {\n+\t\t\t\t\treturn nil, splitErr\n+\t\t\t\t}\n+\t\t\t\tdialIP, checkErr := urlFetchCheckHost(dialCtx, host, ec.AllowedHosts, urlFetchResolver)\n+\t\t\t\tif checkErr != nil {\n+\t\t\t\t\treturn nil, checkErr\n+\t\t\t\t}\n+\t\t\t\tif dialIP != nil && port != \"\" {\n+\t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(dialIP.String(), port))\n \t\t\t\t}\n \t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, addr)\n \t\t\t},\n \t\t},\n \t\tCheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {\n-\t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n-\t\t\tif err != nil {\n-\t\t\t\treturn err\n-\t\t\t}\n \t\t\tif len(via) >= 10 {\n \t\t\t\treturn fmt.Errorf(\"too many redirects\")\n \t\t\t}\n",
+              "exit": 0,
+              "description": "Get diff of changes since last commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774025161500,
+              "end": 1774025161542
+            }
+          },
+          "id": "prt_d0c23ba01001UOVwnvUrPauEQR",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23af36001Rg1tNTcbG4mU4Z"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.08009625,
+          "tokens": {
+            "total": 12543,
+            "input": 3,
+            "output": 91,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 12449
+            }
+          },
+          "id": "prt_d0c23bb46001LxliD1WWrpgSGT",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23af36001Rg1tNTcbG4mU4Z"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025161641,
+          "completed": 1774025167677
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03944825,
+        "tokens": {
+          "total": 16448,
+          "input": 1,
+          "output": 439,
+          "reasoning": 0,
+          "cache": {
+            "read": 12449,
+            "write": 3559
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c23bba9001ZKQCwn3T1DCq0j",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c23c329001r3piJE1j8XHu66",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "text",
+          "text": "Now let me read the relevant source files to understand the broader context of these changes.",
+          "time": {
+            "start": 1774025164414,
+            "end": 1774025164414
+          },
+          "id": "prt_d0c23c329002kyUu8JpIhQZDIo",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01DgkFz75TAw92HwpwZBkkx7",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"mime\"\n8: \t\"net\"\n9: \t\"net/http\"\n10: \t\"net/url\"\n11: \t\"strings\"\n12: \t\"time\"\n13: \n14: \t\"golang.org/x/net/html\"\n15: \n16: \t\"github.com/jrswab/axe/internal/hostcheck\"\n17: \t\"github.com/jrswab/axe/internal/provider\"\n18: \t\"github.com/jrswab/axe/internal/toolname\"\n19: )\n20: \n21: const maxReadBytes = 10000\n22: \n23: // urlFetchTimeout is the per-request HTTP timeout.\n24: var urlFetchTimeout = 15 * time.Second\n25: \n26: // urlFetchResolver is the DNS resolver used for host validation.\n27: // Override in tests to inject fake DNS responses.\n28: var urlFetchResolver hostcheck.Resolver = net.DefaultResolver\n29: \n30: // urlFetchCheckHost is the host validation function.\n31: // Override in tests to bypass private IP / allowlist checks.\n32: var urlFetchCheckHost = hostcheck.CheckHost\n33: \n34: func truncateURL(urlStr string, maxLen int) string {\n35: \tif len(urlStr) <= maxLen {\n36: \t\treturn urlStr\n37: \t}\n38: \treturn urlStr[:maxLen] + \"...\"\n39: }\n40: \n41: func sanitizeURL(urlStr string) string {\n42: \tparsedURL, err := url.Parse(urlStr)\n43: \tif err != nil {\n44: \t\treturn \"invalid-url\"\n45: \t}\n46: \n47: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n48: \t\treturn \"invalid-url\"\n49: \t}\n50: \n51: \tpath := parsedURL.EscapedPath()\n52: \tif path == \"\" {\n53: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n54: \t}\n55: \n56: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n57: }\n58: \n59: func urlFetchEntry() ToolEntry {\n60: \treturn ToolEntry{\n61: \t\tDefinition: urlFetchDefinition,\n62: \t\tExecute:    urlFetchExecute,\n63: \t}\n64: }\n65: \n66: func urlFetchDefinition() provider.Tool {\n67: \treturn provider.Tool{\n68: \t\tName:        toolname.URLFetch,\n69: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n70: \t\tParameters: map[string]provider.ToolParameter{\n71: \t\t\t\"url\": {\n72: \t\t\t\tType:        \"string\",\n73: \t\t\t\tDescription: \"The URL to fetch.\",\n74: \t\t\t\tRequired:    true,\n75: \t\t\t},\n76: \t\t},\n77: \t}\n78: }\n79: \n80: func stripHTML(raw string) string {\n81: \tdoc, err := html.Parse(strings.NewReader(raw))\n82: \tif err != nil {\n83: \t\treturn raw\n84: \t}\n85: \n86: \tvar b strings.Builder\n87: \tvar walk func(*html.Node)\n88: \twalk = func(n *html.Node) {\n89: \t\tif n.Type == html.ElementNode && (n.Data == \"script\" || n.Data == \"style\") {\n90: \t\t\tb.WriteByte(' ')\n91: \t\t\treturn\n92: \t\t}\n93: \t\tif n.Type == html.TextNode {\n94: \t\t\tb.WriteString(n.Data)\n95: \t\t}\n96: \t\tfor c := n.FirstChild; c != nil; c = c.NextSibling {\n97: \t\t\twalk(c)\n98: \t\t}\n99: \t\tif n.Type == html.ElementNode {\n100: \t\t\tb.WriteByte(' ')\n101: \t\t}\n102: \t}\n103: \twalk(doc)\n104: \n105: \treturn strings.Join(strings.Fields(b.String()), \" \")\n106: }\n107: \n108: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n109: \turlStr := call.Arguments[\"url\"]\n110: \tstatusCode := 0\n111: \n112: \tdefer func() {\n113: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n114: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n115: \t\tif statusCode != 0 {\n116: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n117: \t\t} else if result.IsError {\n118: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n119: \t\t}\n120: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n121: \t}()\n122: \n123: \tif urlStr == \"\" {\n124: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n125: \t}\n126: \n127: \tparsedURL, err := url.Parse(urlStr)\n128: \tif err != nil {\n129: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n130: \t}\n131: \n132: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n133: \t\treturn provider.ToolResult{\n134: \t\t\tCallID:  call.ID,\n135: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n136: \t\t\tIsError: true,\n137: \t\t}\n138: \t}\n139: \n140: \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n141: \tdefer cancel()\n142: \n143: \t// Host allowlist and private IP check.\n144: \t_, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n145: \tif hostErr != nil {\n146: \t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n147: \t}\n148: \n149: \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n150: \tif err != nil {\n151: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n152: \t}\n153: \n154: \tclient := &http.Client{\n155: \t\tTimeout: urlFetchTimeout,\n156: \t\tTransport: &http.Transport{\n157: \t\t\tDialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {\n158: \t\t\t\thost, port, splitErr := net.SplitHostPort(addr)\n159: \t\t\t\tif splitErr != nil {\n160: \t\t\t\t\treturn nil, splitErr\n161: \t\t\t\t}\n162: \t\t\t\tdialIP, checkErr := urlFetchCheckHost(dialCtx, host, ec.AllowedHosts, urlFetchResolver)\n163: \t\t\t\tif checkErr != nil {\n164: \t\t\t\t\treturn nil, checkErr\n165: \t\t\t\t}\n166: \t\t\t\tif dialIP != nil && port != \"\" {\n167: \t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(dialIP.String(), port))\n168: \t\t\t\t}\n169: \t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, addr)\n170: \t\t\t},\n171: \t\t},\n172: \t\tCheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {\n173: \t\t\tif len(via) >= 10 {\n174: \t\t\t\treturn fmt.Errorf(\"too many redirects\")\n175: \t\t\t}\n176: \t\t\treturn nil\n177: \t\t},\n178: \t}\n179: \n180: \tresp, err := client.Do(req)\n181: \tif err != nil {\n182: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n183: \t}\n184: \tdefer func() {\n185: \t\t_ = resp.Body.Close()\n186: \t}()\n187: \tstatusCode = resp.StatusCode\n188: \n189: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n190: \tif err != nil {\n191: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n192: \t}\n193: \n194: \tbodyStr := string(body)\n195: \n196: \t// Strip HTML if Content-Type is text/html\n197: \tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n198: \tif mediaType == \"text/html\" {\n199: \t\tbodyStr = stripHTML(bodyStr)\n200: \t}\n201: \n202: \tif len(bodyStr) > maxReadBytes {\n203: \t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n204: \t}\n205: \n206: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n207: \t\treturn provider.ToolResult{\n208: \t\t\tCallID:  call.ID,\n209: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n210: \t\t\tIsError: true,\n211: \t\t}\n212: \t}\n213: \n214: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n215: }\n\n(End of file - total 215 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"mime\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/url\"\n\t\"strings\"\n\t\"time\"\n\n\t\"golang.org/x/net/html\"\n\n\t\"github.com/jrswab/axe/internal/hostcheck\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025164940,
+              "end": 1774025164945
+            }
+          },
+          "id": "prt_d0c23c680001ua0sfBYA74SsI4",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go</path>\n<type>file</type>\n<content>1: package hostcheck\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net\"\n7: \t\"strings\"\n8: )\n9: \n10: // Resolver performs DNS lookups. *net.Resolver satisfies this interface.\n11: type Resolver interface {\n12: \tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n13: }\n14: \n15: var privateRanges []*net.IPNet\n16: \n17: func init() {\n18: \tcidrs := []string{\n19: \t\t\"0.0.0.0/8\",      // \"this\" network\n20: \t\t\"10.0.0.0/8\",     // RFC 1918\n21: \t\t\"100.64.0.0/10\",  // CGNAT\n22: \t\t\"127.0.0.0/8\",    // loopback\n23: \t\t\"169.254.0.0/16\", // link-local\n24: \t\t\"172.16.0.0/12\",  // RFC 1918\n25: \t\t\"192.168.0.0/16\", // RFC 1918\n26: \t\t\"::1/128\",        // IPv6 loopback\n27: \t\t\"fc00::/7\",       // IPv6 unique local\n28: \t\t\"fe80::/10\",      // IPv6 link-local\n29: \t}\n30: \tfor _, cidr := range cidrs {\n31: \t\t_, network, err := net.ParseCIDR(cidr)\n32: \t\tif err != nil {\n33: \t\t\tpanic(fmt.Sprintf(\"hostcheck: invalid CIDR %q: %v\", cidr, err))\n34: \t\t}\n35: \t\tprivateRanges = append(privateRanges, network)\n36: \t}\n37: }\n38: \n39: // IsAllowed reports whether hostname is permitted by allowlist.\n40: // An empty allowlist permits every hostname.\n41: func IsAllowed(hostname string, allowlist []string) bool {\n42: \tif len(allowlist) == 0 {\n43: \t\treturn true\n44: \t}\n45: \tfor _, entry := range allowlist {\n46: \t\tif strings.EqualFold(hostname, entry) {\n47: \t\t\treturn true\n48: \t\t}\n49: \t}\n50: \treturn false\n51: }\n52: \n53: // IsPrivateIP reports whether ip falls within any private/reserved range.\n54: func IsPrivateIP(ip net.IP) bool {\n55: \t// Normalise to 4-byte form for IPv4 so net.IPNet.Contains works correctly.\n56: \tif v4 := ip.To4(); v4 != nil {\n57: \t\tip = v4\n58: \t}\n59: \tfor _, network := range privateRanges {\n60: \t\tif network.Contains(ip) {\n61: \t\t\treturn true\n62: \t\t}\n63: \t}\n64: \treturn false\n65: }\n66: \n67: // CheckHost validates hostname against allowlist and ensures it resolves only\n68: // to public IP addresses. It returns the first resolved IP on success.\n69: func CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) (net.IP, error) {\n70: \t// Step 1: allowlist check.\n71: \tif !IsAllowed(hostname, allowlist) {\n72: \t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n73: \t}\n74: \n75: \t// Step 2: raw IP literal — skip DNS entirely.\n76: \tif ip := net.ParseIP(hostname); ip != nil {\n77: \t\tif IsPrivateIP(ip) {\n78: \t\t\treturn nil, fmt.Errorf(\"address %s is a private/reserved IP\", hostname)\n79: \t\t}\n80: \t\treturn ip, nil\n81: \t}\n82: \n83: \t// Step 3: DNS resolution.\n84: \tif resolver == nil {\n85: \t\treturn nil, fmt.Errorf(\"no DNS resolver configured for host %q\", hostname)\n86: \t}\n87: \taddrs, err := resolver.LookupIPAddr(ctx, hostname)\n88: \tif err != nil {\n89: \t\treturn nil, fmt.Errorf(\"failed to resolve %q: %w\", hostname, err)\n90: \t}\n91: \n92: \t// Step 4: reject if any resolved address is private.\n93: \tfor _, addr := range addrs {\n94: \t\tif IsPrivateIP(addr.IP) {\n95: \t\t\treturn nil, fmt.Errorf(\"host %q resolves to private address %s\", hostname, addr.IP)\n96: \t\t}\n97: \t}\n98: \n99: \t// Step 5: return first address.\n100: \tif len(addrs) == 0 {\n101: \t\treturn nil, fmt.Errorf(\"host %q resolved to no addresses\", hostname)\n102: \t}\n103: \treturn addrs[0].IP, nil\n104: }\n\n(End of file - total 104 lines)\n</content>",
+            "title": "internal/hostcheck/hostcheck.go",
+            "metadata": {
+              "preview": "package hostcheck\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net\"\n\t\"strings\"\n)\n\n// Resolver performs DNS lookups. *net.Resolver satisfies this interface.\ntype Resolver interface {\n\tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n}\n\nvar privateRanges []*net.IPNet\n\nfunc init() {\n\tcidrs := []string{\n\t\t\"0.0.0.0/8\",      // \"this\" network\n\t\t\"10.0.0.0/8\",     // RFC 1918",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025165407,
+              "end": 1774025165412
+            }
+          },
+          "id": "prt_d0c23c88e001KgZIjU0MtPyjPE",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 140,
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>140: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load agent %q: %s\", agentName, err), opts)\n141: \t}\n142: \n143: \t// Step 7: Parse sub-agent's model\n144: \tprovName, modelName, err := parseModel(cfg.Model)\n145: \tif err != nil {\n146: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n147: \t}\n148: \n149: \t// Compute effective allowed hosts: sub-agent's own list wins (even if empty),\n150: \t// else inherit parent's when not explicitly set (nil).\n151: \teffectiveAllowedHosts := cfg.AllowedHosts\n152: \tif effectiveAllowedHosts == nil {\n153: \t\teffectiveAllowedHosts = opts.AllowedHosts\n154: \t}\n155: \n156: \t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n157: \tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n158: \tif err != nil {\n159: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve workdir for agent %q: %s\", agentName, err), opts)\n160: \t}\n161: \n162: \tfiles, err := resolve.Files(cfg.Files, workdir)\n163: \tif err != nil {\n164: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve files for agent %q: %s\", agentName, err), opts)\n165: \t}\n166: \n167: \tconfigDir, err := xdg.GetConfigDir()\n168: \tif err != nil {\n169: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to get config dir: %s\", err), opts)\n\n(Showing lines 140-169 of 486. Use offset=170 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load agent %q: %s\", agentName, err), opts)\n\t}\n\n\t// Step 7: Parse sub-agent's model\n\tprovName, modelName, err := parseModel(cfg.Model)\n\tif err != nil {\n\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n\t}\n\n\t// Compute effective allowed hosts: sub-agent's own list wins (even if empty),\n\t// else inherit parent's when not explicitly set (nil).\n\teffectiveAllowedHosts := cfg.AllowedHosts\n\tif effectiveAllowedHosts == nil {\n\t\teffectiveAllowedHosts = opts.AllowedHosts\n\t}\n\n\t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n\tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n\tif err != nil {\n\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve workdir for agent %q: %s\", agentName, err), opts)",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025166354,
+              "end": 1774025166359
+            }
+          },
+          "id": "prt_d0c23ca60001WB4FZ9Qcl1fYJT",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Xd8cZEB3319X9j48uvoas8",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go",
+              "offset": 1,
+              "limit": 40
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go</path>\n<type>file</type>\n<content>1: package agent\n2: \n3: import (\n4: \t\"errors\"\n5: \t\"fmt\"\n6: \t\"net/url\"\n7: \t\"os\"\n8: \t\"path/filepath\"\n9: \t\"strings\"\n10: \n11: \t\"github.com/BurntSushi/toml\"\n12: \t\"github.com/jrswab/axe/internal/toolname\"\n13: \t\"github.com/jrswab/axe/internal/xdg\"\n14: )\n15: \n16: // ValidationError represents an agent configuration validation failure.\n17: type ValidationError struct {\n18: \tmsg string\n19: }\n20: \n21: func (e *ValidationError) Error() string {\n22: \treturn e.msg\n23: }\n24: \n25: // MemoryConfig holds memory sub-configuration for an agent.\n26: type MemoryConfig struct {\n27: \tEnabled    bool   `toml:\"enabled\"`\n28: \tPath       string `toml:\"path\"`\n29: \tLastN      int    `toml:\"last_n\"`\n30: \tMaxEntries int    `toml:\"max_entries\"`\n31: }\n32: \n33: // ParamsConfig holds model parameter overrides for an agent.\n34: type ParamsConfig struct {\n35: \tTemperature float64 `toml:\"temperature\"`\n36: \tMaxTokens   int     `toml:\"max_tokens\"`\n37: }\n38: \n39: // RetryConfig holds retry sub-configuration for an agent.\n40: type RetryConfig struct {\n\n(Showing lines 1-40 of 376. Use offset=41 to continue.)\n</content>",
+            "title": "internal/agent/agent.go",
+            "metadata": {
+              "preview": "package agent\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"net/url\"\n\t\"os\"\n\t\"path/filepath\"\n\t\"strings\"\n\n\t\"github.com/BurntSushi/toml\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n\t\"github.com/jrswab/axe/internal/xdg\"\n)\n\n// ValidationError represents an agent configuration validation failure.\ntype ValidationError struct {\n\tmsg string\n}\n",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025167217,
+              "end": 1774025167223
+            }
+          },
+          "id": "prt_d0c23ce140018Xe1NA5CFUQX6S",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md</path>\n<type>file</type>\n<content>1: # 040 -- Output Allowlist Spec\n2: \n3: # Milestone Document\n4: docs/plans/000_milestones.md\n5: \n6: GitHub Issue: https://github.com/jrswab/axe/issues/24\n7: \n8: ---\n9: \n10: ## Section 1: Context & Constraints\n11: \n12: ### Problem\n13: \n14: The `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n15: \n16: There is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n17: \n18: ### Codebase Structure Relevant to This Milestone\n19: \n20: **Agent configuration** (`internal/agent/agent.go`):\n21: \n22: The `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n23: \n24: **Tool execution context** (`internal/tool/registry.go`):\n25: \n26: The `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n27: \n28: **`url_fetch` tool** (`internal/tool/url_fetch.go`):\n29: \n30: Makes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n31: \n32: **Top-level run** (`cmd/run.go`):\n33: \n34: Builds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n35: \n36: **Sub-agent delegation** (`internal/tool/tool.go`):\n37: \n38: The `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n39: \n40: **New package**: `internal/hostcheck/`\n41: \n42: All host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n43: \n44: ### Decisions Already Made\n45: \n46: **1. Default: allow-all when no `allowed_hosts` is configured.**\n47: \n48: An empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n49: \n50: **2. Only `url_fetch` is gated.**\n51: \n52: `web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n53: \n54: **3. Private IP blocking is unconditional and separate from the allowlist.**\n55: \n56: Regardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n57: \n58: The following IP ranges are always blocked:\n59: \n60: | Range | Classification |\n61: |---|---|\n62: | `127.0.0.0/8` | IPv4 loopback |\n63: | `::1/128` | IPv6 loopback |\n64: | `10.0.0.0/8` | RFC 1918 private |\n65: | `172.16.0.0/12` | RFC 1918 private |\n66: | `192.168.0.0/16` | RFC 1918 private |\n67: | `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n68: | `fe80::/10` | IPv6 link-local |\n69: | `0.0.0.0/8` | This network |\n70: | `100.64.0.0/10` | CGNAT / shared address space |\n71: \n72: **4. Private IP check must happen after DNS resolution.**\n73: \n74: Checking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n75: \n76: **5. Allowlist matching is hostname/domain-only in v1.**\n77: \n78: CIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n79: \n80: **6. Sub-agent propagation uses inheritance with explicit override.**\n81: \n82: Each agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n83: \n84: This behavior means:\n85: - A sub-agent can be more restrictive than its parent (define a subset of hosts).\n86: - A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n87: - A sub-agent with no opinion inherits the parent's restrictions.\n88: \n89: ### Approaches Ruled Out\n90: \n91: **Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n92: \n93: **Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n94: \n95: **Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n96: \n97: **Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n98: \n99: **Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n100: \n101: ### Constraints and Assumptions\n102: \n103: - The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n104: - All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n105: - Private IP blocking applies universally — it cannot be disabled by any configuration.\n106: - Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n107: - Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n108: - The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n109: - DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n110: \n111: ---\n112: \n113: ## Section 2: Requirements\n114: \n115: ### R1: New `allowed_hosts` field in agent configuration\n116: \n117: The agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n118: \n119: ### R2: Host validation is a distinct, independently testable unit\n120: \n121: All logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n122: \n123: ### R3: Private IP ranges are always blocked\n124: \n125: `url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n126: \n127: ### R4: Private IP check is performed after DNS resolution\n128: \n129: The hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n130: \n131: ### R5: Allowlist check behavior when `allowed_hosts` is configured\n132: \n133: When `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n134: \n135: ### R6: Allowlist check behavior when `allowed_hosts` is empty\n136: \n137: When `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n138: \n139: ### R7: Hostname matching is exact in v1\n140: \n141: An allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n142: \n143: ### R8: Rejection produces a clear, actionable error message\n144: \n145: When a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n146: \n147: ### R9: `allowed_hosts` is threaded through the execution context\n148: \n149: The effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n150: \n151: ### R10: Sub-agent inheritance rule\n152: \n153: When a sub-agent is invoked:\n154: \n155: - If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n156: - If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n157: - If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n158: \n159: This rule is applied recursively at every level of the sub-agent tree.\n160: \n161: ### R11: Sub-agent propagation for recursive depth\n162: \n163: The effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n164: \n165: ### R12: No validation of `allowed_hosts` entries at load time\n166: \n167: Entries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n168: \n169: ### R13: `web_search`, MCP connections, and provider connections are unaffected\n170: \n171: This feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n172: \n173: ---\n174: \n175: ## Edge Cases\n176: \n177: ### E1: Hostname resolves to both public and private IPs\n178: \n179: If DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n180: \n181: ### E2: `allowed_hosts` contains an entry that resolves to a private IP\n182: \n183: An operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n184: \n185: ### E3: URL uses an IP address directly instead of a hostname\n186: \n187: If the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n188: \n189: ### E4: URL uses `localhost` or similar aliases\n190: \n191: `localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n192: \n193: ### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n194: \n195: An omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n196: \n197: ### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n198: \n199: Both inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n200: \n201: ### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n202: \n203: The sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n204: \n205: ### E8: Allowlist entry with a port\n206: \n207: A `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n208: \n209: ### E9: Redirect following\n210: \n211: If the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n212: \n213: ---\n214: \n215: ## Parallel Work Structure\n216: \n217: The following tasks have no dependencies on each other and may be implemented concurrently:\n218: \n219: - **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n220: - **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n221: - **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n222: \n223: The following tasks have dependencies:\n224: \n225: - **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n226: - **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n227: - **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n228: - **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n(End of file - total 228 lines)\n</content>",
+            "title": "docs/plans/040_output_allowlist_spec.md",
+            "metadata": {
+              "preview": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025167531,
+              "end": 1774025167536
+            }
+          },
+          "id": "prt_d0c23d174001zKqdxMmoR5RzCJ",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.03944825,
+          "tokens": {
+            "total": 16448,
+            "input": 1,
+            "output": 439,
+            "reasoning": 0,
+            "cache": {
+              "read": 12449,
+              "write": 3559
+            }
+          },
+          "id": "prt_d0c23d2ce001Hhx7zeByBeWhNZ",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23bba9001ZKQCwn3T1DCq0j"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025167678,
+          "completed": 1774025174247
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08085275,
+        "tokens": {
+          "total": 26851,
+          "input": 1,
+          "output": 271,
+          "reasoning": 0,
+          "cache": {
+            "read": 16008,
+            "write": 10571
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c23d33e001IrURX4CdV9mHn0",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c23dd850011NrUu36J5gFE40",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        },
+        {
+          "type": "text",
+          "text": "Now let me read more context to understand the full picture, particularly the test file and the agent config struct.",
+          "time": {
+            "start": 1774025171347,
+            "end": 1774025171347
+          },
+          "id": "prt_d0c23dd86001awUiERceB828jU",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_017yxnmXpWUowtPM5i6m9Rn6",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"fmt\"\n7: \t\"net\"\n8: \t\"net/http\"\n9: \t\"net/http/httptest\"\n10: \t\"net/url\"\n11: \t\"strings\"\n12: \t\"testing\"\n13: \t\"time\"\n14: \n15: \t\"github.com/jrswab/axe/internal/hostcheck\"\n16: \t\"github.com/jrswab/axe/internal/provider\"\n17: )\n18: \n19: // fakeURLFetchResolver is a test-only Resolver that returns preset addresses.\n20: type fakeURLFetchResolver struct {\n21: \taddrs []net.IPAddr\n22: \terr   error\n23: }\n24: \n25: func (f *fakeURLFetchResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {\n26: \treturn f.addrs, f.err\n27: }\n28: \n29: // skipHostCheck bypasses the host check for tests that use httptest.NewServer\n30: // (which binds to 127.0.0.1, a private IP that would otherwise be rejected).\n31: func skipHostCheck(t *testing.T) {\n32: \tt.Helper()\n33: \torig := urlFetchCheckHost\n34: \turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n35: \t\treturn net.ParseIP(\"127.0.0.1\"), nil\n36: \t}\n37: \tt.Cleanup(func() { urlFetchCheckHost = orig })\n38: }\n39: \n40: func TestURLFetch_Success(t *testing.T) {\n41: \tskipHostCheck(t)\n42: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n43: \t\t_, _ = w.Write([]byte(\"hello world\"))\n44: \t}))\n45: \tdefer ts.Close()\n46: \n47: \tentry := urlFetchEntry()\n48: \tcall := provider.ToolCall{ID: \"uf-success\", Arguments: map[string]string{\"url\": ts.URL}}\n49: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n50: \n51: \tif result.IsError {\n52: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n53: \t}\n54: \tif result.Content != \"hello world\" {\n55: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"hello world\")\n56: \t}\n57: \tif result.CallID != call.ID {\n58: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n59: \t}\n60: }\n61: \n62: func TestURLFetch_EmptyURL(t *testing.T) {\n63: \tentry := urlFetchEntry()\n64: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty\", Arguments: map[string]string{}}, ExecContext{})\n65: \n66: \tif !result.IsError {\n67: \t\tt.Fatal(\"expected IsError true\")\n68: \t}\n69: \tif !strings.Contains(result.Content, \"url is required\") {\n70: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n71: \t}\n72: }\n73: \n74: func TestURLFetch_MissingURLArgument(t *testing.T) {\n75: \tentry := urlFetchEntry()\n76: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-missing\", Arguments: map[string]string{\"url\": \"\"}}, ExecContext{})\n77: \n78: \tif !result.IsError {\n79: \t\tt.Fatal(\"expected IsError true\")\n80: \t}\n81: \tif !strings.Contains(result.Content, \"url is required\") {\n82: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"url is required\")\n83: \t}\n84: }\n85: \n86: func TestURLFetch_UnsupportedScheme_File(t *testing.T) {\n87: \tentry := urlFetchEntry()\n88: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-file\", Arguments: map[string]string{\"url\": \"file:///etc/passwd\"}}, ExecContext{})\n89: \n90: \tif !result.IsError {\n91: \t\tt.Fatal(\"expected IsError true\")\n92: \t}\n93: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n94: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n95: \t}\n96: \tif !strings.Contains(result.Content, \"file\") {\n97: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"file\")\n98: \t}\n99: }\n100: \n101: func TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {\n102: \tentry := urlFetchEntry()\n103: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-ftp\", Arguments: map[string]string{\"url\": \"ftp://example.com/file\"}}, ExecContext{})\n104: \n105: \tif !result.IsError {\n106: \t\tt.Fatal(\"expected IsError true\")\n107: \t}\n108: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n109: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n110: \t}\n111: \tif !strings.Contains(result.Content, \"ftp\") {\n112: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"ftp\")\n113: \t}\n114: }\n115: \n116: func TestURLFetch_NoScheme(t *testing.T) {\n117: \tentry := urlFetchEntry()\n118: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-noscheme\", Arguments: map[string]string{\"url\": \"example.com\"}}, ExecContext{})\n119: \n120: \tif !result.IsError {\n121: \t\tt.Fatal(\"expected IsError true\")\n122: \t}\n123: \tif !strings.Contains(result.Content, \"unsupported scheme\") {\n124: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"unsupported scheme\")\n125: \t}\n126: }\n127: \n128: func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n129: \tskipHostCheck(t)\n130: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n131: \t\tw.WriteHeader(http.StatusNotFound)\n132: \t\t_, _ = w.Write([]byte(\"not found\"))\n133: \t}))\n134: \tdefer ts.Close()\n135: \n136: \tentry := urlFetchEntry()\n137: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-404\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n138: \n139: \tif !result.IsError {\n140: \t\tt.Fatal(\"expected IsError true\")\n141: \t}\n142: \tif !strings.Contains(result.Content, \"HTTP 404\") {\n143: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n144: \t}\n145: \tif !strings.Contains(result.Content, \"not found\") {\n146: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"not found\")\n147: \t}\n148: }\n149: \n150: func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n151: \tskipHostCheck(t)\n152: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n153: \t\tw.WriteHeader(http.StatusInternalServerError)\n154: \t\t_, _ = w.Write([]byte(\"internal error\"))\n155: \t}))\n156: \tdefer ts.Close()\n157: \n158: \tentry := urlFetchEntry()\n159: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-500\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n160: \n161: \tif !result.IsError {\n162: \t\tt.Fatal(\"expected IsError true\")\n163: \t}\n164: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n165: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n166: \t}\n167: \tif !strings.Contains(result.Content, \"internal error\") {\n168: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"internal error\")\n169: \t}\n170: }\n171: \n172: func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n173: \tskipHostCheck(t)\n174: \tlargeBody := strings.Repeat(\"A\", 20000)\n175: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n176: \t\t_, _ = w.Write([]byte(largeBody))\n177: \t}))\n178: \tdefer ts.Close()\n179: \n180: \tentry := urlFetchEntry()\n181: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n182: \n183: \tif result.IsError {\n184: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n185: \t}\n186: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n187: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n188: \t}\n189: \tif len(result.Content) <= 10000 {\n190: \t\tt.Errorf(\"len(Content) = %d, want > 10000\", len(result.Content))\n191: \t}\n192: \tif len(result.Content) >= 20000 {\n193: \t\tt.Errorf(\"len(Content) = %d, want < 20000\", len(result.Content))\n194: \t}\n195: }\n196: \n197: func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n198: \tskipHostCheck(t)\n199: \texactBody := strings.Repeat(\"B\", 10000)\n200: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n201: \t\t_, _ = w.Write([]byte(exactBody))\n202: \t}))\n203: \tdefer ts.Close()\n204: \n205: \tentry := urlFetchEntry()\n206: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-exact\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n207: \n208: \tif result.IsError {\n209: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n210: \t}\n211: \tif strings.Contains(result.Content, \"truncated\") {\n212: \t\tt.Errorf(\"Content = %q, should not contain truncation notice\", result.Content)\n213: \t}\n214: \tif len(result.Content) != 10000 {\n215: \t\tt.Errorf(\"len(Content) = %d, want 10000\", len(result.Content))\n216: \t}\n217: }\n218: \n219: func TestURLFetch_ContextCancellation(t *testing.T) {\n220: \tskipHostCheck(t)\n221: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n222: \t\ttimer := time.NewTimer(10 * time.Second)\n223: \t\tdefer timer.Stop()\n224: \n225: \t\tselect {\n226: \t\tcase <-r.Context().Done():\n227: \t\t\treturn\n228: \t\tcase <-timer.C:\n229: \t\t\t_, _ = w.Write([]byte(\"too late\"))\n230: \t\t}\n231: \t}))\n232: \tdefer ts.Close()\n233: \n234: \tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n235: \tdefer cancel()\n236: \n237: \tentry := urlFetchEntry()\n238: \tresult := entry.Execute(ctx, provider.ToolCall{ID: \"uf-timeout\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n239: \n240: \tif !result.IsError {\n241: \t\tt.Fatal(\"expected IsError true\")\n242: \t}\n243: }\n244: \n245: func TestURLFetch_ConnectionRefused(t *testing.T) {\n246: \tskipHostCheck(t)\n247: \tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n248: \tif err != nil {\n249: \t\tt.Fatalf(\"net.Listen error: %v\", err)\n250: \t}\n251: \taddr := listener.Addr().String()\n252: \tif err := listener.Close(); err != nil {\n253: \t\tt.Fatalf(\"listener.Close error: %v\", err)\n254: \t}\n255: \n256: \tentry := urlFetchEntry()\n257: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-refused\", Arguments: map[string]string{\"url\": \"http://\" + addr}}, ExecContext{})\n258: \n259: \tif !result.IsError {\n260: \t\tt.Fatal(\"expected IsError true\")\n261: \t}\n262: \tif result.Content == \"\" {\n263: \t\tt.Fatal(\"expected non-empty error content\")\n264: \t}\n265: }\n266: \n267: func TestURLFetch_CallIDPassthrough(t *testing.T) {\n268: \tskipHostCheck(t)\n269: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n270: \t\t_, _ = w.Write([]byte(\"ok\"))\n271: \t}))\n272: \tdefer ts.Close()\n273: \n274: \tentry := urlFetchEntry()\n275: \tcall := provider.ToolCall{ID: \"uf-unique-42\", Arguments: map[string]string{\"url\": ts.URL}}\n276: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n277: \n278: \tif result.CallID != \"uf-unique-42\" {\n279: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, \"uf-unique-42\")\n280: \t}\n281: }\n282: \n283: func TestURLFetch_EmptyResponseBody(t *testing.T) {\n284: \tskipHostCheck(t)\n285: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n286: \t\tw.WriteHeader(http.StatusOK)\n287: \t}))\n288: \tdefer ts.Close()\n289: \n290: \tentry := urlFetchEntry()\n291: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-empty-body\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n292: \n293: \tif result.IsError {\n294: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n295: \t}\n296: \tif result.Content != \"\" {\n297: \t\tt.Errorf(\"Content = %q, want empty string\", result.Content)\n298: \t}\n299: }\n300: \n301: func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n302: \tskipHostCheck(t)\n303: \tlargeBody := strings.Repeat(\"C\", 20000)\n304: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n305: \t\tw.WriteHeader(http.StatusInternalServerError)\n306: \t\t_, _ = w.Write([]byte(largeBody))\n307: \t}))\n308: \tdefer ts.Close()\n309: \n310: \tentry := urlFetchEntry()\n311: \tresult := entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-err-large\", Arguments: map[string]string{\"url\": ts.URL}}, ExecContext{})\n312: \n313: \tif !result.IsError {\n314: \t\tt.Fatal(\"expected IsError true\")\n315: \t}\n316: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n317: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n318: \t}\n319: \tif !strings.Contains(result.Content, \"[response truncated, exceeded 10000 characters]\") {\n320: \t\tt.Errorf(\"Content missing truncation notice: %q\", result.Content)\n321: \t}\n322: }\n323: \n324: func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n325: \tskipHostCheck(t)\n326: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n327: \t\t_, _ = w.Write([]byte(\"ok\"))\n328: \t}))\n329: \tdefer ts.Close()\n330: \n331: \ttargetURL := strings.Replace(ts.URL, \"http://\", \"http://user:pass@\", 1) + \"/secret/path?token=abc#frag\"\n332: \n333: \tvar stderr bytes.Buffer\n334: \tentry := urlFetchEntry()\n335: \t_ = entry.Execute(context.Background(), provider.ToolCall{ID: \"uf-verbose\", Arguments: map[string]string{\"url\": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})\n336: \n337: \tlogOutput := stderr.String()\n338: \tif strings.Contains(logOutput, \"user:pass\") {\n339: \t\tt.Errorf(\"verbose log leaked credentials: %q\", logOutput)\n340: \t}\n341: \tif strings.Contains(logOutput, \"token=abc\") {\n342: \t\tt.Errorf(\"verbose log leaked query string: %q\", logOutput)\n343: \t}\n344: \tif strings.Contains(logOutput, \"#frag\") {\n345: \t\tt.Errorf(\"verbose log leaked fragment: %q\", logOutput)\n346: \t}\n347: \tif !strings.Contains(logOutput, \"/secret/path\") {\n348: \t\tt.Errorf(\"verbose log missing sanitized path: %q\", logOutput)\n349: \t}\n350: }\n351: \n352: func TestURLFetch_PerRequestTimeout(t *testing.T) {\n353: \tskipHostCheck(t)\n354: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n355: \t\t// Block longer than the per-request timeout\n356: \t\ttimer := time.NewTimer(2 * time.Second)\n357: \t\tdefer timer.Stop()\n358: \t\tselect {\n359: \t\tcase <-r.Context().Done():\n360: \t\t\treturn\n361: \t\tcase <-timer.C:\n362: \t\t\t_, _ = w.Write([]byte(\"too late\"))\n363: \t\t}\n364: \t}))\n365: \tdefer ts.Close()\n366: \n367: \t// Override the per-request timeout to keep the test fast\n368: \torig := urlFetchTimeout\n369: \turlFetchTimeout = 100 * time.Millisecond\n370: \tdefer func() { urlFetchTimeout = orig }()\n371: \n372: \tentry := urlFetchEntry()\n373: \tcall := provider.ToolCall{ID: \"uf-per-req-timeout\", Arguments: map[string]string{\"url\": ts.URL}}\n374: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n375: \n376: \tif !result.IsError {\n377: \t\tt.Fatal(\"expected IsError true when per-request timeout fires\")\n378: \t}\n379: \tif result.CallID != call.ID {\n380: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n381: \t}\n382: \tif result.Content == \"\" {\n383: \t\tt.Error(\"expected non-empty error content\")\n384: \t}\n385: }\n386: \n387: func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n388: \tskipHostCheck(t)\n389: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n390: \t\ttimer := time.NewTimer(2 * time.Second)\n391: \t\tdefer timer.Stop()\n392: \t\tselect {\n393: \t\tcase <-r.Context().Done():\n394: \t\t\treturn\n395: \t\tcase <-timer.C:\n396: \t\t\t_, _ = w.Write([]byte(\"too late\"))\n397: \t\t}\n398: \t}))\n399: \tdefer ts.Close()\n400: \n401: \t// Set per-request timeout to something long so the parent wins\n402: \torig := urlFetchTimeout\n403: \turlFetchTimeout = 10 * time.Second\n404: \tdefer func() { urlFetchTimeout = orig }()\n405: \n406: \tctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)\n407: \tdefer cancel()\n408: \n409: \tentry := urlFetchEntry()\n410: \tcall := provider.ToolCall{ID: \"uf-parent-wins\", Arguments: map[string]string{\"url\": ts.URL}}\n411: \tresult := entry.Execute(ctx, call, ExecContext{})\n412: \n413: \tif !result.IsError {\n414: \t\tt.Fatal(\"expected IsError true when parent context fires first\")\n415: \t}\n416: }\n417: \n418: func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n419: \tskipHostCheck(t)\n420: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n421: \t\t_, _ = w.Write([]byte(\"fast response\"))\n422: \t}))\n423: \tdefer ts.Close()\n424: \n425: \tentry := urlFetchEntry()\n426: \tcall := provider.ToolCall{ID: \"uf-fast\", Arguments: map[string]string{\"url\": ts.URL}}\n427: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n428: \n429: \tif result.IsError {\n430: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n431: \t}\n432: \tif result.Content != \"fast response\" {\n433: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"fast response\")\n434: \t}\n435: \tif result.CallID != call.ID {\n436: \t\tt.Errorf(\"CallID = %q, want %q\", result.CallID, call.ID)\n437: \t}\n438: }\n439: \n440: // Phase 1A: stripHTML unit tests\n441: \n442: func TestStripHTML_BasicExtraction(t *testing.T) {\n443: \tgot := stripHTML(\"<html><body><p>Hello</p><p>World</p></body></html>\")\n444: \twant := \"Hello World\"\n445: \tif got != want {\n446: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n447: \t}\n448: }\n449: \n450: func TestStripHTML_RemovesScriptAndStyle(t *testing.T) {\n451: \tgot := stripHTML(\"<html><body><script>var x=1;</script><p>Keep this</p><style>.foo{color:red}</style></body></html>\")\n452: \twant := \"Keep this\"\n453: \tif got != want {\n454: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n455: \t}\n456: }\n457: \n458: func TestStripHTML_PreservesNoscript(t *testing.T) {\n459: \tgot := stripHTML(\"<html><body><noscript>Enable JS</noscript><p>Main content</p></body></html>\")\n460: \twant := \"Enable JS Main content\"\n461: \tif got != want {\n462: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n463: \t}\n464: }\n465: \n466: func TestStripHTML_NestedScriptInDiv(t *testing.T) {\n467: \tgot := stripHTML(\"<div>Before<script>alert('x')</script>After</div>\")\n468: \twant := \"Before After\"\n469: \tif got != want {\n470: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n471: \t}\n472: }\n473: \n474: func TestStripHTML_WhitespaceCollapsing(t *testing.T) {\n475: \tgot := stripHTML(\"<p>  Hello   \\n\\n  World  </p>\")\n476: \twant := \"Hello World\"\n477: \tif got != want {\n478: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n479: \t}\n480: }\n481: \n482: func TestStripHTML_EmptyInput(t *testing.T) {\n483: \tgot := stripHTML(\"\")\n484: \twant := \"\"\n485: \tif got != want {\n486: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n487: \t}\n488: }\n489: \n490: func TestStripHTML_OnlyScriptsAndStyles(t *testing.T) {\n491: \tgot := stripHTML(\"<html><body><script>code</script><style>css</style></body></html>\")\n492: \twant := \"\"\n493: \tif got != want {\n494: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n495: \t}\n496: }\n497: \n498: func TestStripHTML_HTMLEntities(t *testing.T) {\n499: \tgot := stripHTML(\"<p>Tom &amp; Jerry &#x27;s</p>\")\n500: \twant := \"Tom & Jerry 's\"\n501: \tif got != want {\n502: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n503: \t}\n504: }\n505: \n506: func TestStripHTML_NoHTMLTags(t *testing.T) {\n507: \tgot := stripHTML(\"Just plain text\")\n508: \twant := \"Just plain text\"\n509: \tif got != want {\n510: \t\tt.Errorf(\"stripHTML() = %q, want %q\", got, want)\n511: \t}\n512: }\n513: \n514: // Phase 1B: urlFetchExecute integration tests\n515: \n516: func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n517: \tskipHostCheck(t)\n518: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n519: \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n520: \t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n521: \t}))\n522: \tdefer ts.Close()\n523: \n524: \tentry := urlFetchEntry()\n525: \tcall := provider.ToolCall{ID: \"uf-html-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n526: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n527: \n528: \tif result.IsError {\n529: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n530: \t}\n531: \tif result.Content != \"Visible\" {\n532: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Visible\")\n533: \t}\n534: }\n535: \n536: func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n537: \tskipHostCheck(t)\n538: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n539: \t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n540: \t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n541: \t}))\n542: \tdefer ts.Close()\n543: \n544: \tentry := urlFetchEntry()\n545: \tcall := provider.ToolCall{ID: \"uf-html-charset\", Arguments: map[string]string{\"url\": ts.URL}}\n546: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n547: \n548: \tif result.IsError {\n549: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n550: \t}\n551: \tif result.Content != \"Hello charset\" {\n552: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Hello charset\")\n553: \t}\n554: }\n555: \n556: func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n557: \tskipHostCheck(t)\n558: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n559: \t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n560: \t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n561: \t}))\n562: \tdefer ts.Close()\n563: \n564: \tentry := urlFetchEntry()\n565: \tcall := provider.ToolCall{ID: \"uf-html-case\", Arguments: map[string]string{\"url\": ts.URL}}\n566: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n567: \n568: \tif result.IsError {\n569: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n570: \t}\n571: \tif result.Content != \"Case test\" {\n572: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"Case test\")\n573: \t}\n574: }\n575: \n576: func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n577: \tskipHostCheck(t)\n578: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n579: \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n580: \t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n581: \t}))\n582: \tdefer ts.Close()\n583: \n584: \tentry := urlFetchEntry()\n585: \tcall := provider.ToolCall{ID: \"uf-json-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n586: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n587: \n588: \tif result.IsError {\n589: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n590: \t}\n591: \twant := `{\"key\": \"<b>value</b>\"}`\n592: \tif result.Content != want {\n593: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, want)\n594: \t}\n595: }\n596: \n597: func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n598: \tskipHostCheck(t)\n599: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n600: \t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n601: \t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n602: \t}))\n603: \tdefer ts.Close()\n604: \n605: \tentry := urlFetchEntry()\n606: \tcall := provider.ToolCall{ID: \"uf-plain-no-strip\", Arguments: map[string]string{\"url\": ts.URL}}\n607: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n608: \n609: \tif result.IsError {\n610: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n611: \t}\n612: \tif result.Content != \"<p>Not HTML</p>\" {\n613: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>Not HTML</p>\")\n614: \t}\n615: }\n616: \n617: func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n618: \tskipHostCheck(t)\n619: \t// Note: Go's http.DetectContentType may auto-set Content-Type.\n620: \t// We explicitly set it to empty to test the missing header case.\n621: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n622: \t\tw.Header().Set(\"Content-Type\", \"\")\n623: \t\t_, _ = w.Write([]byte(\"<p>No header</p>\"))\n624: \t}))\n625: \tdefer ts.Close()\n626: \n627: \tentry := urlFetchEntry()\n628: \tcall := provider.ToolCall{ID: \"uf-no-ct\", Arguments: map[string]string{\"url\": ts.URL}}\n629: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n630: \n631: \tif result.IsError {\n632: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n633: \t}\n634: \t// With empty Content-Type, body should be returned verbatim (no stripping)\n635: \tif result.Content != \"<p>No header</p>\" {\n636: \t\tt.Errorf(\"Content = %q, want %q\", result.Content, \"<p>No header</p>\")\n637: \t}\n638: }\n639: \n640: func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n641: \tskipHostCheck(t)\n642: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n643: \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n644: \t\tw.WriteHeader(http.StatusNotFound)\n645: \t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Not Found</p></body></html>\"))\n646: \t}))\n647: \tdefer ts.Close()\n648: \n649: \tentry := urlFetchEntry()\n650: \tcall := provider.ToolCall{ID: \"uf-404-html\", Arguments: map[string]string{\"url\": ts.URL}}\n651: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n652: \n653: \tif !result.IsError {\n654: \t\tt.Fatal(\"expected IsError true\")\n655: \t}\n656: \tif !strings.Contains(result.Content, \"HTTP 404\") {\n657: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 404\")\n658: \t}\n659: \tif !strings.Contains(result.Content, \"Not Found\") {\n660: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Not Found\")\n661: \t}\n662: \tif strings.Contains(result.Content, \"<script>\") {\n663: \t\tt.Errorf(\"Content = %q, should not contain <script>\", result.Content)\n664: \t}\n665: }\n666: \n667: func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n668: \tskipHostCheck(t)\n669: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n670: \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n671: \t\tw.WriteHeader(http.StatusInternalServerError)\n672: \t\t_, _ = w.Write([]byte(`{\"error\": \"bad\"}`))\n673: \t}))\n674: \tdefer ts.Close()\n675: \n676: \tentry := urlFetchEntry()\n677: \tcall := provider.ToolCall{ID: \"uf-500-json\", Arguments: map[string]string{\"url\": ts.URL}}\n678: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n679: \n680: \tif !result.IsError {\n681: \t\tt.Fatal(\"expected IsError true\")\n682: \t}\n683: \tif !strings.Contains(result.Content, \"HTTP 500\") {\n684: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"HTTP 500\")\n685: \t}\n686: \tif !strings.Contains(result.Content, \"bad\") {\n687: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"bad\")\n688: \t}\n689: }\n690: \n691: func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n692: \tskipHostCheck(t)\n693: \t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n694: \t// 9950 bytes of CSS in a <style> tag + small visible text.\n695: \tbigCSS := strings.Repeat(\"x\", 9950)\n696: \thtmlBody := \"<html><body><style>\" + bigCSS + \"</style><p>Short text</p></body></html>\"\n697: \n698: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n699: \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n700: \t\t_, _ = w.Write([]byte(htmlBody))\n701: \t}))\n702: \tdefer ts.Close()\n703: \n704: \tentry := urlFetchEntry()\n705: \tcall := provider.ToolCall{ID: \"uf-strip-before-trunc\", Arguments: map[string]string{\"url\": ts.URL}}\n706: \tresult := entry.Execute(context.Background(), call, ExecContext{})\n707: \n708: \tif result.IsError {\n709: \t\tt.Fatalf(\"expected IsError false, got true with content %q\", result.Content)\n710: \t}\n711: \tif strings.Contains(result.Content, \"truncated\") {\n712: \t\tt.Errorf(\"Content should not contain truncation notice after stripping: %q\", result.Content)\n713: \t}\n714: \tif !strings.Contains(result.Content, \"Short text\") {\n715: \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n716: \t}\n717: }\n718: \n719: // Phase 4: Allowlist and private IP tests\n720: \n721: func TestURLFetch_AllowlistPermitsMatchingHost(t *testing.T) {\n722: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n723: \t\tw.WriteHeader(200)\n724: \t\t_, _ = w.Write([]byte(\"ok\"))\n725: \t}))\n726: \tdefer ts.Close()\n727: \n728: \t// Extract hostname from test server URL (will be 127.0.0.1)\n729: \tu, _ := url.Parse(ts.URL)\n730: \thostname := u.Hostname()\n731: \n732: \t// Override host check: verify allowlist logic passes, bypass private IP check\n733: \t// so the test server (127.0.0.1) is reachable.\n734: \torig := urlFetchCheckHost\n735: \turlFetchCheckHost = func(ctx context.Context, h string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n736: \t\tif !hostcheck.IsAllowed(h, allowlist) {\n737: \t\t\treturn nil, &net.AddrError{Err: \"not in allowed_hosts\", Addr: h}\n738: \t\t}\n739: \t\treturn net.ParseIP(\"127.0.0.1\"), nil\n740: \t}\n741: \tdefer func() { urlFetchCheckHost = orig }()\n742: \n743: \tentry := urlFetchEntry()\n744: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n745: \t\tID:        \"test-1\",\n746: \t\tName:      \"url_fetch\",\n747: \t\tArguments: map[string]string{\"url\": ts.URL},\n748: \t}, ExecContext{AllowedHosts: []string{hostname}})\n749: \n750: \tif result.IsError {\n751: \t\tt.Errorf(\"expected success, got error: %s\", result.Content)\n752: \t}\n753: }\n754: \n755: func TestURLFetch_AllowlistBlocksNonMatchingHost(t *testing.T) {\n756: \tentry := urlFetchEntry()\n757: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n758: \t\tID:        \"test-2\",\n759: \t\tName:      \"url_fetch\",\n760: \t\tArguments: map[string]string{\"url\": \"https://blocked.example.com/page\"},\n761: \t}, ExecContext{AllowedHosts: []string{\"allowed.example.com\"}})\n762: \n763: \tif !result.IsError {\n764: \t\tt.Error(\"expected error for non-matching host\")\n765: \t}\n766: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n767: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n768: \t}\n769: }\n770: \n771: func TestURLFetch_EmptyAllowlistPermitsAll(t *testing.T) {\n772: \tskipHostCheck(t)\n773: \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n774: \t\tw.WriteHeader(200)\n775: \t\t_, _ = w.Write([]byte(\"ok\"))\n776: \t}))\n777: \tdefer ts.Close()\n778: \n779: \tentry := urlFetchEntry()\n780: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n781: \t\tID:        \"test-3\",\n782: \t\tName:      \"url_fetch\",\n783: \t\tArguments: map[string]string{\"url\": ts.URL},\n784: \t}, ExecContext{})\n785: \n786: \tif result.IsError {\n787: \t\tt.Errorf(\"expected success with empty allowlist, got error: %s\", result.Content)\n788: \t}\n789: }\n790: \n791: func TestURLFetch_BlocksPrivateIP(t *testing.T) {\n792: \tentry := urlFetchEntry()\n793: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n794: \t\tID:        \"test-4\",\n795: \t\tName:      \"url_fetch\",\n796: \t\tArguments: map[string]string{\"url\": \"http://192.168.1.1/data\"},\n797: \t}, ExecContext{})\n798: \n799: \tif !result.IsError {\n800: \t\tt.Error(\"expected error for private IP\")\n801: \t}\n802: \tif !strings.Contains(result.Content, \"private\") {\n803: \t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n804: \t}\n805: }\n806: \n807: func TestURLFetch_BlocksLoopbackIP(t *testing.T) {\n808: \tentry := urlFetchEntry()\n809: \t// Override resolver to avoid actual DNS and return a loopback address\n810: \torig := urlFetchResolver\n811: \turlFetchResolver = &fakeURLFetchResolver{\n812: \t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"127.0.0.1\")}},\n813: \t}\n814: \tdefer func() { urlFetchResolver = orig }()\n815: \n816: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n817: \t\tID:        \"test-5\",\n818: \t\tName:      \"url_fetch\",\n819: \t\tArguments: map[string]string{\"url\": \"http://evil.example.com/steal\"},\n820: \t}, ExecContext{})\n821: \n822: \tif !result.IsError {\n823: \t\tt.Error(\"expected error for loopback IP\")\n824: \t}\n825: \tif !strings.Contains(result.Content, \"private\") {\n826: \t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n827: \t}\n828: }\n829: \n830: func TestURLFetch_RedirectToDisallowedHostBlocked(t *testing.T) {\n831: \t// Target server listens on 127.0.0.1; we'll reach it via \"localhost\" in the\n832: \t// redirect URL so that source (\"127.0.0.1\") and target (\"localhost\") have\n833: \t// distinct hostnames, letting the allowlist distinguish between them.\n834: \ttarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n835: \t\tw.WriteHeader(200)\n836: \t\t_, _ = w.Write([]byte(\"should not reach here\"))\n837: \t}))\n838: \tdefer target.Close()\n839: \n840: \ttargetURL, _ := url.Parse(target.URL)\n841: \t// Build redirect destination using \"localhost\" instead of \"127.0.0.1\".\n842: \tredirectDest := \"http://localhost:\" + targetURL.Port() + \"/secret\"\n843: \ttargetHost := \"localhost\"\n844: \n845: \t// Source server redirects to the localhost-addressed target.\n846: \tsource := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n847: \t\thttp.Redirect(w, r, redirectDest, http.StatusMovedPermanently)\n848: \t}))\n849: \tdefer source.Close()\n850: \n851: \tsourceURL, _ := url.Parse(source.URL)\n852: \tsourceHost := sourceURL.Hostname() // \"127.0.0.1\"\n853: \n854: \t// Override urlFetchCheckHost to simulate allowlist behavior:\n855: \t// - source host (\"127.0.0.1\") is allowed → returns loopback IP\n856: \t// - target host (\"localhost\") is not in allowlist → blocked\n857: \torig := urlFetchCheckHost\n858: \turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n859: \t\tif len(allowlist) > 0 && !hostcheck.IsAllowed(hostname, allowlist) {\n860: \t\t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n861: \t\t}\n862: \t\treturn net.ParseIP(\"127.0.0.1\"), nil\n863: \t}\n864: \tdefer func() { urlFetchCheckHost = orig }()\n865: \n866: \tentry := urlFetchEntry()\n867: \tresult := entry.Execute(context.Background(), provider.ToolCall{\n868: \t\tID:        \"test-redirect\",\n869: \t\tName:      \"url_fetch\",\n870: \t\tArguments: map[string]string{\"url\": source.URL + \"/start\"},\n871: \t}, ExecContext{AllowedHosts: []string{sourceHost}})\n872: \n873: \t// The redirect to \"localhost\" (not in allowlist) should be blocked.\n874: \tif !result.IsError {\n875: \t\tt.Errorf(\"expected error for redirect to disallowed host %s, got success: %s\", targetHost, result.Content)\n876: \t}\n877: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n878: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n879: \t}\n880: }\n\n(End of file - total 880 lines)\n</content>",
+            "title": "internal/tool/url_fetch_test.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"fmt\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"net/url\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/hostcheck\"\n\t\"github.com/jrswab/axe/internal/provider\"\n)\n\n// fakeURLFetchResolver is a test-only Resolver that returns preset addresses.\ntype fakeURLFetchResolver struct {",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025172596,
+              "end": 1774025172602
+            }
+          },
+          "id": "prt_d0c23e1970012A9K8ToJSdHqg0",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_013GpWkAo8rUJBoseiAnVV38",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "AllowedHosts",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent"
+            },
+            "output": "Found 8 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 77: \tAllowedHosts  []string          `toml:\"allowed_hosts\"`\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 1788: func TestAllowedHosts_TOMLParsing(t *testing.T) {\n  Line 1818: \t\t\t\tif cfg.AllowedHosts != nil {\n  Line 1819: \t\t\t\t\tt.Errorf(\"expected nil AllowedHosts, got %v\", cfg.AllowedHosts)\n  Line 1823: \t\t\tif len(cfg.AllowedHosts) != len(tt.wantHosts) {\n  Line 1824: \t\t\t\tt.Fatalf(\"AllowedHosts length = %d, want %d\", len(cfg.AllowedHosts), len(tt.wantHosts))\n  Line 1826: \t\t\tfor i, got := range cfg.AllowedHosts {\n  Line 1828: \t\t\t\t\tt.Errorf(\"AllowedHosts[%d] = %q, want %q\", i, got, tt.wantHosts[i])",
+            "title": "AllowedHosts",
+            "metadata": {
+              "matches": 8,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774025173444,
+              "end": 1774025173462
+            }
+          },
+          "id": "prt_d0c23e682001DA6oE8MO1Xrry7",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "AllowedHosts",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool"
+            },
+            "output": "Found 25 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 41: \tAllowedHosts  []string\n  Line 151: \teffectiveAllowedHosts := cfg.AllowedHosts\n  Line 152: \tif effectiveAllowedHosts == nil {\n  Line 153: \t\teffectiveAllowedHosts = opts.AllowedHosts\n  Line 314: \trunOpts.AllowedHosts = effectiveAllowedHosts\n  Line 420: \t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n  Line 448: \texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool_test.go:\n  Line 838: // TestExecuteCallAgent_AllowedHostsInheritance verifies nil vs empty-slice semantics.\n  Line 839: // When cfg.AllowedHosts is nil (no field in TOML), the parent's list is inherited.\n  Line 840: // When cfg.AllowedHosts is []string{} (explicit empty list), it is used as-is.\n  Line 841: func TestExecuteCallAgent_AllowedHostsInheritance(t *testing.T) {\n  Line 844: \tvar capturedAllowedHosts []string\n  Line 867: \tt.Run(\"nil AllowedHosts inherits parent list\", func(t *testing.T) {\n  Line 868: \t\t// Agent TOML without allowed_hosts field → cfg.AllowedHosts == nil\n  Line 882: \t\t\tAllowedHosts:  parentHosts,\n  Line 890: \t\t_ = capturedAllowedHosts\n  Line 893: \tt.Run(\"empty AllowedHosts clears parent list\", func(t *testing.T) {\n  Line 894: \t\t// Agent TOML with explicit allowed_hosts = [] → cfg.AllowedHosts == []string{}\n  Line 909: \t\t\tAllowedHosts:  parentHosts,\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go:\n  Line 144: \t_, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n  Line 162: \t\t\t\tdialIP, checkErr := urlFetchCheckHost(dialCtx, host, ec.AllowedHosts, urlFetchResolver)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 748: \t}, ExecContext{AllowedHosts: []string{hostname}})\n  Line 761: \t}, ExecContext{AllowedHosts: []string{\"allowed.example.com\"}})\n  Line 871: \t}, ExecContext{AllowedHosts: []string{sourceHost}})\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 17: \tAllowedHosts []string",
+            "title": "AllowedHosts",
+            "metadata": {
+              "matches": 25,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774025174019,
+              "end": 1774025174031
+            }
+          },
+          "id": "prt_d0c23e9c6001BXVhJcWm0lJYqb",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.08085275,
+          "tokens": {
+            "total": 26851,
+            "input": 1,
+            "output": 271,
+            "reasoning": 0,
+            "cache": {
+              "read": 16008,
+              "write": 10571
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23d33e001IrURX4CdV9mHn0"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025174248,
+          "completed": 1774025180351
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.10962575,
+        "tokens": {
+          "total": 41573,
+          "input": 1,
+          "output": 140,
+          "reasoning": 0,
+          "cache": {
+            "read": 26579,
+            "write": 14853
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c23ece8001ziVTnjhMoGjQEG",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c23ffd0001GIN8f9tv14jVzj",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23ece8001ziVTnjhMoGjQEG"
+        },
+        {
+          "type": "text",
+          "text": "Let me also check the agent test for TOML parsing to understand nil vs empty semantics:",
+          "time": {
+            "start": 1774025179436,
+            "end": 1774025179436
+          },
+          "id": "prt_d0c23ffd00026NqtL5Rger8lQ6",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23ece8001ziVTnjhMoGjQEG"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01QuZQFyrrQmcT4zE7mNbecu",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go",
+              "offset": 1785,
+              "limit": 60
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go</path>\n<type>file</type>\n<content>1785: \t}\n1786: }\n1787: \n1788: func TestAllowedHosts_TOMLParsing(t *testing.T) {\n1789: \ttests := []struct {\n1790: \t\tname      string\n1791: \t\tinput     string\n1792: \t\twantHosts []string\n1793: \t\twantNil   bool\n1794: \t}{\n1795: \t\t{\n1796: \t\t\tname:      \"with allowed_hosts\",\n1797: \t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = [\\\"api.example.com\\\", \\\"docs.example.com\\\"]\",\n1798: \t\t\twantHosts: []string{\"api.example.com\", \"docs.example.com\"},\n1799: \t\t},\n1800: \t\t{\n1801: \t\t\tname:    \"without allowed_hosts field\",\n1802: \t\t\tinput:   \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\",\n1803: \t\t\twantNil: true,\n1804: \t\t},\n1805: \t\t{\n1806: \t\t\tname:      \"empty allowed_hosts\",\n1807: \t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = []\",\n1808: \t\t\twantHosts: []string{},\n1809: \t\t},\n1810: \t}\n1811: \tfor _, tt := range tests {\n1812: \t\tt.Run(tt.name, func(t *testing.T) {\n1813: \t\t\tvar cfg AgentConfig\n1814: \t\t\tif _, err := tomlDecode(tt.input, &cfg); err != nil {\n1815: \t\t\t\tt.Fatalf(\"unexpected decode error: %v\", err)\n1816: \t\t\t}\n1817: \t\t\tif tt.wantNil {\n1818: \t\t\t\tif cfg.AllowedHosts != nil {\n1819: \t\t\t\t\tt.Errorf(\"expected nil AllowedHosts, got %v\", cfg.AllowedHosts)\n1820: \t\t\t\t}\n1821: \t\t\t\treturn\n1822: \t\t\t}\n1823: \t\t\tif len(cfg.AllowedHosts) != len(tt.wantHosts) {\n1824: \t\t\t\tt.Fatalf(\"AllowedHosts length = %d, want %d\", len(cfg.AllowedHosts), len(tt.wantHosts))\n1825: \t\t\t}\n1826: \t\t\tfor i, got := range cfg.AllowedHosts {\n1827: \t\t\t\tif got != tt.wantHosts[i] {\n1828: \t\t\t\t\tt.Errorf(\"AllowedHosts[%d] = %q, want %q\", i, got, tt.wantHosts[i])\n1829: \t\t\t\t}\n1830: \t\t\t}\n1831: \t\t})\n1832: \t}\n1833: }\n\n(End of file - total 1833 lines)\n</content>",
+            "title": "internal/agent/agent_test.go",
+            "metadata": {
+              "preview": "\t}\n}\n\nfunc TestAllowedHosts_TOMLParsing(t *testing.T) {\n\ttests := []struct {\n\t\tname      string\n\t\tinput     string\n\t\twantHosts []string\n\t\twantNil   bool\n\t}{\n\t\t{\n\t\t\tname:      \"with allowed_hosts\",\n\t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = [\\\"api.example.com\\\", \\\"docs.example.com\\\"]\",\n\t\t\twantHosts: []string{\"api.example.com\", \"docs.example.com\"},\n\t\t},\n\t\t{\n\t\t\tname:    \"without allowed_hosts field\",\n\t\t\tinput:   \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\",\n\t\t\twantNil: true,\n\t\t},",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025180199,
+              "end": 1774025180202
+            }
+          },
+          "id": "prt_d0c24013500115GlZh1EVIuLoK",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23ece8001ziVTnjhMoGjQEG"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.10962575,
+          "tokens": {
+            "total": 41573,
+            "input": 1,
+            "output": 140,
+            "reasoning": 0,
+            "cache": {
+              "read": 26579,
+              "write": 14853
+            }
+          },
+          "id": "prt_d0c2404440012GqUFH0h1bCMAw",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c23ece8001ziVTnjhMoGjQEG"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025180352,
+          "completed": 1774025186262
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03047725,
+        "tokens": {
+          "total": 42550,
+          "input": 1,
+          "output": 148,
+          "reasoning": 0,
+          "cache": {
+            "read": 41432,
+            "write": 969
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c2404c0001qoFlXYozYP6AOp",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c241021001uG9k7XR0j8M4K8",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c2404c0001qoFlXYozYP6AOp"
+        },
+        {
+          "type": "text",
+          "text": "Now let me run the tests to make sure everything passes:",
+          "time": {
+            "start": 1774025183696,
+            "end": 1774025183696
+          },
+          "id": "prt_d0c2410220013o322IhrPeT8mu",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c2404c0001qoFlXYozYP6AOp"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01JABmfKufUQ5ZAzeeSCQuui",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "go test ./internal/hostcheck/ ./internal/tool/ ./internal/agent/ -run \"TestCheckHost|TestURLFetch|TestAllowedHosts|TestExecuteCallAgent_AllowedHosts\" -count=1 -timeout 60s 2>&1",
+              "description": "Run relevant tests for the diff"
+            },
+            "output": "ok  \tgithub.com/jrswab/axe/internal/hostcheck\t0.246s\nok  \tgithub.com/jrswab/axe/internal/tool\t0.556s\nok  \tgithub.com/jrswab/axe/internal/agent\t0.446s\n",
+            "title": "Run relevant tests for the diff",
+            "metadata": {
+              "output": "ok  \tgithub.com/jrswab/axe/internal/hostcheck\t0.246s\nok  \tgithub.com/jrswab/axe/internal/tool\t0.556s\nok  \tgithub.com/jrswab/axe/internal/agent\t0.446s\n",
+              "exit": 0,
+              "description": "Run relevant tests for the diff",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774025185247,
+              "end": 1774025186166
+            }
+          },
+          "id": "prt_d0c2411db001ZBLbgcy80IjbrS",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c2404c0001qoFlXYozYP6AOp"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.03047725,
+          "tokens": {
+            "total": 42550,
+            "input": 1,
+            "output": 148,
+            "reasoning": 0,
+            "cache": {
+              "read": 41432,
+              "write": 969
+            }
+          },
+          "id": "prt_d0c241b7700178L12ZwbcLjrzs",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c2404c0001qoFlXYozYP6AOp"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025186263,
+          "completed": 1774025195128
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02848675,
+        "tokens": {
+          "total": 42868,
+          "input": 1,
+          "output": 233,
+          "reasoning": 0,
+          "cache": {
+            "read": 42401,
+            "write": 233
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c241bd7001Rf90c1ggmBwMM9",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c24357d001wy07A5tfqpGeyS",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c241bd7001Rf90c1ggmBwMM9"
+        },
+        {
+          "type": "text",
+          "text": "All tests pass. Now let me carefully review the full diff and the surrounding context.",
+          "time": {
+            "start": 1774025193756,
+            "end": 1774025193756
+          },
+          "id": "prt_d0c24357e001YGAdG4Wg9LGfsz",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c241bd7001Rf90c1ggmBwMM9"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01LnSpUXpWbvSs9Zscahk1cS",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 300,
+              "limit": 50
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>300: \n301: \t// Step 13: Create timeout context\n302: \tvar callCtx context.Context\n303: \tvar cancel context.CancelFunc\n304: \tif opts.Timeout > 0 {\n305: \t\tcallCtx, cancel = context.WithTimeout(ctx, time.Duration(opts.Timeout)*time.Second)\n306: \t} else {\n307: \t\tcallCtx, cancel = context.WithCancel(ctx)\n308: \t}\n309: \tdefer cancel()\n310: \n311: \t// Step 14: Run conversation loop (or single-shot if no tools)\n312: \trunOpts := opts\n313: \trunOpts.MCPRouter = mcpRouter\n314: \trunOpts.AllowedHosts = effectiveAllowedHosts\n315: \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)\n316: \tif err != nil {\n317: \t\tdurationMs := time.Since(start).Milliseconds()\n318: \t\tif opts.Verbose && opts.Stderr != nil {\n319: \t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, err)\n320: \t\t}\n321: \t\t_ = durationMs\n322: \t\treturn errorResult(call.ID, agentName, err.Error(), opts)\n323: \t}\n324: \n325: \t// Step 14b: Memory — append entry after successful response\n326: \tif cfg.Memory.Enabled {\n327: \t\tappendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)\n328: \t\tif appendErr != nil {\n329: \t\t\tif opts.Verbose && opts.Stderr != nil {\n330: \t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n331: \t\t\t}\n332: \t\t} else {\n333: \t\t\tif appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {\n334: \t\t\t\tif opts.Verbose && opts.Stderr != nil {\n335: \t\t\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] Warning: failed to save memory for %q: %v\\n\", agentName, appendErr)\n336: \t\t\t\t}\n337: \t\t\t}\n338: \t\t}\n339: \t}\n340: \n341: \t// Step 15: Return result\n342: \tdurationMs := time.Since(start).Milliseconds()\n343: \tif opts.Verbose && opts.Stderr != nil {\n344: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q completed in %dms (%d chars returned)\\n\", agentName, durationMs, len(resp.Content))\n345: \t}\n346: \n347: \treturn provider.ToolResult{\n348: \t\tCallID:  call.ID,\n349: \t\tContent: resp.Content,\n\n(Showing lines 300-349 of 486. Use offset=350 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\n\t// Step 13: Create timeout context\n\tvar callCtx context.Context\n\tvar cancel context.CancelFunc\n\tif opts.Timeout > 0 {\n\t\tcallCtx, cancel = context.WithTimeout(ctx, time.Duration(opts.Timeout)*time.Second)\n\t} else {\n\t\tcallCtx, cancel = context.WithCancel(ctx)\n\t}\n\tdefer cancel()\n\n\t// Step 14: Run conversation loop (or single-shot if no tools)\n\trunOpts := opts\n\trunOpts.MCPRouter = mcpRouter\n\trunOpts.AllowedHosts = effectiveAllowedHosts\n\tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)\n\tif err != nil {\n\t\tdurationMs := time.Since(start).Milliseconds()\n\t\tif opts.Verbose && opts.Stderr != nil {\n\t\t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, err)",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025194564,
+              "end": 1774025194569
+            }
+          },
+          "id": "prt_d0c24391c001EIoDu6LWe1dH2T",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c241bd7001Rf90c1ggmBwMM9"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01SWygHtdNuri3CftyfP3dt6",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 410,
+              "limit": 50
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>410: \t\t\t\t\tDepth:         depth,\n411: \t\t\t\t\tMaxDepth:      opts.MaxDepth,\n412: \t\t\t\t\tTimeout:       opts.Timeout,\n413: \t\t\t\t\tGlobalConfig:  opts.GlobalConfig,\n414: \t\t\t\t\tMCPRouter:     nil,\n415: \t\t\t\t\tVerbose:       opts.Verbose,\n416: \t\t\t\t\tStderr:        opts.Stderr,\n417: \t\t\t\t\tBudgetTracker: opts.BudgetTracker,\n418: \t\t\t\t\tAgentsDir:     opts.AgentsDir,\n419: \t\t\t\t\tAgentsBase:    toolWorkdir, // sub-agent's workdir becomes the new base\n420: \t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n421: \t\t\t\t}\n422: \t\t\t\tresults[i] = ExecuteCallAgent(ctx, tc, subOpts)\n423: \t\t\t} else {\n424: \t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, opts, toolWorkdir)\n425: \t\t\t}\n426: \t\t}\n427: \n428: \t\t// Append tool result message\n429: \t\ttoolMsg := provider.Message{\n430: \t\t\tRole:        \"tool\",\n431: \t\t\tToolResults: results,\n432: \t\t}\n433: \t\treq.Messages = append(req.Messages, toolMsg)\n434: \t}\n435: \n436: \treturn nil, fmt.Errorf(\"sub-agent exceeded maximum conversation turns (%d)\", maxConversationTurns)\n437: }\n438: \n439: func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {\n440: \tif opts.MCPRouter != nil && opts.MCPRouter.Has(tc.Name) {\n441: \t\tresult, err := opts.MCPRouter.Dispatch(ctx, tc)\n442: \t\tif err != nil {\n443: \t\t\treturn provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}\n444: \t\t}\n445: \t\treturn result\n446: \t}\n447: \n448: \texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n449: \tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n450: \tif dispatchErr != nil {\n451: \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\n452: \t}\n453: \treturn result\n454: }\n455: \n456: // errorResult creates an error ToolResult for a sub-agent failure.\n457: func errorResult(callID, agentName, errMsg string, opts ExecuteOptions) provider.ToolResult {\n458: \tif opts.Verbose && opts.Stderr != nil {\n459: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, errMsg)\n\n(Showing lines 410-459 of 486. Use offset=460 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\t\t\t\t\tDepth:         depth,\n\t\t\t\t\tMaxDepth:      opts.MaxDepth,\n\t\t\t\t\tTimeout:       opts.Timeout,\n\t\t\t\t\tGlobalConfig:  opts.GlobalConfig,\n\t\t\t\t\tMCPRouter:     nil,\n\t\t\t\t\tVerbose:       opts.Verbose,\n\t\t\t\t\tStderr:        opts.Stderr,\n\t\t\t\t\tBudgetTracker: opts.BudgetTracker,\n\t\t\t\t\tAgentsDir:     opts.AgentsDir,\n\t\t\t\t\tAgentsBase:    toolWorkdir, // sub-agent's workdir becomes the new base\n\t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n\t\t\t\t}\n\t\t\t\tresults[i] = ExecuteCallAgent(ctx, tc, subOpts)\n\t\t\t} else {\n\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, opts, toolWorkdir)\n\t\t\t}\n\t\t}\n\n\t\t// Append tool result message\n\t\ttoolMsg := provider.Message{",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774025195004,
+              "end": 1774025195013
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c241bd7001Rf90c1ggmBwMM9"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.02848675,
+          "tokens": {
+            "total": 42868,
+            "input": 1,
+            "output": 233,
+            "reasoning": 0,
+            "cache": {
+              "read": 42401,
+              "write": 233
+            }
+          },
+          "id": "prt_d0c243e18001f7s3JLkUtsi5Xi",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c241bd7001Rf90c1ggmBwMM9"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025195131,
+          "completed": 1774025218022
+        },
+        "parentID": "msg_d0c23af2f001yAIk3BQvQcSial",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.05326575,
+        "tokens": {
+          "total": 45409,
+          "input": 1,
+          "output": 779,
+          "reasoning": 0,
+          "cache": {
+            "read": 42634,
+            "write": 1995
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c243e7b0011VDTh0XkH6Ih93",
+        "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "id": "prt_d0c244b580012y5w3In95NonAp",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c243e7b0011VDTh0XkH6Ih93"
+        },
+        {
+          "type": "text",
+          "text": "Now I have a thorough understanding of the changes. Here's my review:\n\n---\n\n## Code Review\n\n- **Security: Redirect host validation removed from `CheckRedirect`, relying solely on `DialContext` — in @internal/tool/url_fetch.go, the `CheckRedirect` callback no longer validates the redirect target's hostname against the allowlist. The `DialContext` hook now handles this, which is actually correct for preventing TOCTOU (time-of-check-time-of-use) bypasses where DNS could resolve differently between `CheckRedirect` and the actual dial. However, `DialContext` is only called when a TCP connection is established. If Go's HTTP client reuses a keep-alive connection for the redirect (same host, different path), `DialContext` may not fire, silently skipping the host check. Add a `CheckRedirect` guard back that validates the redirect target hostname against the allowlist (hostname-only, no DNS) as a first line of defense, keeping the `DialContext` DNS-level check as the authoritative TOCTOU-safe gate. In @internal/tool/url_fetch.go, restore the allowlist-only check (not DNS resolution) inside the `CheckRedirect` callback, e.g. `if !hostcheck.IsAllowed(redirectReq.URL.Hostname(), ec.AllowedHosts) { return fmt.Errorf(\"host %q is not in allowed_hosts\", redirectReq.URL.Hostname()) }`. Also add a test for same-host redirect reuse in @internal/tool/url_fetch_test.go.**\n\n- **Weak test assertion: `TestExecuteCallAgent_AllowedHostsInheritance` does not actually verify the effective allowed hosts value — in @internal/tool/tool_test.go the test declares `capturedAllowedHosts` but never captures or asserts on it. Both sub-tests only check `result.IsError == false`, which proves the sub-agent ran successfully but does not prove the nil-vs-empty distinction was respected. The \"empty AllowedHosts clears parent list\" sub-test would pass even if the old `len() == 0` logic were still in place, because both empty and nil would inherit the parent, and the parent list is also valid. Refactor @internal/tool/tool_test.go `TestExecuteCallAgent_AllowedHostsInheritance` to actually capture and assert the effective `AllowedHosts` passed to the sub-agent's `ExecContext`. One approach: inject a custom `urlFetchCheckHost` that records the allowlist it receives, then have the sub-agent call `url_fetch` and verify the captured allowlist matches expectations (parent list for nil case, empty slice for explicit-empty case).**\n\n- **Spec comment in scaffold template is misleading — in @internal/agent/agent.go the scaffold comment says `# Restrict url_fetch to these hostnames (optional, empty = allow all)`. Per the updated E5 semantics, an explicit `allowed_hosts = []` now means \"clear parent restrictions\" (not just \"allow all\"), which is a subtly different meaning in the sub-agent context. Update the scaffold comment in @internal/agent/agent.go to say `# Restrict url_fetch to these hostnames (optional, omit to inherit parent's list)` to avoid implying that `[]` and omission are equivalent.**",
+          "time": {
+            "start": 1774025217833,
+            "end": 1774025217833
+          },
+          "id": "prt_d0c244b58002CzKcbcJlMv69Z5",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c243e7b0011VDTh0XkH6Ih93"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "9d0e508d427dbb9f50a571ad355f9c67263d9f0c",
+          "cost": 0.05326575,
+          "tokens": {
+            "total": 45409,
+            "input": 1,
+            "output": 779,
+            "reasoning": 0,
+            "cache": {
+              "read": 42634,
+              "write": 1995
+            }
+          },
+          "id": "prt_d0c24972d001Dcz0KKY066UDe8",
+          "sessionID": "ses_2f3dc50d6ffeK1aFPk3vmDmzwA",
+          "messageID": "msg_d0c243e7b0011VDTh0XkH6Ih93"
+        }
+      ]
+    }
+  ]
+}
