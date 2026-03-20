@@ -1,0 +1,293 @@
+Go read https://github.com/jrswab/axe/issues/24 and let's plan out how we can add this feature.
+
+---
+
+per "call_agent — unchanged. Sub-agents get their own allowed_hosts from their own TOML." does this mean if the axe running the request spins up sub-agents those agents call whatever? If so we need to make sure any sub-agents that are called by the axe instance follows the allow-list from the toml file as they don't get their own toml files.
+
+---
+
+When sub-agent field is defined we should defer to that sub-agent allow list. This way the user can define exactly what each agent (sub or not) is allowed to fetch.
+
+---
+
+{miles}=
+
+if {miles} is empty or blank
+    use current context
+else
+    create a spec file for the next incomplete milestone in {miles}
+    and add the milestone document path to the top of the new spec document.
+
+## Objective
+Create a specification document for a single milestone.
+**DO NOT do the work.** ONLY produce the specification document as defined below.
+
+## Requirements
+- Use clear, unambiguous language. No assumptions; be explicit.
+- All edge cases must be documented.
+- Ask questions to the user as needed to be explicit.
+- No implementation details.
+- Specifiy which parts of the spec can be done in parallel.
+- Place the file in `docs/plans/` with the name `xxx_nnn_spec.md`
+  - "xxx" = A Linear issue ID; ask the user for the ID or if you should use the next highest spec number.
+  - "nnn" = task to achieve
+
+## Document Structure
+
+### Section 1: Context & Constraints
+Extract the relevant context from the milestone's **Research Findings** that applies to this milestone:
+- Codebase structure and patterns relevant to this milestone
+- Decisions already made and why
+- Approaches already ruled out (do not re-evaluate these)
+- Constraints and assumptions that apply
+- Open questions resolved during research
+
+This section must come before requirements. The implementation guide will rely on it — do not omit details.
+
+### Section 2: Requirements
+What needs to happen: behaviors, interfaces, data flow, edge cases.
+No implementation details — what and why, not how or where.
+
+## Post Spec Generation
+1. Once complete, ask the user if there are any changes.
+2. If changes are needed, update the spec to match.
+
+---
+
+## Objective
+Create an implementation guide from a specification document.
+**DO NOT do the work.** ONLY produce the implementation guide as defined below.
+
+## Requirements
+- If docs/plans/040_output_allowlist_spec.md is empty or omitted, pull the latest `*_spec.md` from `docs/plans/` and verify it with the user.
+- Read the spec's **Context & Constraints** before writing tasks. Do not re-derive or re-evaluate decisions already made there.
+- Each task must reference the exact file path and function/method (e.g. `internal/handler/auth.go: UpdateUser()`).
+- Each task must be implementable and testable in isolation.
+- Tasks ordered by dependency and priority.
+- If anything is unclear, ask — then update the spec to match.
+- Specifiy which parts of the implementation checklist can be done in parallel.
+- Place the file in `docs/plans/` with the name `xxx_nnn_implement.md`
+  - "xxx" = linear id matching the spec file
+  - "nnn" = task to achieve
+
+## Testing Rules
+- Test real code, not mocks. If deleting the code under test doesn't break the test, the test adds no value.
+- Mock at the router level only for auth gating, input validation, and error propagation.
+
+## Document Structure
+
+### Section 1: Context Summary
+One paragraph summarizing the *why* behind this implementation, drawn from the spec's Context & Constraints. Anchors the executing agent without needing to re-read the spec.
+
+### Section 2: Implementation Checklist
+- `- [ ] {Task description}` format
+- Exact file path and function/method on each task
+- Include test tasks alongside implementation tasks
+
+---
+
+# Code Generation Instructions
+
+Before starting, ask what branch to use.
+
+## Setup
+Locate the plan files in `docs/plans/`:
+- Spec: file starting with 040, or the newest `xxx_topic_spec.md` if 040 is empty.
+- Implement: file starting with 040, or the newest `xxx_topic_implement.md` if 040 is empty.
+
+## Steps
+
+1. Read the **Context Summary** in the implement guide to understand the *why* before selecting any tasks.
+2. Study the spec file thoroughly.
+3. Study the implement file thoroughly.
+4. Pick the highest leverage unchecked task.
+5. Complete the task.
+6. Verify the task changes against `## Rules` listed below.
+7. Run the `auto-review` skill with the @review subagent then delegate fixes to subagents.
+8. Run `make check-diff` and fix the errors with @general subagent.
+9. Update the implementation plan to check off the completed task using a sub-agent.
+10. Run `git diff --shortstat` to check total line changes in as sub-agent.
+    - If changes are greater than 500, commit the changes and untracked files, then stop.
+    - If changes are less than 500, repeat steps 4-10.
+11. If all tasks in the implement file are checked off:
+    - Mark the corresponding milestone as complete in the milestone doc (`- [ ] 001:` → `- [x] 001:`).
+    - Commit the changes.
+
+## Rules
+
+- Always use red/green TDD
+- Use @explore sub-agents for exploring the codebase
+- Use @general sub-agents for working on the codebase
+- Each sub-agent must only have one explicit task.
+- Each sub-agent must only return the information that fulfills that task.
+- Spin off multiple sub-agents in parallel for tasks that do not depend on another task.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+- Verify that the unit tests for functions with updates have a test case that will verify the change.
+- Verify that all new code has an unbiased unit test.
+ Use the above message and context to generate a prompt and call the task tool with subagent: review
+ Use the above message and context to generate a prompt and call the task tool with subagent: explore
+ Use the above message and context to generate a prompt and call the task tool with subagent: general
+
+---
+
+# Code Generation Instructions
+
+Before starting, ask what branch to use.
+
+## Setup
+Locate the plan files in `docs/plans/`:
+- Spec: file starting with 040, or the newest `xxx_topic_spec.md` if 040 is empty.
+- Implement: file starting with 040, or the newest `xxx_topic_implement.md` if 040 is empty.
+
+## Steps
+
+1. Read the **Context Summary** in the implement guide to understand the *why* before selecting any tasks.
+2. Study the spec file thoroughly.
+3. Study the implement file thoroughly.
+4. Pick the highest leverage unchecked task.
+5. Complete the task.
+6. Verify the task changes against `## Rules` listed below.
+7. Run the `auto-review` skill with the @review subagent then delegate fixes to subagents.
+8. Run `make check-diff` and fix the errors with @general subagent.
+9. Update the implementation plan to check off the completed task using a sub-agent.
+10. Run `git diff --shortstat` to check total line changes in as sub-agent.
+    - If changes are greater than 500, commit the changes and untracked files, then stop.
+    - If changes are less than 500, repeat steps 4-10.
+11. If all tasks in the implement file are checked off:
+    - Mark the corresponding milestone as complete in the milestone doc (`- [ ] 001:` → `- [x] 001:`).
+    - Commit the changes.
+
+## Rules
+
+- Always use red/green TDD
+- Use @explore sub-agents for exploring the codebase
+- Use @general sub-agents for working on the codebase
+- Each sub-agent must only have one explicit task.
+- Each sub-agent must only return the information that fulfills that task.
+- Spin off multiple sub-agents in parallel for tasks that do not depend on another task.
+- If there was an attempt at fixing a pattern, you must make a comprehensive search proving ALL instances are addressed.
+- Verify that the unit tests for functions with updates have a test case that will verify the change.
+- Verify that all new code has an unbiased unit test.
+ Use the above message and context to generate a prompt and call the task tool with subagent: explore
+ Use the above message and context to generate a prompt and call the task tool with subagent: review
+ Use the above message and context to generate a prompt and call the task tool with subagent: general
+
+---
+
+1. Verify that we are not on the develop, main, or master branch.
+    - If we are on the one of these branch ask what branch name to switch to.
+    - Once given the name create a new git branch off of develop using `git checkout -b`
+2. Use the script at `/Users/jaronswab/.config/opencode/scripts/stacked_diff_parent.sh`; then ask the user if it's correct.
+3. Run `git rebase` off of the parent branch at origin/remote.
+4. Read all changes made against the parent branch.
+5. Create a Git message which lists out the changes made in a short paragraph
+6. The title should summarize the changes at a high level. Keep it UNDER 50 characters.
+7. Commit the changes locally.
+8. Push the branch to remote using `git push --set-upstream origin "$(git branch --show-current)"`
+9. Open a PR on GitHub if it does not already exist.
+    - Use `gh pr create --base <parent branch>` when sending the PR request to GitHub. (we use stacked diffs)
+    - Always verify before opening the PR on GitHub
+    - Make sure the the title starts with the Linear issue ID (GAI-XXXX - this should be part of the branch name already).
+    - Make sure the title is in title case.
+    - Do not add any details to the description.
+    - If a PR for the current branch is already in GitHub just push the new commit(s) to remote.
+
+---
+
+Verify each finding against the current code and only fix it if needed.
+
+Inline comments:
+In `@internal/hostcheck/hostcheck.go`:
+- Around line 69-87: The CheckHost function must guard against a nil resolver
+and wrap DNS errors with host context: add a nil check for the resolver
+parameter before calling resolver.LookupIPAddr and return a clear error
+mentioning the hostname (e.g., "no DNS resolver configured for host
+<hostname>"), and when resolver.LookupIPAddr returns an error, wrap/return it
+with additional context including the hostname (e.g., "failed to resolve
+<hostname>: <err>"). Keep existing early checks (IsAllowed, net.ParseIP,
+IsPrivateIP) unchanged and update error returns from resolver.LookupIPAddr to
+include the hostname.
+- Around line 15-37: Remove the package-global mutable var privateRanges and the
+init() initializer and instead make CIDR ranges an explicit dependency on a
+host-checker instance: create a type (e.g., HostChecker) with a field
+privateRanges []*net.IPNet and a constructor NewHostChecker([]string) that
+parses the cidr strings (mirroring the current cidrs slice) and returns
+(*HostChecker, error) (returning parse errors instead of panicking); replace any
+direct references to package symbol privateRanges with receiver accesses
+(hc.privateRanges) and update callers to accept or construct a HostChecker via
+NewHostChecker so the CIDR list is injected rather than global.
+
+In `@internal/tool/tool.go`:
+- Around line 149-153: The current logic treats an explicitly empty
+cfg.AllowedHosts the same as absent by using len()==0, preventing sub-agents
+from clearing a parent's allowlist; change the selection so that if
+cfg.AllowedHosts is non-nil you use it (even if its length is zero) otherwise
+inherit opts.AllowedHosts. Update the effectiveAllowedHosts assignment in the
+code that references cfg.AllowedHosts and opts.AllowedHosts (e.g., in
+internal/tool/tool.go around effectiveAllowedHosts) to check for nil
+(cfg.AllowedHosts != nil) rather than len==0 so an explicit empty slice clears
+the parent list.
+
+In `@internal/tool/url_fetch_test.go`:
+- Around line 771-789: The test TestURLFetch_EmptyAllowlistPermitsAll currently
+calls skipHostCheck(t) which overrides urlFetchCheckHost and prevents exercising
+the empty-allowlist logic; remove the skipHostCheck(t) call and ensure the
+actual host-checker is in place (do not stub urlFetchCheckHost) and arrange the
+environment so the allowlist is empty (e.g., ensure whatever config or variable
+the url fetching code reads for allowed hosts is set to an empty list) before
+creating entry := urlFetchEntry() and calling
+entry.Execute(provider.ToolCall{...}); this will let the real urlFetchCheckHost
+logic run and verify that an empty allowlist permits the test server URL.
+
+In `@internal/tool/url_fetch.go`:
+- Around line 140-147: Move the 15s timeout context creation so host validation
+runs under it: create reqCtx, cancel := context.WithTimeout(ctx,
+urlFetchTimeout) and defer cancel() before calling urlFetchCheckHost, then call
+urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts,
+urlFetchResolver) instead of passing the outer ctx; this ensures
+urlFetchCheckHost (and its DNS I/O) is bounded by urlFetchTimeout while keeping
+the rest of the function semantics the same.
+- Around line 154-175: The DialContext closure currently closes over the initial
+safeIP so redirects validated in CheckRedirect still use the original IP; change
+DialContext in the http.Transport to re-resolve and validate the actual host
+it's about to dial (extract hostname/port from addr), call urlFetchCheckHost
+with that hostname and urlFetchResolver (or the same validation logic used in
+CheckRedirect) to obtain the per-host safe IP, and then dial using
+net.JoinHostPort(resolvedSafeIP.String(), port) when provided; keep the
+CheckRedirect host validation but do not rely on the outer safeIP variable.
+
+---
+
+Nitpick comments:
+In `@cmd/run_integration_test.go`:
+- Around line 2010-2173: Collapse the four nearly identical tests
+(TestIntegration_AllowedHosts_BlocksNonMatchingHost, _BlocksPrivateIP,
+_EmptyAllowlistPermitsPublicHosts, _BlocksLoopbackEvenWithAllowlist) into a
+single table-driven test (e.g., TestIntegration_AllowedHosts_TableDriven) that
+iterates over a []struct{ name, configName, configTOML string; mockResponses
+[]testutil.MockLLMResponse; wantContains string; wantNotContains string } and
+for each case calls resetRunCmd, writeAgentConfig, sets env vars, primes
+testutil.NewMockLLMServer with mockResponses, runs rootCmd.Execute(), asserts
+mock.RequestCount()==2, and checks mock.Requests[1].Body contains wantContains
+or does not contain wantNotContains as appropriate; keep using rootCmd,
+writeAgentConfig, testutil.NewMockLLMServer, and the existing assertion logic
+inside a t.Run for each case.
+
+In `@internal/agent/agent.go`:
+- Line 77: Scaffold() currently omits the new AllowedHosts field from the
+generated TOML template; update the Scaffold() function to include an
+allowed_hosts entry in the generated agent config so users can discover and set
+AllowedHosts via TOML. Locate the Scaffold() implementation and add a line for
+"allowed_hosts" (matching the AllowedHosts []string `toml:"allowed_hosts"`
+field) in the returned template/example output (and any related comments or
+example entries) so the scaffolded config surface mirrors the struct.
+
+In `@internal/provider/opencode_test.go`:
+- Line 36: Remove the redundant `return` that immediately follows a
+`t.Fatal(...)` in the test (look for the failing call to `t.Fatal` in
+internal/provider/opencode_test.go) — `t.Fatal` already stops execution, so
+delete the dead `return` statement to clean up the test flow.
+
+---
+
+yes, make sure to update the spec to match any changes that contrdict it.
