@@ -1,0 +1,15 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Run the full test suite for the axe project to check for any regressions across the entire codebase.
+
+Run: `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./... -count=1 2>&1 | tail -40`
+
+Report back:
+1. Whether all packages passed
+2. Any FAIL lines
+3. The final summary line
+
