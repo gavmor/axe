@@ -1,0 +1,85 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Add `AllowedHosts []string` to the `AgentConfig` struct and write TOML decode tests. Use red/green TDD.
+
+## Step 1: Write tests FIRST — `internal/agent/agent_test.go`
+
+Add the following tests to the EXISTING test file (append, don't overwrite). Follow the existing pattern in the file which uses raw TOML string → `tomlDecode(input, &cfg)` → assert fields.
+
+The `tomlDecode` var is defined in `agent.go` line 372 as `var tomlDecode = toml.Decode`.
+
+```go
+func TestAllowedHosts_TOMLParsing(t *testing.T) {
+    tests := []struct {
+        name      string
+        input     string
+        wantHosts []string
+        wantNil   bool
+    }{
+        {
+            name:      "with allowed_hosts",
+            input:     "name = \"test\"\nmodel = \"openai/gpt-4o\"\nallowed_hosts = [\"api.example.com\", \"docs.example.com\"]",
+            wantHosts: []string{"api.example.com", "docs.example.com"},
+        },
+        {
+            name:    "without allowed_hosts field",
+            input:   "name = \"test\"\nmodel = \"openai/gpt-4o\"",
+            wantNil: true,
+        },
+        {
+            name:      "empty allowed_hosts",
+            input:     "name = \"test\"\nmodel = \"openai/gpt-4o\"\nallowed_hosts = []",
+            wantHosts: []string{},
+        },
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            var cfg AgentConfig
+            if _, err := tomlDecode(tt.input, &cfg); err != nil {
+                t.Fatalf("unexpected decode error: %v", err)
+            }
+            if tt.wantNil {
+                if cfg.AllowedHosts != nil {
+                    t.Errorf("expected nil AllowedHosts, got %v", cfg.AllowedHosts)
+                }
+                return
+            }
+            if len(cfg.AllowedHosts) != len(tt.wantHosts) {
+                t.Fatalf("AllowedHosts length = %d, want %d", len(cfg.AllowedHosts), len(tt.wantHosts))
+            }
+            for i, got := range cfg.AllowedHosts {
+                if got != tt.wantHosts[i] {
+                    t.Errorf("AllowedHosts[%d] = %q, want %q", i, got, tt.wantHosts[i])
+                }
+            }
+        })
+    }
+}
+```
+
+## Step 2: Run the test — it should FAIL (red phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run TestAllowedHosts_TOMLParsing ./internal/agent/` and confirm it fails because `AllowedHosts` doesn't exist on `AgentConfig` yet.
+
+## Step 3: Add the field to `AgentConfig`
+
+In `internal/agent/agent.go`, add this field to the `AgentConfig` struct after the `Tools` field (around line 76):
+
+```go
+AllowedHosts []string `toml:"allowed_hosts"`
+```
+
+Do NOT modify `Validate()` — spec R12 says entries are not validated at load time.
+
+## Step 4: Run the test — it should PASS (green phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run TestAllowedHosts_TOMLParsing -v ./internal/agent/` and confirm all 3 subtests pass.
+
+## Step 5: Run ALL existing agent tests to verify no regressions
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/agent/` and confirm everything passes.
+
+## What to return
+Return:
+1. The red phase test output (confirming failure)
+2. The green phase test output (confirming pass)
+3. The full test suite output (confirming no regressions)
+4. The exact line number where you added the field
