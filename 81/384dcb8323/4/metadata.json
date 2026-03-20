@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "81384dcb8323",
+  "session_id": "ses_2f3b53e32ffe3cVNrY2KxiGNZs",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T17:54:27.396768Z",
+  "branch": "ISS-24/allow-list-connections",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "internal/tool/url_fetch_test.go",
+    "docs/plans/040_output_allowlist_spec.md",
+    "internal/tool/tool.go",
+    "internal/tool/tool_test.go",
+    "internal/tool/url_fetch.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "a9a58ef626e2",
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T17:54:27.39595Z",
+    "agent_lines": 182,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 182,
+    "agent_percentage": 100
+  }
+}
