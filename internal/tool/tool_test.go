@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -832,6 +833,58 @@ enabled = true
 	memPath := filepath.Join(dataDir, "axe", "memory", "helper.md")
 	if _, err := os.Stat(memPath); err == nil {
 		t.Errorf("expected no memory file at %s after error, but it exists", memPath)
+	}
+}
+
+// TestEffectiveAllowedHosts tests the nil-vs-empty-slice inheritance logic used in ExecuteCallAgent.
+// nil sub-agent AllowedHosts → inherit parent list; []string{} → use empty (clear parent list).
+func TestEffectiveAllowedHosts(t *testing.T) {
+	tests := []struct {
+		name      string
+		subAgent  []string // cfg.AllowedHosts (nil or empty or populated)
+		parent    []string // opts.AllowedHosts
+		wantHosts []string // expected effective result (nil-aware via DeepEqual)
+	}{
+		{
+			name:      "nil sub-agent inherits parent list",
+			subAgent:  nil,
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"api.example.com"},
+		},
+		{
+			name:      "empty sub-agent clears parent list",
+			subAgent:  []string{},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{},
+		},
+		{
+			name:      "populated sub-agent uses own list",
+			subAgent:  []string{"docs.example.com"},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"docs.example.com"},
+		},
+		{
+			name:      "nil sub-agent with nil parent stays nil",
+			subAgent:  nil,
+			parent:    nil,
+			wantHosts: nil,
+		},
+		{
+			name:      "populated sub-agent with multiple hosts",
+			subAgent:  []string{"a.example.com", "b.example.com"},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"a.example.com", "b.example.com"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			effective := EffectiveAllowedHosts(tc.subAgent, tc.parent)
+
+			if !reflect.DeepEqual(effective, tc.wantHosts) {
+				t.Errorf("EffectiveAllowedHosts(%v, %v) = %v, want %v", tc.subAgent, tc.parent, effective, tc.wantHosts)
+			}
+		})
 	}
 }
 

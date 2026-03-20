@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,13 +13,26 @@ import (
 
 	"golang.org/x/net/html"
 
+	"github.com/jrswab/axe/internal/hostcheck"
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
 )
 
 const maxReadBytes = 10000
 
-var urlFetchTimeout = 15 * time.Second
+type urlFetcher struct {
+	resolver  hostcheck.Resolver
+	checkHost func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error)
+	timeout   time.Duration
+}
+
+func newURLFetcher() *urlFetcher {
+	return &urlFetcher{
+		resolver:  net.DefaultResolver,
+		checkHost: hostcheck.CheckHost,
+		timeout:   15 * time.Second,
+	}
+}
 
 func truncateURL(urlStr string, maxLen int) string {
 	if len(urlStr) <= maxLen {
@@ -46,9 +60,10 @@ func sanitizeURL(urlStr string) string {
 }
 
 func urlFetchEntry() ToolEntry {
+	f := newURLFetcher()
 	return ToolEntry{
 		Definition: urlFetchDefinition,
-		Execute:    urlFetchExecute,
+		Execute:    f.execute,
 	}
 }
 
@@ -94,7 +109,7 @@ func stripHTML(raw string) string {
 	return strings.Join(strings.Fields(b.String()), " ")
 }
 
-func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
+func (f *urlFetcher) execute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {
 	urlStr := call.Arguments["url"]
 	statusCode := 0
 
@@ -126,15 +141,50 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext
 		}
 	}
 
-	reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)
+	reqCtx, cancel := context.WithTimeout(ctx, f.timeout)
 	defer cancel()
+
+	// Host allowlist and private IP check.
+	_, hostErr := f.checkHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, f.resolver)
+	if hostErr != nil {
+		return provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}
+	}
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)
 	if err != nil {
 		return provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{
+		Timeout: f.timeout,
+		Transport: &http.Transport{
+			DialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {
+				host, port, splitErr := net.SplitHostPort(addr)
+				if splitErr != nil {
+					return nil, splitErr
+				}
+				dialIP, checkErr := f.checkHost(dialCtx, host, ec.AllowedHosts, f.resolver)
+				if checkErr != nil {
+					return nil, checkErr
+				}
+				if dialIP != nil && port != "" {
+					return (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(dialIP.String(), port))
+				}
+				return (&net.Dialer{}).DialContext(dialCtx, network, addr)
+			},
+		},
+		CheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {
+			if len(ec.AllowedHosts) > 0 && !hostcheck.IsAllowed(redirectReq.URL.Hostname(), ec.AllowedHosts) {
+				return fmt.Errorf("host %q is not in allowed_hosts", redirectReq.URL.Hostname())
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}
 	}

@@ -3,15 +3,40 @@ package tool
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jrswab/axe/internal/hostcheck"
 	"github.com/jrswab/axe/internal/provider"
 )
+
+// fakeURLFetchResolver is a test-only Resolver that returns preset addresses.
+type fakeURLFetchResolver struct {
+	addrs []net.IPAddr
+	err   error
+}
+
+func (f *fakeURLFetchResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {
+	return f.addrs, f.err
+}
+
+// newTestURLFetcher returns a urlFetcher that bypasses host validation,
+// allowing tests to reach httptest.NewServer on 127.0.0.1.
+func newTestURLFetcher() *urlFetcher {
+	return &urlFetcher{
+		resolver: net.DefaultResolver,
+		checkHost: func(_ context.Context, _ string, _ []string, _ hostcheck.Resolver) (net.IP, error) {
+			return net.ParseIP("127.0.0.1"), nil
+		},
+		timeout: 15 * time.Second,
+	}
+}
 
 func TestURLFetch_Success(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +44,9 @@ func TestURLFetch_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-success", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -35,8 +60,8 @@ func TestURLFetch_Success(t *testing.T) {
 }
 
 func TestURLFetch_EmptyURL(t *testing.T) {
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-empty", Arguments: map[string]string{}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-empty", Arguments: map[string]string{}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -47,8 +72,8 @@ func TestURLFetch_EmptyURL(t *testing.T) {
 }
 
 func TestURLFetch_MissingURLArgument(t *testing.T) {
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-missing", Arguments: map[string]string{"url": ""}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-missing", Arguments: map[string]string{"url": ""}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -59,8 +84,8 @@ func TestURLFetch_MissingURLArgument(t *testing.T) {
 }
 
 func TestURLFetch_UnsupportedScheme_File(t *testing.T) {
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-file", Arguments: map[string]string{"url": "file:///etc/passwd"}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-file", Arguments: map[string]string{"url": "file:///etc/passwd"}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -74,8 +99,8 @@ func TestURLFetch_UnsupportedScheme_File(t *testing.T) {
 }
 
 func TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-ftp", Arguments: map[string]string{"url": "ftp://example.com/file"}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-ftp", Arguments: map[string]string{"url": "ftp://example.com/file"}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -89,8 +114,8 @@ func TestURLFetch_UnsupportedScheme_FTP(t *testing.T) {
 }
 
 func TestURLFetch_NoScheme(t *testing.T) {
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-noscheme", Arguments: map[string]string{"url": "example.com"}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-noscheme", Arguments: map[string]string{"url": "example.com"}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -107,8 +132,8 @@ func TestURLFetch_Non2xxStatus_404(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-404", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-404", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -128,8 +153,8 @@ func TestURLFetch_Non2xxStatus_500(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-500", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-500", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -149,8 +174,8 @@ func TestURLFetch_LargeResponseTruncation(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-large", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-large", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -173,8 +198,8 @@ func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-exact", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-exact", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -204,8 +229,8 @@ func TestURLFetch_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(ctx, provider.ToolCall{ID: "uf-timeout", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(ctx, provider.ToolCall{ID: "uf-timeout", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -222,8 +247,8 @@ func TestURLFetch_ConnectionRefused(t *testing.T) {
 		t.Fatalf("listener.Close error: %v", err)
 	}
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-refused", Arguments: map[string]string{"url": "http://" + addr}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-refused", Arguments: map[string]string{"url": "http://" + addr}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -239,9 +264,9 @@ func TestURLFetch_CallIDPassthrough(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-unique-42", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.CallID != "uf-unique-42" {
 		t.Errorf("CallID = %q, want %q", result.CallID, "uf-unique-42")
@@ -254,8 +279,8 @@ func TestURLFetch_EmptyResponseBody(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-empty-body", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-empty-body", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -273,8 +298,8 @@ func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
-	result := entry.Execute(context.Background(), provider.ToolCall{ID: "uf-err-large", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
+	f := newTestURLFetcher()
+	result := f.execute(context.Background(), provider.ToolCall{ID: "uf-err-large", Arguments: map[string]string{"url": ts.URL}}, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -296,8 +321,8 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {
 	targetURL := strings.Replace(ts.URL, "http://", "http://user:pass@", 1) + "/secret/path?token=abc#frag"
 
 	var stderr bytes.Buffer
-	entry := urlFetchEntry()
-	_ = entry.Execute(context.Background(), provider.ToolCall{ID: "uf-verbose", Arguments: map[string]string{"url": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})
+	f := newTestURLFetcher()
+	_ = f.execute(context.Background(), provider.ToolCall{ID: "uf-verbose", Arguments: map[string]string{"url": targetURL}}, ExecContext{Verbose: true, Stderr: &stderr})
 
 	logOutput := stderr.String()
 	if strings.Contains(logOutput, "user:pass") {
@@ -328,14 +353,10 @@ func TestURLFetch_PerRequestTimeout(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Override the per-request timeout to keep the test fast
-	orig := urlFetchTimeout
-	urlFetchTimeout = 100 * time.Millisecond
-	defer func() { urlFetchTimeout = orig }()
-
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
+	f.timeout = 100 * time.Millisecond
 	call := provider.ToolCall{ID: "uf-per-req-timeout", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true when per-request timeout fires")
@@ -361,17 +382,12 @@ func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// Set per-request timeout to something long so the parent wins
-	orig := urlFetchTimeout
-	urlFetchTimeout = 10 * time.Second
-	defer func() { urlFetchTimeout = orig }()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-parent-wins", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(ctx, call, ExecContext{})
+	result := f.execute(ctx, call, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true when parent context fires first")
@@ -384,9 +400,9 @@ func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-fast", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -482,9 +498,9 @@ func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-html-strip", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -501,9 +517,9 @@ func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-html-charset", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -520,9 +536,9 @@ func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-html-case", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -539,9 +555,9 @@ func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-json-no-strip", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -559,9 +575,9 @@ func TestURLFetch_PlainTextNotStripped(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-plain-no-strip", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -580,9 +596,9 @@ func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-no-ct", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -601,9 +617,9 @@ func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-404-html", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -627,9 +643,9 @@ func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-500-json", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if !result.IsError {
 		t.Fatal("expected IsError true")
@@ -654,9 +670,9 @@ func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	entry := urlFetchEntry()
+	f := newTestURLFetcher()
 	call := provider.ToolCall{ID: "uf-strip-before-trunc", Arguments: map[string]string{"url": ts.URL}}
-	result := entry.Execute(context.Background(), call, ExecContext{})
+	result := f.execute(context.Background(), call, ExecContext{})
 
 	if result.IsError {
 		t.Fatalf("expected IsError false, got true with content %q", result.Content)
@@ -666,5 +682,178 @@ func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {
 	}
 	if !strings.Contains(result.Content, "Short text") {
 		t.Errorf("Content = %q, want contains %q", result.Content, "Short text")
+	}
+}
+
+// Phase 4: Allowlist and private IP tests
+
+func TestURLFetch_AllowlistAndIPChecks(t *testing.T) {
+	tests := []struct {
+		name         string
+		setup        func(t *testing.T) (f *urlFetcher, call provider.ToolCall, ec ExecContext, cleanup func())
+		wantError    bool
+		wantContains string
+	}{
+		{
+			name: "allowlist permits matching host",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+					_, _ = w.Write([]byte("ok"))
+				}))
+				u, _ := url.Parse(ts.URL)
+				hostname := u.Hostname()
+
+				f := &urlFetcher{
+					resolver: net.DefaultResolver,
+					checkHost: func(_ context.Context, h string, allowlist []string, _ hostcheck.Resolver) (net.IP, error) {
+						if !hostcheck.IsAllowed(h, allowlist) {
+							return nil, &net.AddrError{Err: "not in allowed_hosts", Addr: h}
+						}
+						return net.ParseIP("127.0.0.1"), nil
+					},
+					timeout: 15 * time.Second,
+				}
+				call := provider.ToolCall{
+					ID:        "test-allow-match",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": ts.URL},
+				}
+				ec := ExecContext{AllowedHosts: []string{hostname}}
+				return f, call, ec, ts.Close
+			},
+			wantError: false,
+		},
+		{
+			name: "allowlist blocks non-matching host",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				f := newURLFetcher()
+				call := provider.ToolCall{
+					ID:        "test-allow-block",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": "https://blocked.example.com/page"},
+				}
+				ec := ExecContext{AllowedHosts: []string{"allowed.example.com"}}
+				return f, call, ec, nil
+			},
+			wantError:    true,
+			wantContains: "not in allowed_hosts",
+		},
+		{
+			name: "empty allowlist permits all",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+					_, _ = w.Write([]byte("ok"))
+				}))
+				f := newTestURLFetcher()
+				call := provider.ToolCall{
+					ID:        "test-empty-allow",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": ts.URL},
+				}
+				return f, call, ExecContext{}, ts.Close
+			},
+			wantError: false,
+		},
+		{
+			name: "blocks private IP",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				f := newURLFetcher()
+				call := provider.ToolCall{
+					ID:        "test-private-ip",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": "http://192.168.1.1/data"},
+				}
+				return f, call, ExecContext{}, nil
+			},
+			wantError:    true,
+			wantContains: "private",
+		},
+		{
+			name: "blocks loopback via DNS",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				f := &urlFetcher{
+					resolver: &fakeURLFetchResolver{
+						addrs: []net.IPAddr{{IP: net.ParseIP("127.0.0.1")}},
+					},
+					checkHost: hostcheck.CheckHost,
+					timeout:   15 * time.Second,
+				}
+				call := provider.ToolCall{
+					ID:        "test-loopback",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": "http://evil.example.com/steal"},
+				}
+				return f, call, ExecContext{}, nil
+			},
+			wantError:    true,
+			wantContains: "private",
+		},
+		{
+			name: "redirect to disallowed host blocked",
+			setup: func(t *testing.T) (*urlFetcher, provider.ToolCall, ExecContext, func()) {
+				t.Helper()
+				target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+					_, _ = w.Write([]byte("should not reach here"))
+				}))
+				targetURL, _ := url.Parse(target.URL)
+				redirectDest := "http://localhost:" + targetURL.Port() + "/secret"
+
+				source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.Redirect(w, r, redirectDest, http.StatusMovedPermanently)
+				}))
+				sourceURL, _ := url.Parse(source.URL)
+				sourceHost := sourceURL.Hostname()
+
+				f := &urlFetcher{
+					resolver: net.DefaultResolver,
+					checkHost: func(_ context.Context, hostname string, allowlist []string, _ hostcheck.Resolver) (net.IP, error) {
+						if len(allowlist) > 0 && !hostcheck.IsAllowed(hostname, allowlist) {
+							return nil, fmt.Errorf("host %q is not in allowed_hosts", hostname)
+						}
+						return net.ParseIP("127.0.0.1"), nil
+					},
+					timeout: 15 * time.Second,
+				}
+				call := provider.ToolCall{
+					ID:        "test-redirect",
+					Name:      "url_fetch",
+					Arguments: map[string]string{"url": source.URL + "/start"},
+				}
+				ec := ExecContext{AllowedHosts: []string{sourceHost}}
+				cleanup := func() {
+					source.Close()
+					target.Close()
+				}
+				return f, call, ec, cleanup
+			},
+			wantError:    true,
+			wantContains: "not in allowed_hosts",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f, call, ec, cleanup := tc.setup(t)
+			if cleanup != nil {
+				defer cleanup()
+			}
+
+			result := f.execute(context.Background(), call, ec)
+
+			if result.IsError != tc.wantError {
+				t.Fatalf("IsError = %v, want %v; content: %s", result.IsError, tc.wantError, result.Content)
+			}
+			if tc.wantContains != "" && !strings.Contains(result.Content, tc.wantContains) {
+				t.Errorf("Content = %q, want substring %q", result.Content, tc.wantContains)
+			}
+		})
 	}
 }

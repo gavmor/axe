@@ -38,6 +38,7 @@ type ExecuteOptions struct {
 	BudgetTracker *budget.BudgetTracker
 	AgentsDir     string // value of --agents-dir flag (may be empty)
 	AgentsBase    string // parent agent's resolved workdir (for auto-discovery)
+	AllowedHosts  []string
 }
 
 // CallAgentTool returns the call_agent tool definition for LLM tool calling.
@@ -67,6 +68,16 @@ func CallAgentTool(allowedAgents []string) provider.Tool {
 			},
 		},
 	}
+}
+
+// EffectiveAllowedHosts returns the effective allowed hosts for a sub-agent.
+// If subAgent is non-nil (even if empty), it is used as-is.
+// If subAgent is nil, parent is inherited.
+func EffectiveAllowedHosts(subAgent, parent []string) []string {
+	if subAgent == nil {
+		return parent
+	}
+	return subAgent
 }
 
 // ExecuteCallAgent executes a call_agent tool call by loading and running a sub-agent.
@@ -144,6 +155,8 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 	if err != nil {
 		return errorResult(call.ID, agentName, fmt.Sprintf("invalid model for agent %q: %s", agentName, err), opts)
 	}
+
+	effectiveAllowedHosts := EffectiveAllowedHosts(cfg.AllowedHosts, opts.AllowedHosts)
 
 	// Step 8: Resolve sub-agent's working directory, files, skill, system prompt
 	workdir, err := resolve.Workdir("", cfg.Workdir)
@@ -303,6 +316,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO
 	// Step 14: Run conversation loop (or single-shot if no tools)
 	runOpts := opts
 	runOpts.MCPRouter = mcpRouter
+	runOpts.AllowedHosts = effectiveAllowedHosts
 	resp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)
 	if err != nil {
 		durationMs := time.Since(start).Milliseconds()
@@ -408,6 +422,7 @@ func runConversationLoop(ctx context.Context, prov provider.Provider, req *provi
 					BudgetTracker: opts.BudgetTracker,
 					AgentsDir:     opts.AgentsDir,
 					AgentsBase:    toolWorkdir, // sub-agent's workdir becomes the new base
+					AllowedHosts:  opts.AllowedHosts,
 				}
 				results[i] = ExecuteCallAgent(ctx, tc, subOpts)
 			} else {
@@ -435,7 +450,7 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Regis
 		return result
 	}
 
-	execCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose}
+	execCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}
 	result, dispatchErr := registry.Dispatch(ctx, tc, execCtx)
 	if dispatchErr != nil {
 		return provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}

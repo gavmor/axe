@@ -74,6 +74,7 @@ type AgentConfig struct {
 	Files         []string          `toml:"files"`
 	Workdir       string            `toml:"workdir"`
 	Tools         []string          `toml:"tools"`
+	AllowedHosts  []string          `toml:"allowed_hosts"`
 	MCPServers    []MCPServerConfig `toml:"mcp_servers"`
 	SubAgents     []string          `toml:"sub_agents"`
 	SubAgentsConf SubAgentsConfig   `toml:"sub_agents_config"`
@@ -318,6 +319,9 @@ model = "provider/model-name"
 # Tools this agent can use (optional)
 # Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search
 # tools = []
+
+# Restrict url_fetch to these hostnames (optional, omit to inherit parent's list)
+# allowed_hosts = []
 
 # Sub-agents this agent can invoke (optional)
 # sub_agents = []
