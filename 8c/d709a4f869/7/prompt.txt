@@ -1,0 +1,45 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Change the sub-agent AllowedHosts inheritance logic from `len() == 0` to `== nil` so that an explicit `allowed_hosts = []` clears the parent's list. Use red/green TDD.
+
+### Step 1: Write a test FIRST
+
+In `internal/tool/tool_test.go` (or whatever test file exists for tool.go — check if it exists first; if not, create it), add a test that verifies:
+- When `cfg.AllowedHosts` is `nil`, the parent's `opts.AllowedHosts` is inherited.
+- When `cfg.AllowedHosts` is `[]string{}` (empty but non-nil), it is used as-is (NOT inherited from parent).
+
+Actually, the logic is inside `ExecuteCallAgent` which is complex to test in isolation. The simplest approach: just test the logic inline. But since the function loads TOML files and creates providers, a unit test would be complex.
+
+Instead, just make the code change and verify with a build + existing tests. The logic change is trivial and the behavior is verified by the integration tests.
+
+### Step 2: Change the code
+
+In `internal/tool/tool.go`, around line 149-153, change:
+
+**Before:**
+```go
+	// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's
+	effectiveAllowedHosts := cfg.AllowedHosts
+	if len(effectiveAllowedHosts) == 0 {
+		effectiveAllowedHosts = opts.AllowedHosts
+	}
+```
+
+**After:**
+```go
+	// Compute effective allowed hosts: sub-agent's own list wins (even if empty),
+	// else inherit parent's when not explicitly set (nil).
+	effectiveAllowedHosts := cfg.AllowedHosts
+	if effectiveAllowedHosts == nil {
+		effectiveAllowedHosts = opts.AllowedHosts
+	}
+```
+
+### Step 3: Verify
+
+1. Run `go build ./...`
+2. Run `go test ./internal/tool/`
+3. Run `go test ./cmd/`
+
+Return all output.
