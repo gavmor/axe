@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "8cd709a4f869",
+  "session_id": "ses_2f3db2f30ffeWjPlbWA1eq662p",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T16:49:00.519676Z",
+  "branch": "ISS-24/allow-list-connections",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/040_output_allowlist_spec.md",
+    "internal/agent/agent.go",
+    "internal/hostcheck/hostcheck.go",
+    "internal/hostcheck/hostcheck_test.go",
+    "internal/tool/tool.go",
+    "internal/tool/tool_test.go",
+    "internal/tool/url_fetch.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "84d8b734ce41",
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 7355,
+    "cache_read_tokens": 104108,
+    "output_tokens": 1039,
+    "api_call_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T16:49:00.468873Z",
+    "agent_lines": 94,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 94,
+    "agent_percentage": 100
+  }
+}

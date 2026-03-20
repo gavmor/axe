@@ -1,0 +1,52 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Two quick fixes:
+
+### Fix 1: Restore allowlist check in CheckRedirect
+
+In `internal/tool/url_fetch.go`, the `CheckRedirect` callback currently only checks redirect count. Restore the allowlist-only check (no DNS) as a first line of defense. The `DialContext` handles the full DNS-level check.
+
+Find the current `CheckRedirect` (around line 165-170):
+```go
+		CheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+```
+
+Replace with:
+```go
+		CheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {
+			if len(ec.AllowedHosts) > 0 && !hostcheck.IsAllowed(redirectReq.URL.Hostname(), ec.AllowedHosts) {
+				return fmt.Errorf("host %q is not in allowed_hosts", redirectReq.URL.Hostname())
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+```
+
+### Fix 2: Update scaffold comment
+
+In `internal/agent/agent.go`, find the scaffold comment:
+```go
+# Restrict url_fetch to these hostnames (optional, empty = allow all)
+# allowed_hosts = []
+```
+
+Replace with:
+```go
+# Restrict url_fetch to these hostnames (optional, omit to inherit parent's list)
+# allowed_hosts = []
+```
+
+### Verification
+1. Run `go build ./...`
+2. Run `go test ./internal/tool/`
+3. Run `go test ./cmd/`
+
+Return all output.
