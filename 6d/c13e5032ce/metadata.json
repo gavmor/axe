@@ -3,7 +3,7 @@
   "checkpoint_id": "6dc13e5032ce",
   "strategy": "manual-commit",
   "branch": "ISS-36/docker-build-in-goreleaser",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     ".github/workflows/release.yml"
   ],
@@ -21,13 +21,20 @@
       "context": "/6d/c13e5032ce/1/context.md",
       "content_hash": "/6d/c13e5032ce/1/content_hash.txt",
       "prompt": "/6d/c13e5032ce/1/prompt.txt"
+    },
+    {
+      "metadata": "/6d/c13e5032ce/2/metadata.json",
+      "transcript": "/6d/c13e5032ce/2/full.jsonl",
+      "context": "/6d/c13e5032ce/2/context.md",
+      "content_hash": "/6d/c13e5032ce/2/content_hash.txt",
+      "prompt": "/6d/c13e5032ce/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9,
-    "cache_creation_tokens": 4127,
-    "cache_read_tokens": 66537,
-    "output_tokens": 448,
-    "api_call_count": 6
+    "input_tokens": 16,
+    "cache_creation_tokens": 7805,
+    "cache_read_tokens": 137707,
+    "output_tokens": 1231,
+    "api_call_count": 11
   }
 }

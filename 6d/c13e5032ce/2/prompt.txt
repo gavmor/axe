@@ -1,0 +1,65 @@
+You are in the repo at /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-36/docker-build-in-goreleaser.
+
+Edit the file `.github/workflows/release.yml` to narrow the permission scope. Here is the exact change needed:
+
+**Current top-level permissions block (lines 10-14):**
+```yaml
+permissions:
+  contents: write      # GoReleaser: create GitHub Release
+  packages: write      # Docker: push to GHCR
+  attestations: write  # Docker: build provenance attestation
+  id-token: write      # Docker: OIDC token for attestation signing
+```
+
+**Replace with** a minimal top-level block that only grants what ALL jobs need:
+```yaml
+permissions:
+  contents: write      # GoReleaser: create GitHub Release & checkout
+```
+
+Then add job-level permissions to ONLY the `docker` job. The `goreleaser` job does NOT get job-level permissions (it inherits the global `contents: write` which is all it needs).
+
+For the `docker` job, add a `permissions` block right after `runs-on: ubuntu-latest` with:
+```yaml
+    permissions:
+      contents: read       # checkout
+      packages: write      # push to GHCR
+      attestations: write  # build provenance attestation
+      id-token: write      # OIDC token for attestation signing
+```
+
+IMPORTANT: When a job specifies its own `permissions`, it does NOT inherit the workflow-level permissions — it gets ONLY what's listed in its own block. That's why we must explicitly include `contents: read` in the docker job's permissions even though `contents: write` is set globally.
+
+The final file should look like this (showing the structure):
+
+```yaml
+# .github/workflows/release.yml
+# Create binaries on each release
+name: goreleaser
+
+on:
+  push:
+    tags:
+      - 'v*' # only version tags trigger a run
+
+permissions:
+  contents: write      # GoReleaser: create GitHub Release & checkout
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      ... (unchanged)
+
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read       # checkout
+      packages: write      # push to GHCR
+      attestations: write  # build provenance attestation
+      id-token: write      # OIDC token for attestation signing
+    steps:
+      ... (unchanged)
+```
+
+After making the edit, read back the full file and return its complete contents so I can verify correctness. Do NOT change anything else in the file — only the permissions blocks.
