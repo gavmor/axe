@@ -1,0 +1,34 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task 1: Mark Task 7 complete in the implementation checklist
+
+In `docs/plans/040_output_allowlist_implement.md`, change the Task 7 checkbox from `- [ ]` to `- [x]`:
+
+Find:
+```
+- [ ] **Task 7: Integration tests — `cmd/`**
+```
+
+Replace with:
+```
+- [x] **Task 7: Integration tests — `cmd/`**
+```
+
+## Task 2: Commit all changes
+
+Run:
+```bash
+cd /Users/jaronswab/go/src/github.com/jrswab/axe
+git add -A
+git commit -m "test: add integration tests for output allowlist (ISS-24)
+
+- 4 integration tests in cmd/run_integration_test.go:
+  - Allowlist blocks non-matching host
+  - Private IP blocking (unconditional, no allowlist)
+  - Empty allowlist permits public hosts (backwards compat)
+  - Loopback blocked even with allowlist configured
+- Fix pre-existing lint issue in opencode_test.go (SA5011)
+- All implementation tasks complete"
+```
+
+Return the commit output.

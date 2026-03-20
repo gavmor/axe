@@ -1,0 +1,2346 @@
+{
+  "info": {
+    "id": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+    "slug": "swift-orchid",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+    "title": "Check off Task 7 and commit (@general subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 1,
+      "deletions": 1,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774022759850,
+      "updated": 1774022766930
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774022759859
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/040_output_allowlist_implement.md",
+              "before": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [ ] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+              "after": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [x] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+              "additions": 1,
+              "deletions": 1,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0bff15b2001nynRM0kBlbhJa2",
+        "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.\n\n## Task 1: Mark Task 7 complete in the implementation checklist\n\nIn `docs/plans/040_output_allowlist_implement.md`, change the Task 7 checkbox from `- [ ]` to `- [x]`:\n\nFind:\n```\n- [ ] **Task 7: Integration tests — `cmd/`**\n```\n\nReplace with:\n```\n- [x] **Task 7: Integration tests — `cmd/`**\n```\n\n## Task 2: Commit all changes\n\nRun:\n```bash\ncd /Users/jaronswab/go/src/github.com/jrswab/axe\ngit add -A\ngit commit -m \"test: add integration tests for output allowlist (ISS-24)\n\n- 4 integration tests in cmd/run_integration_test.go:\n  - Allowlist blocks non-matching host\n  - Private IP blocking (unconditional, no allowlist)\n  - Empty allowlist permits public hosts (backwards compat)\n  - Loopback blocked even with allowlist configured\n- Fix pre-existing lint issue in opencode_test.go (SA5011)\n- All implementation tasks complete\"\n```\n\nReturn the commit output.",
+          "id": "prt_d0bff15b30015PSymIKtcugZek",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff15b2001nynRM0kBlbhJa2"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022759864,
+          "completed": 1774022762483
+        },
+        "parentID": "msg_d0bff15b2001nynRM0kBlbhJa2",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00784365,
+        "tokens": {
+          "total": 13403,
+          "input": 3,
+          "output": 110,
+          "reasoning": 0,
+          "cache": {
+            "read": 12653,
+            "write": 637
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bff15b8001y0QgsjmBhN6u03",
+        "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8e0dc278bbe79302008ab69b9d3c713e242b9c12",
+          "id": "REDACTED",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff15b8001y0QgsjmBhN6u03"
+        },
+        {
+          "type": "text",
+          "text": "I'll complete both tasks. Let me first read the file, then make the edit and commit.",
+          "time": {
+            "start": 1774022762171,
+            "end": 1774022762171
+          },
+          "id": "prt_d0bff1b7500200CTQp7Pb36EvO",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff15b8001y0QgsjmBhN6u03"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md</path>\n<type>file</type>\n<content>1: # 040 — Output Allowlist Implementation Guide\n2: \n3: Spec: `docs/plans/040_output_allowlist_spec.md`\n4: \n5: ---\n6: \n7: ## Section 1: Context Summary\n8: \n9: The `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n10: \n11: ---\n12: \n13: ## Section 2: Implementation Checklist\n14: \n15: ### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n16: \n17: - [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n18:   - New package `hostcheck` with three exported functions:\n19:     - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n20:     - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n21:     - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n22:   - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n23: \n24: - [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n25:   - Tests for `IsAllowed`:\n26:     - Empty allowlist returns `true` for any hostname.\n27:     - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n28:     - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n29:     - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n30:     - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n31:   - Tests for `IsPrivateIP`:\n32:     - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n33:     - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n34:     - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n35:   - Tests for `CheckHost`:\n36:     - Use a fake `Resolver` that returns controlled IPs.\n37:     - Allowlist non-empty, hostname not in list → error.\n38:     - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n39:     - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n40:     - Allowlist empty, resolves to public IP → nil.\n41:     - Allowlist empty, resolves to private IP → error.\n42:     - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n43:     - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n44:     - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n45:     - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n46:     - DNS resolution error → return the DNS error (not silently allow).\n47: \n48: - [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n49:   - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n50:   - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n51: \n52: - [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n53:   - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n54:   - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n55:   - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n56:   - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n57: \n58: - [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n59:   - Add field `AllowedHosts []string` to the `ExecContext` struct.\n60: \n61: ### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n62: \n63: - [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n64:   - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n65:   - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n66:   - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n67:   - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n68: \n69: - [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n70:   - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n71:   - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n72:   - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n73:   - Test: no allowlist (empty), public test server → request succeeds.\n74:   - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n75:   - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n76:   - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n77: \n78: - [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n79:   - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n80:   - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n81:   - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n82: \n83: - [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n84:   - Add field `AllowedHosts []string` to `ExecuteOptions`.\n85: \n86: - [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n87:   - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n88:     ```\n89:     effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n90:     if len(effectiveAllowedHosts) == 0 {\n91:         effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n92:     }\n93:     ```\n94:   - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n95:   - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n96: \n97: - [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n98:   - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n99:   - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n100:   - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n101:   - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n102: \n103: - [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n104:   - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n105: \n106: ### Phase 3 — Integration (depends on all of Phase 2)\n107: \n108: - [ ] **Task 7: Integration tests — `cmd/`**\n109:   - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n110:   - Test cases:\n111:     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n112:     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n113:     - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n114:     - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n115:     - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n116:     - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n117:   - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n118: \n119: ### Parallel Work Map\n120: \n121: ```\n122: Phase 1 (all parallel):\n123:   Task 1a + 1b ─┐\n124:   Task 2  + 2b ─┤\n125:   Task 3  ──────┘\n126:                  │\n127: Phase 2:         ▼\n128:   Task 4 + 4b ──── (depends on 1a, 1b, 3)\n129:   Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n130:   Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n131:                  │\n132: Phase 3:         ▼\n133:   Task 7 ───────── (depends on 4, 5, 6)\n134: ```\n\n(End of file - total 134 lines)\n</content>",
+            "title": "docs/plans/040_output_allowlist_implement.md",
+            "metadata": {
+              "preview": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022762358,
+              "end": 1774022762361
+            }
+          },
+          "id": "prt_d0bff1ebc0018c4t6Z59fifhnC",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff15b8001y0QgsjmBhN6u03"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "8e0dc278bbe79302008ab69b9d3c713e242b9c12",
+          "cost": 0.00784365,
+          "tokens": {
+            "total": 13403,
+            "input": 3,
+            "output": 110,
+            "reasoning": 0,
+            "cache": {
+              "read": 12653,
+              "write": 637
+            }
+          },
+          "id": "prt_d0bff1f86001oofWIoIhZWpI2N",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff15b8001y0QgsjmBhN6u03"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022762483,
+          "completed": 1774022766867
+        },
+        "parentID": "msg_d0bff15b2001nynRM0kBlbhJa2",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0246114,
+        "tokens": {
+          "total": 17736,
+          "input": 1,
+          "output": 156,
+          "reasoning": 0,
+          "cache": {
+            "read": 12653,
+            "write": 4926
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bff1ff3001yVNsE2pCeXZ3ND",
+        "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8e0dc278bbe79302008ab69b9d3c713e242b9c12",
+          "id": "prt_d0bff28ba001Ym3AsN53zq3aDP",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff1ff3001yVNsE2pCeXZ3ND"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01BDXW1ZAAaLKWmdw1PY11z4",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md",
+              "oldString": "- [ ] **Task 7: Integration tests — `cmd/`**",
+              "newString": "- [x] **Task 7: Integration tests — `cmd/`**"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/040_output_allowlist_implement.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/release.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 66,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 66,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 101,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 106,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 356,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 356,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 468,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 468,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/router.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/toolname/toolname.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 115,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 115,
+                        "character": 8
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field System"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 116,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 21
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Messages"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 131,
+                        "character": 7
+                      },
+                      "end": {
+                        "line": 131,
+                        "character": 7
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Model"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 132,
+                        "character": 13
+                      },
+                      "end": {
+                        "line": 132,
+                        "character": 13
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field InputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 133,
+                        "character": 14
+                      },
+                      "end": {
+                        "line": 133,
+                        "character": 14
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field OutputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 134,
+                        "character": 12
+                      },
+                      "end": {
+                        "line": 134,
+                        "character": 12
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field StopReason"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 147,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 147,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 148,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 148,
+                        "character": 9
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Content"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 169,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 169,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/retry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/read_file.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 187,
+                        "character": 4
+                      },
+                      "end": {
+                        "line": 187,
+                        "character": 20
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#minmax"
+                    },
+                    "source": "minmax",
+                    "message": "if statement can be modernized using min"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/anthropic.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 76,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 76,
+                        "character": 20
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 87,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 87,
+                        "character": 33
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 97,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 97,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 107,
+                        "character": 19
+                      },
+                      "end": {
+                        "line": 107,
+                        "character": 30
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 156,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 156,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 182,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 182,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 185,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 185,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 194,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 194,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 300,
+                        "character": 3
+                      },
+                      "end": {
+                        "line": 300,
+                        "character": 28
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringbuilder"
+                    },
+                    "source": "stringsbuilder",
+                    "message": "using string += string in a loop is inefficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/path_validation.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/resolve/resolve.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 165,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 165,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 288,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 288,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/openai.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 85,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 85,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 145,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 145,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 184,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 184,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 187,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 187,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 196,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 196,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 308,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 308,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/ollama.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 85,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 85,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 96,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 96,
+                        "character": 33
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 133,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 133,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 164,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 164,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 167,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 167,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 176,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 176,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/opencode.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 78,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 78,
+                        "character": 33
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 86,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 86,
+                        "character": 20
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 121,
+                        "character": 19
+                      },
+                      "end": {
+                        "line": 121,
+                        "character": 30
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 162,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 162,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 355,
+                        "character": 19
+                      },
+                      "end": {
+                        "line": 355,
+                        "character": 30
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 436,
+                        "character": 12
+                      },
+                      "end": {
+                        "line": 436,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 548,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 548,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 714,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 714,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/bedrock.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 91,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 91,
+                        "character": 33
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 131,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 131,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 195,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 195,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 223,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 223,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 226,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 226,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 231,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 231,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/gemini.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 82,
+                        "character": 17
+                      },
+                      "end": {
+                        "line": 82,
+                        "character": 28
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 101,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 101,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 181,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 181,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 216,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 216,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 219,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 219,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 228,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 228,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 345,
+                        "character": 4
+                      },
+                      "end": {
+                        "line": 345,
+                        "character": 24
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringbuilder"
+                    },
+                    "source": "stringsbuilder",
+                    "message": "using string += string in a loop is inefficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/minimax.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/sigv4.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 720,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 720,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 284,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 284,
+                        "character": 24
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 688,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 688,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 717,
+                        "character": 46
+                      },
+                      "end": {
+                        "line": 717,
+                        "character": 57
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 769,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 769,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 796,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 796,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 839,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 839,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 890,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 890,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 943,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 943,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 956,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 956,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 963,
+                        "character": 37
+                      },
+                      "end": {
+                        "line": 963,
+                        "character": 48
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 970,
+                        "character": 44
+                      },
+                      "end": {
+                        "line": 970,
+                        "character": 55
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1658,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1658,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1672,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 1672,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1681,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 1681,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1808,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1808,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1813,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1813,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1814,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1814,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1855,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1855,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1860,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1860,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1861,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1861,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1934,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1934,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1982,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1982,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/mockserver.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 548,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 548,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 712,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 712,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 729,
+                        "character": 48
+                      },
+                      "end": {
+                        "line": 729,
+                        "character": 59
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 745,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 745,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 749,
+                        "character": 47
+                      },
+                      "end": {
+                        "line": 749,
+                        "character": 58
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 937,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 937,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 939,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 939,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 951,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 951,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1798,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1798,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 2698,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 2698,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 2742,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 2742,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/testutil.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/opencode_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 83,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 83,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 84,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 84,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 421,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 421,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 424,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 424,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 427,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 427,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 668,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 668,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 670,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 670,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 673,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 673,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ]
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md\n@@ -104,9 +104,9 @@\n   - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n \n ### Phase 3 — Integration (depends on all of Phase 2)\n \n-- [ ] **Task 7: Integration tests — `cmd/`**\n+- [x] **Task 7: Integration tests — `cmd/`**\n   - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n   - Test cases:\n     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md",
+                "before": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [ ] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+                "after": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [x] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n    - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n  - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n\n- [x] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n  - Tests for `IsAllowed`:\n    - Empty allowlist returns `true` for any hostname.\n    - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n    - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n    - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n    - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n  - Tests for `IsPrivateIP`:\n    - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n    - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n    - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n  - Tests for `CheckHost`:\n    - Use a fake `Resolver` that returns controlled IPs.\n    - Allowlist non-empty, hostname not in list → error.\n    - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n    - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n    - Allowlist empty, resolves to public IP → nil.\n    - Allowlist empty, resolves to private IP → error.\n    - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n    - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n    - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n    - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n    - DNS resolution error → return the DNS error (not silently allow).\n\n- [x] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n  - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n  - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n\n- [x] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n  - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n  - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n  - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n  - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n\n- [x] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n  - Add field `AllowedHosts []string` to the `ExecContext` struct.\n\n### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n\n- [x] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n  - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n  - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n  - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n  - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n\n- [x] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n  - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n  - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n  - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n  - Test: no allowlist (empty), public test server → request succeeds.\n  - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n  - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n  - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n\n- [x] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n  - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n  - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n  - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n\n- [x] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n  - Add field `AllowedHosts []string` to `ExecuteOptions`.\n\n- [x] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n  - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n    ```\n    effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n    if len(effectiveAllowedHosts) == 0 {\n        effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n    }\n    ```\n  - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n  - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n\n- [x] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n  - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n  - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n  - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n  - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n\n- [x] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n  - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n\n### Phase 3 — Integration (depends on all of Phase 2)\n\n- [x] **Task 7: Integration tests — `cmd/`**\n  - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n  - Test cases:\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n    - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n    - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n    - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n    - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n    - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n  - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n\n### Parallel Work Map\n\n```\nPhase 1 (all parallel):\n  Task 1a + 1b ─┐\n  Task 2  + 2b ─┤\n  Task 3  ──────┘\n                 │\nPhase 2:         ▼\n  Task 4 + 4b ──── (depends on 1a, 1b, 3)\n  Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n  Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n                 │\nPhase 3:         ▼\n  Task 7 ───────── (depends on 4, 5, 6)\n```\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022766747,
+              "end": 1774022766770
+            }
+          },
+          "id": "prt_d0bff28ba002Q2KZ7gDt8zRoF1",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff1ff3001yVNsE2pCeXZ3ND"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "846c951845ba30ce20ca2733ff531262d001ef7a",
+          "cost": 0.0246114,
+          "tokens": {
+            "total": 17736,
+            "input": 1,
+            "output": 156,
+            "reasoning": 0,
+            "cache": {
+              "read": 12653,
+              "write": 4926
+            }
+          },
+          "id": "prt_d0bff30b3001VC6LLXbY566fiN",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff1ff3001yVNsE2pCeXZ3ND"
+        },
+        {
+          "type": "patch",
+          "hash": "8e0dc278bbe79302008ab69b9d3c713e242b9c12",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md"
+          ],
+          "id": "prt_d0bff3110001G1rwE4XW0OIHRF",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff1ff3001yVNsE2pCeXZ3ND"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022766867
+        },
+        "parentID": "msg_d0bff15b2001nynRM0kBlbhJa2",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0,
+        "tokens": {
+          "input": 0,
+          "output": 0,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "id": "msg_d0bff3113001mpOgqRWaj6u7Ke",
+        "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "846c951845ba30ce20ca2733ff531262d001ef7a",
+          "id": "prt_d0bff3780001OEmFozvt759tOQ",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff3113001mpOgqRWaj6u7Ke"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01LKktsVRs4xPR4fuBf8QPaW",
+          "tool": "bash",
+          "state": {
+            "status": "running",
+            "input": {
+              "command": "git add -A && git commit -m \"test: add integration tests for output allowlist (ISS-24)\n\n- 4 integration tests in cmd/run_integration_test.go:\n  - Allowlist blocks non-matching host\n  - Private IP blocking (unconditional, no allowlist)\n  - Empty allowlist permits public hosts (backwards compat)\n  - Loopback blocked even with allowlist configured\n- Fix pre-existing lint issue in opencode_test.go (SA5011)\n- All implementation tasks complete\"",
+              "description": "Stage all changes and commit with specified message"
+            },
+            "time": {
+              "start": 1774022772158
+            }
+          },
+          "id": "prt_d0bff3780002adcn2iWp1OP98c",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff3113001mpOgqRWaj6u7Ke"
+        }
+      ]
+    }
+  ]
+}
