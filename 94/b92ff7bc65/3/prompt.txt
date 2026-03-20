@@ -1,0 +1,8 @@
+In /Users/jaronswab/go/src/github.com/jrswab/axe:
+
+1. Run `grep -rn "urlFetchTimeout\|URLFetchTimeout" --include="*.go"` to find all references to the timeout var.
+2. Check if the rename from `urlFetchTimeout` to `URLFetchTimeout` broke any existing tests in `internal/tool/url_fetch_test.go` (which previously used the lowercase name).
+3. Run `go test ./internal/tool/` to verify.
+4. Run `go test ./cmd/` to verify.
+
+Return all output.
