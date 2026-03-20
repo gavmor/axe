@@ -1,0 +1,46 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Two small changes:
+
+### Fix 8: Add `allowed_hosts` to Scaffold template
+
+In `internal/agent/agent.go`, find the `Scaffold()` function (around line 298-358). Add a commented-out `allowed_hosts` entry after the `tools` line. Find:
+
+```go
+# Tools this agent can use (optional)
+# Valid: list_directory, read_file, write_file, edit_file, run_command, url_fetch, web_search
+# tools = []
+```
+
+Add after it:
+```go
+
+# Restrict url_fetch to these hostnames (optional, empty = allow all)
+# allowed_hosts = []
+```
+
+### Update spec E5
+
+In `docs/plans/040_output_allowlist_spec.md`, find the E5 section (around line 193-195). Replace:
+
+```
+### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all
+
+An `allowed_hosts = []` in a sub-agent TOML is treated as "not defined" — the parent's list is inherited. This is consistent with TOML semantics where an omitted field and an empty list are functionally equivalent for this feature. The inheritance rule triggers on "empty at load time," regardless of whether the field was explicitly set or defaulted.
+```
+
+With:
+
+```
+### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all
+
+An omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.
+```
+
+### Verification
+
+1. Run `go build ./...`
+2. Run `go test -run TestScaffold ./internal/agent/` (if a scaffold test exists) or `go test ./internal/agent/`
+
+Return all output.
