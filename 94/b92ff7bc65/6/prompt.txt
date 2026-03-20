@@ -1,0 +1,59 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Fix 3 issues in the integration tests in `cmd/run_integration_test.go`:
+
+### Fix 1: `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts`
+
+This test makes a real DNS query to `nonexistent.example.com` which is flaky in air-gapped CI. Change the URL to use `https://192.0.2.1/data` (TEST-NET-1 from RFC 5737 — a public IP that's guaranteed to not be routable but is NOT in our private IP ranges). This avoids DNS dependency. The test should verify that the error is a connection error, NOT an allowlist error.
+
+Find the test and change:
+```go
+// Before
+{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "https://nonexistent.example.com/data"}},
+```
+```go
+// After
+{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "https://192.0.2.1/data"}},
+```
+
+### Fix 2: `TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist`
+
+The assertion uses `||` to accept either error. The behavior is deterministic: `127.0.0.1` fails the allowlist check first. Make the assertion specific:
+
+Find and change:
+```go
+// Before
+if !strings.Contains(body, "not in allowed_hosts") && !strings.Contains(body, "private") {
+    t.Errorf("expected allowlist or private IP error, got:\n%s", body)
+}
+```
+```go
+// After
+if !strings.Contains(body, "not in allowed_hosts") {
+    t.Errorf("expected 'not in allowed_hosts' error for raw IP, got:\n%s", body)
+}
+```
+
+### Fix 3: `TestIntegration_AllowedHosts_BlocksPrivateIP`
+
+Use a more specific assertion substring:
+
+Find and change:
+```go
+// Before
+if !strings.Contains(body, "private") {
+    t.Errorf("expected tool result to mention 'private', got request body:\n%s", body)
+}
+```
+```go
+// After
+if !strings.Contains(body, "private/reserved IP") {
+    t.Errorf("expected tool result to mention 'private/reserved IP', got request body:\n%s", body)
+}
+```
+
+## Verification
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run "TestIntegration_AllowedHosts" -v ./cmd/` and confirm all 4 tests pass.
+
+Return the test output.
