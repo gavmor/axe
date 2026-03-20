@@ -1,0 +1,75 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Fix two issues in `internal/hostcheck/hostcheck.go` using red/green TDD.
+
+### Fix 1a: Nil resolver guard
+
+Before line 84 (`addrs, err := resolver.LookupIPAddr(ctx, hostname)`), add a nil check:
+
+```go
+	if resolver == nil {
+		return nil, fmt.Errorf("no DNS resolver configured for host %q", hostname)
+	}
+```
+
+### Fix 1b: Wrap DNS error with hostname context
+
+Change line 85-86 from:
+```go
+	if err != nil {
+		return nil, err
+	}
+```
+to:
+```go
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve %q: %w", hostname, err)
+	}
+```
+
+### Update test
+
+In `internal/hostcheck/hostcheck_test.go`, make two changes:
+
+1. Add a new test case to the `TestCheckHost` table for the nil resolver:
+```go
+		{
+			name:      "nil resolver returns error",
+			hostname:  "example.com",
+			allowlist: []string{},
+			resolver:  nil,
+			wantErr:   "no DNS resolver configured",
+		},
+```
+
+2. Update the existing "DNS resolution error is returned" test case (around line 233-238). The error is now wrapped, so the `wantErr` substring still matches since `"dns timeout"` is inside the wrapped error `"failed to resolve \"bad.example.com\": dns timeout"`. But let's also verify the hostname is in the error. Change:
+```go
+		{
+			name:      "DNS resolution error is returned",
+			hostname:  "bad.example.com",
+			allowlist: []string{},
+			resolver:  &fakeResolver{err: fmt.Errorf("dns timeout")},
+			wantErr:   "dns timeout",
+		},
+```
+to:
+```go
+		{
+			name:      "DNS resolution error is returned with hostname",
+			hostname:  "bad.example.com",
+			allowlist: []string{},
+			resolver:  &fakeResolver{err: fmt.Errorf("dns timeout")},
+			wantErr:   "failed to resolve",
+		},
+```
+
+### Red/Green TDD
+
+1. Write the nil resolver test case FIRST, run `go test -run TestCheckHost/nil_resolver ./internal/hostcheck/` — should FAIL.
+2. Add the nil guard to `hostcheck.go`, run again — should PASS.
+3. Update the DNS error test case, run `go test -run "TestCheckHost/DNS_resolution" ./internal/hostcheck/` — should PASS (the wrapped error still contains the substring).
+4. Run ALL hostcheck tests: `go test -v ./internal/hostcheck/`
+5. Run `go build ./...` to verify no compilation issues.
+
+Return all test output.
