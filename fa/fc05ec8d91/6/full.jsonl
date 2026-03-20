@@ -1,0 +1,762 @@
+{
+  "info": {
+    "id": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+    "slug": "brave-forest",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+    "title": "Auto-review code changes (@review subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774020505126,
+      "updated": 1774020530637
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774020505134
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "review",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are reviewing code changes in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.\n\n## Steps\n\n1. Run `git diff HEAD` to get the full diff of all changes (both tracked and untracked won't show — also run `cat` on the new files: `internal/hostcheck/hostcheck.go`, `internal/hostcheck/hostcheck_test.go`, `docs/plans/040_output_allowlist_implement.md`, `docs/plans/040_output_allowlist_spec.md`)\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it's intended to do, especially for user-facing or critical paths.\n    - Prioritize clear variable and function names, simple logic, and minimal complexity.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.\n    - Avoid nitpicks that block progress unless they are critical.\n    - Check for bugs, security issues, code drift, performance bottlenecks, poor maintainability.\n3. Return your review as a markdown list. Each item must include:\n    - A prompt for an LLM coding agent to fix the code. This prompt MUST be specific and only address the fix needed.\n    - Mention the file name prepended with `@` in the prompt.\n4. If there are no issues, return \"No issues found.\"\n\nFocus on correctness and security — this is a security feature (SSRF protection).",
+          "id": "prt_d0bdcae2e001cyfQHbyT2okw9G",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020505140,
+          "completed": 1774020511532
+        },
+        "parentID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0878525,
+        "tokens": {
+          "total": 12944,
+          "input": 3,
+          "output": 371,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 12570
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bdcae34001TiKTw2AXemr0J5",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "id": "prt_d0bdcb9290015yJhNas27qs97d",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI'll start by gathering all the changes and new files in parallel.",
+          "time": {
+            "start": 1774020508845,
+            "end": 1774020508845
+          },
+          "id": "prt_d0bdcb929002Jys0I3UOZfov37",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get full diff of all changes"
+            },
+            "output": "diff --git a/cmd/run.go b/cmd/run.go\nindex e7f8055..751f885 100644\n--- a/cmd/run.go\n+++ b/cmd/run.go\n@@ -700,17 +700,18 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \t\tBudgetTracker: budgetTracker,\n \t\tAgentsDir:     agentsDir,\n \t\tAgentsBase:    agentsBase,\n+\t\tAllowedHosts:  cfg.AllowedHosts,\n \t}\n \n \tif len(toolCalls) == 1 || !parallel {\n \t\t// Sequential execution (also used for single call)\n \t\tfor i, tc := range toolCalls {\n \t\t\tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n-\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t} else if tc.Name == tool.CallAgentToolName {\n \t\t\t\tresults[i] = tool.ExecuteCallAgent(ctx, tc, execOpts)\n \t\t\t} else {\n-\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t}\n \t\t}\n \t} else {\n@@ -724,11 +725,11 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \t\t\tgo func(idx int, call provider.ToolCall) {\n \t\t\t\tvar res provider.ToolResult\n \t\t\t\tif mcpRouter != nil && mcpRouter.Has(call.Name) {\n-\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t\t} else if call.Name == tool.CallAgentToolName {\n \t\t\t\t\tres = tool.ExecuteCallAgent(ctx, call, execOpts)\n \t\t\t\t} else {\n-\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t\t}\n \t\t\t\tch <- indexedResult{index: idx, result: res}\n \t\t\t}(i, tc)\n@@ -742,7 +743,7 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \treturn results\n }\n \n-func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string) provider.ToolResult {\n+func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string) provider.ToolResult {\n \tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n \t\tif verbose && stderr != nil {\n \t\t\tif serverName, ok := mcpRouter.ServerName(tc.Name); ok {\n@@ -756,7 +757,7 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.\n \t\treturn result\n \t}\n \n-\tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose})\n+\tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose, AllowedHosts: allowedHosts})\n \tif dispatchErr != nil {\n \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\n \t}\ndiff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 535787f..546c874 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -74,6 +74,7 @@ type AgentConfig struct {\n \tFiles         []string          `toml:\"files\"`\n \tWorkdir       string            `toml:\"workdir\"`\n \tTools         []string          `toml:\"tools\"`\n+\tAllowedHosts  []string          `toml:\"allowed_hosts\"`\n \tMCPServers    []MCPServerConfig `toml:\"mcp_servers\"`\n \tSubAgents     []string          `toml:\"sub_agents\"`\n \tSubAgentsConf SubAgentsConfig   `toml:\"sub_agents_config\"`\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 839e0a8..a4c95c5 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -1784,3 +1784,50 @@ func TestBuildSearchDirs_EmptyFlag_EmptyBase(t *testing.T) {\n \t\tt.Errorf(\"dir[0] = %q, want %q\", got[0], want)\n \t}\n }\n+\n+func TestAllowedHosts_TOMLParsing(t *testing.T) {\n+\ttests := []struct {\n+\t\tname      string\n+\t\tinput     string\n+\t\twantHosts []string\n+\t\twantNil   bool\n+\t}{\n+\t\t{\n+\t\t\tname:      \"with allowed_hosts\",\n+\t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = [\\\"api.example.com\\\", \\\"docs.example.com\\\"]\",\n+\t\t\twantHosts: []string{\"api.example.com\", \"docs.example.com\"},\n+\t\t},\n+\t\t{\n+\t\t\tname:    \"without allowed_hosts field\",\n+\t\t\tinput:   \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\",\n+\t\t\twantNil: true,\n+\t\t},\n+\t\t{\n+\t\t\tname:      \"empty allowed_hosts\",\n+\t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = []\",\n+\t\t\twantHosts: []string{},\n+\t\t},\n+\t}\n+\tfor _, tt := range tests {\n+\t\tt.Run(tt.name, func(t *testing.T) {\n+\t\t\tvar cfg AgentConfig\n+\t\t\tif _, err := tomlDecode(tt.input, &cfg); err != nil {\n+\t\t\t\tt.Fatalf(\"unexpected decode error: %v\", err)\n+\t\t\t}\n+\t\t\tif tt.wantNil {\n+\t\t\t\tif cfg.AllowedHosts != nil {\n+\t\t\t\t\tt.Errorf(\"expected nil AllowedHosts, got %v\", cfg.AllowedHosts)\n+\t\t\t\t}\n+\t\t\t\treturn\n+\t\t\t}\n+\t\t\tif len(cfg.AllowedHosts) != len(tt.wantHosts) {\n+\t\t\t\tt.Fatalf(\"AllowedHosts length = %d, want %d\", len(cfg.AllowedHosts), len(tt.wantHosts))\n+\t\t\t}\n+\t\t\tfor i, got := range cfg.AllowedHosts {\n+\t\t\t\tif got != tt.wantHosts[i] {\n+\t\t\t\t\tt.Errorf(\"AllowedHosts[%d] = %q, want %q\", i, got, tt.wantHosts[i])\n+\t\t\t\t}\n+\t\t\t}\n+\t\t})\n+\t}\n+}\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 3049cf0..327ac24 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -11,9 +11,10 @@ import (\n \n // ExecContext holds the minimal context needed by generic tool executors.\n type ExecContext struct {\n-\tWorkdir string\n-\tStderr  io.Writer\n-\tVerbose bool\n+\tWorkdir      string\n+\tStderr       io.Writer\n+\tVerbose      bool\n+\tAllowedHosts []string\n }\n \n // ToolEntry holds a tool's definition and executor functions.\ndiff --git a/internal/tool/tool.go b/internal/tool/tool.go\nindex f1c1d29..f43065b 100644\n--- a/internal/tool/tool.go\n+++ b/internal/tool/tool.go\n@@ -38,6 +38,7 @@ type ExecuteOptions struct {\n \tBudgetTracker *budget.BudgetTracker\n \tAgentsDir     string // value of --agents-dir flag (may be empty)\n \tAgentsBase    string // parent agent's resolved workdir (for auto-discovery)\n+\tAllowedHosts  []string\n }\n \n // CallAgentTool returns the call_agent tool definition for LLM tool calling.\n@@ -145,6 +146,12 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n \t}\n \n+\t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n+\teffectiveAllowedHosts := cfg.AllowedHosts\n+\tif len(effectiveAllowedHosts) == 0 {\n+\t\teffectiveAllowedHosts = opts.AllowedHosts\n+\t}\n+\n \t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n \tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n \tif err != nil {\n@@ -303,6 +310,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t// Step 14: Run conversation loop (or single-shot if no tools)\n \trunOpts := opts\n \trunOpts.MCPRouter = mcpRouter\n+\trunOpts.AllowedHosts = effectiveAllowedHosts\n \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)\n \tif err != nil {\n \t\tdurationMs := time.Since(start).Milliseconds()\n@@ -408,6 +416,7 @@ func runConversationLoop(ctx context.Context, prov provider.Provider, req *provi\n \t\t\t\t\tBudgetTracker: opts.BudgetTracker,\n \t\t\t\t\tAgentsDir:     opts.AgentsDir,\n \t\t\t\t\tAgentsBase:    toolWorkdir, // sub-agent's workdir becomes the new base\n+\t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n \t\t\t\t}\n \t\t\t\tresults[i] = ExecuteCallAgent(ctx, tc, subOpts)\n \t\t\t} else {\n@@ -435,7 +444,7 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Regis\n \t\treturn result\n \t}\n \n-\texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose}\n+\texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n \tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n \tif dispatchErr != nil {\n \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 9ae6000..12dacf8 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -5,6 +5,7 @@ import (\n \t\"fmt\"\n \t\"io\"\n \t\"mime\"\n+\t\"net\"\n \t\"net/http\"\n \t\"net/url\"\n \t\"strings\"\n@@ -12,6 +13,7 @@ import (\n \n \t\"golang.org/x/net/html\"\n \n+\t\"github.com/jrswab/axe/internal/hostcheck\"\n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n )\n@@ -20,6 +22,14 @@ const maxReadBytes = 10000\n \n var urlFetchTimeout = 15 * time.Second\n \n+// urlFetchResolver is the DNS resolver used for host validation.\n+// Override in tests to inject fake DNS responses.\n+var urlFetchResolver hostcheck.Resolver = net.DefaultResolver\n+\n+// urlFetchCheckHost is the host validation function.\n+// Override in tests to bypass private IP / allowlist checks.\n+var urlFetchCheckHost = hostcheck.CheckHost\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -126,6 +136,11 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n+\t// Host allowlist and private IP check.\n+\tif _, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver); hostErr != nil {\n+\t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n+\t}\n+\n \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n \tdefer cancel()\n \n@@ -134,7 +149,19 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\n \n-\tresp, err := http.DefaultClient.Do(req)\n+\tclient := &http.Client{\n+\t\tCheckRedirect: func(req *http.Request, via []*http.Request) error {\n+\t\t\tif _, err := urlFetchCheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver); err != nil {\n+\t\t\t\treturn err\n+\t\t\t}\n+\t\t\tif len(via) >= 10 {\n+\t\t\t\treturn fmt.Errorf(\"too many redirects\")\n+\t\t\t}\n+\t\t\treturn nil\n+\t\t},\n+\t}\n+\n+\tresp, err := client.Do(req)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex f3dd2bc..707a277 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -6,14 +6,38 @@ import (\n \t\"net\"\n \t\"net/http\"\n \t\"net/http/httptest\"\n+\t\"net/url\"\n \t\"strings\"\n \t\"testing\"\n \t\"time\"\n \n+\t\"github.com/jrswab/axe/internal/hostcheck\"\n \t\"github.com/jrswab/axe/internal/provider\"\n )\n \n+// fakeURLFetchResolver is a test-only Resolver that returns preset addresses.\n+type fakeURLFetchResolver struct {\n+\taddrs []net.IPAddr\n+\terr   error\n+}\n+\n+func (f *fakeURLFetchResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {\n+\treturn f.addrs, f.err\n+}\n+\n+// skipHostCheck bypasses the host check for tests that use httptest.NewServer\n+// (which binds to 127.0.0.1, a private IP that would otherwise be rejected).\n+func skipHostCheck(t *testing.T) {\n+\tt.Helper()\n+\torig := urlFetchCheckHost\n+\turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n+\t\treturn net.ParseIP(\"127.0.0.1\"), nil\n+\t}\n+\tt.Cleanup(func() { urlFetchCheckHost = orig })\n+}\n+\n func TestURLFetch_Success(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"hello world\"))\n \t}))\n@@ -101,6 +125,7 @@ func TestURLFetch_NoScheme(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusNotFound)\n \t\t_, _ = w.Write([]byte(\"not found\"))\n@@ -122,6 +147,7 @@ func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusInternalServerError)\n \t\t_, _ = w.Write([]byte(\"internal error\"))\n@@ -143,6 +169,7 @@ func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n }\n \n func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n+\tskipHostCheck(t)\n \tlargeBody := strings.Repeat(\"A\", 20000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(largeBody))\n@@ -167,6 +194,7 @@ func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n }\n \n func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n+\tskipHostCheck(t)\n \texactBody := strings.Repeat(\"B\", 10000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(exactBody))\n@@ -188,6 +216,7 @@ func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n }\n \n func TestURLFetch_ContextCancellation(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\ttimer := time.NewTimer(10 * time.Second)\n \t\tdefer timer.Stop()\n@@ -213,6 +242,7 @@ func TestURLFetch_ContextCancellation(t *testing.T) {\n }\n \n func TestURLFetch_ConnectionRefused(t *testing.T) {\n+\tskipHostCheck(t)\n \tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n \tif err != nil {\n \t\tt.Fatalf(\"net.Listen error: %v\", err)\n@@ -234,6 +264,7 @@ func TestURLFetch_ConnectionRefused(t *testing.T) {\n }\n \n func TestURLFetch_CallIDPassthrough(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"ok\"))\n \t}))\n@@ -249,6 +280,7 @@ func TestURLFetch_CallIDPassthrough(t *testing.T) {\n }\n \n func TestURLFetch_EmptyResponseBody(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusOK)\n \t}))\n@@ -266,6 +298,7 @@ func TestURLFetch_EmptyResponseBody(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n+\tskipHostCheck(t)\n \tlargeBody := strings.Repeat(\"C\", 20000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusInternalServerError)\n@@ -288,6 +321,7 @@ func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n }\n \n func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"ok\"))\n \t}))\n@@ -315,6 +349,7 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n }\n \n func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t// Block longer than the per-request timeout\n \t\ttimer := time.NewTimer(2 * time.Second)\n@@ -349,6 +384,7 @@ func TestURLFetch_PerRequestTimeout(t *testing.T) {\n }\n \n func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\ttimer := time.NewTimer(2 * time.Second)\n \t\tdefer timer.Stop()\n@@ -379,6 +415,7 @@ func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n }\n \n func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"fast response\"))\n \t}))\n@@ -476,6 +513,7 @@ func TestStripHTML_NoHTMLTags(t *testing.T) {\n // Phase 1B: urlFetchExecute integration tests\n \n func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n \t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n@@ -495,6 +533,7 @@ func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n }\n \n func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n \t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n@@ -514,6 +553,7 @@ func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n }\n \n func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n \t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n@@ -533,6 +573,7 @@ func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n }\n \n func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n \t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n@@ -553,6 +594,7 @@ func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n \t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n@@ -572,6 +614,7 @@ func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \t// Note: Go's http.DetectContentType may auto-set Content-Type.\n \t// We explicitly set it to empty to test the missing header case.\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n@@ -594,6 +637,7 @@ func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n \t\tw.WriteHeader(http.StatusNotFound)\n@@ -620,6 +664,7 @@ func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n \t\tw.WriteHeader(http.StatusInternalServerError)\n@@ -643,6 +688,7 @@ func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n+\tskipHostCheck(t)\n \t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n \t// 9950 bytes of CSS in a <style> tag + small visible text.\n \tbigCSS := strings.Repeat(\"x\", 9950)\n@@ -668,3 +714,114 @@ func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n \t}\n }\n+\n+// Phase 4: Allowlist and private IP tests\n+\n+func TestURLFetch_AllowlistPermitsMatchingHost(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.WriteHeader(200)\n+\t\t_, _ = w.Write([]byte(\"ok\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Extract hostname from test server URL (will be 127.0.0.1)\n+\tu, _ := url.Parse(ts.URL)\n+\thostname := u.Hostname()\n+\n+\t// Override host check: verify allowlist logic passes, bypass private IP check\n+\t// so the test server (127.0.0.1) is reachable.\n+\torig := urlFetchCheckHost\n+\turlFetchCheckHost = func(ctx context.Context, h string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n+\t\tif !hostcheck.IsAllowed(h, allowlist) {\n+\t\t\treturn nil, &net.AddrError{Err: \"not in allowed_hosts\", Addr: h}\n+\t\t}\n+\t\treturn net.ParseIP(\"127.0.0.1\"), nil\n+\t}\n+\tdefer func() { urlFetchCheckHost = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-1\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": ts.URL},\n+\t}, ExecContext{AllowedHosts: []string{hostname}})\n+\n+\tif result.IsError {\n+\t\tt.Errorf(\"expected success, got error: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_AllowlistBlocksNonMatchingHost(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-2\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"https://blocked.example.com/page\"},\n+\t}, ExecContext{AllowedHosts: []string{\"allowed.example.com\"}})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for non-matching host\")\n+\t}\n+\tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_EmptyAllowlistPermitsAll(t *testing.T) {\n+\tskipHostCheck(t)\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.WriteHeader(200)\n+\t\t_, _ = w.Write([]byte(\"ok\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-3\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": ts.URL},\n+\t}, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Errorf(\"expected success with empty allowlist, got error: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_BlocksPrivateIP(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-4\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"http://192.168.1.1/data\"},\n+\t}, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for private IP\")\n+\t}\n+\tif !strings.Contains(result.Content, \"private\") {\n+\t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_BlocksLoopbackIP(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\t// Override resolver to avoid actual DNS and return a loopback address\n+\torig := urlFetchResolver\n+\turlFetchResolver = &fakeURLFetchResolver{\n+\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"127.0.0.1\")}},\n+\t}\n+\tdefer func() { urlFetchResolver = orig }()\n+\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-5\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"http://evil.example.com/steal\"},\n+\t}, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for loopback IP\")\n+\t}\n+\tif !strings.Contains(result.Content, \"private\") {\n+\t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n+\t}\n+}\n",
+            "title": "Get full diff of all changes",
+            "metadata": {
+              "output": "diff --git a/cmd/run.go b/cmd/run.go\nindex e7f8055..751f885 100644\n--- a/cmd/run.go\n+++ b/cmd/run.go\n@@ -700,17 +700,18 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \t\tBudgetTracker: budgetTracker,\n \t\tAgentsDir:     agentsDir,\n \t\tAgentsBase:    agentsBase,\n+\t\tAllowedHosts:  cfg.AllowedHosts,\n \t}\n \n \tif len(toolCalls) == 1 || !parallel {\n \t\t// Sequential execution (also used for single call)\n \t\tfor i, tc := range toolCalls {\n \t\t\tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n-\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t} else if tc.Name == tool.CallAgentToolName {\n \t\t\t\tresults[i] = tool.ExecuteCallAgent(ctx, tc, execOpts)\n \t\t\t} else {\n-\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t}\n \t\t}\n \t} else {\n@@ -724,11 +725,11 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \t\t\tgo func(idx int, call provider.ToolCall) {\n \t\t\t\tvar res provider.ToolResult\n \t\t\t\tif mcpRouter != nil && mcpRouter.Has(call.Name) {\n-\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t\t} else if call.Name == tool.CallAgentToolName {\n \t\t\t\t\tres = tool.ExecuteCallAgent(ctx, call, execOpts)\n \t\t\t\t} else {\n-\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir)\n+\t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n \t\t\t\t}\n \t\t\t\tch <- indexedResult{index: idx, result: res}\n \t\t\t}(i, tc)\n@@ -742,7 +743,7 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a\n \treturn results\n }\n \n-func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string) provider.ToolResult {\n+func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string) provider.ToolResult {\n \tif mcpRouter != nil && mcpRouter.Has(tc.Name) {\n \t\tif verbose && stderr != nil {\n \t\t\tif serverName, ok := mcpRouter.ServerName(tc.Name); ok {\n@@ -756,7 +757,7 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.\n \t\treturn result\n \t}\n \n-\tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose})\n+\tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose, AllowedHosts: allowedHosts})\n \tif dispatchErr != nil {\n \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\n \t}\ndiff --git a/internal/agent/agent.go b/internal/agent/agent.go\nindex 535787f..546c874 100644\n--- a/internal/agent/agent.go\n+++ b/internal/agent/agent.go\n@@ -74,6 +74,7 @@ type AgentConfig struct {\n \tFiles         []string          `toml:\"files\"`\n \tWorkdir       string            `toml:\"workdir\"`\n \tTools         []string          `toml:\"tools\"`\n+\tAllowedHosts  []string          `toml:\"allowed_hosts\"`\n \tMCPServers    []MCPServerConfig `toml:\"mcp_servers\"`\n \tSubAgents     []string          `toml:\"sub_agents\"`\n \tSubAgentsConf SubAgentsConfig   `toml:\"sub_agents_config\"`\ndiff --git a/internal/agent/agent_test.go b/internal/agent/agent_test.go\nindex 839e0a8..a4c95c5 100644\n--- a/internal/agent/agent_test.go\n+++ b/internal/agent/agent_test.go\n@@ -1784,3 +1784,50 @@ func TestBuildSearchDirs_EmptyFlag_EmptyBase(t *testing.T) {\n \t\tt.Errorf(\"dir[0] = %q, want %q\", got[0], want)\n \t}\n }\n+\n+func TestAllowedHosts_TOMLParsing(t *testing.T) {\n+\ttests := []struct {\n+\t\tname      string\n+\t\tinput     string\n+\t\twantHosts []string\n+\t\twantNil   bool\n+\t}{\n+\t\t{\n+\t\t\tname:      \"with allowed_hosts\",\n+\t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = [\\\"api.example.com\\\", \\\"docs.example.com\\\"]\",\n+\t\t\twantHosts: []string{\"api.example.com\", \"docs.example.com\"},\n+\t\t},\n+\t\t{\n+\t\t\tname:    \"without allowed_hosts field\",\n+\t\t\tinput:   \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\",\n+\t\t\twantNil: true,\n+\t\t},\n+\t\t{\n+\t\t\tname:      \"empty allowed_hosts\",\n+\t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = []\",\n+\t\t\twantHosts: []string{},\n+\t\t},\n+\t}\n+\tfor _, tt := range tests {\n+\t\tt.Run(tt.name, func(t *testing.T) {\n+\t\t\tvar cfg AgentConfig\n+\t\t\tif _, err := tomlDecode(tt.input, &cfg); err != nil {\n+\t\t\t\tt.Fatalf(\"unexpected decode error: %v\", err)\n+\t\t\t}\n+\t\t\tif tt.wantNil {\n+\t\t\t\tif cfg.AllowedHosts != nil {\n+\t\t\t\t\tt.Errorf(\"expected nil AllowedHosts, got %v\", cfg.AllowedHosts)\n+\t\t\t\t}\n+\t\t\t\treturn\n+\t\t\t}\n+\t\t\tif len(cfg.AllowedHosts) != len(tt.wantHosts) {\n+\t\t\t\tt.Fatalf(\"AllowedHosts length = %d, want %d\", len(cfg.AllowedHosts), len(tt.wantHosts))\n+\t\t\t}\n+\t\t\tfor i, got := range cfg.AllowedHosts {\n+\t\t\t\tif got != tt.wantHosts[i] {\n+\t\t\t\t\tt.Errorf(\"AllowedHosts[%d] = %q, want %q\", i, got, tt.wantHosts[i])\n+\t\t\t\t}\n+\t\t\t}\n+\t\t})\n+\t}\n+}\ndiff --git a/internal/tool/registry.go b/internal/tool/registry.go\nindex 3049cf0..327ac24 100644\n--- a/internal/tool/registry.go\n+++ b/internal/tool/registry.go\n@@ -11,9 +11,10 @@ import (\n \n // ExecContext holds the minimal context needed by generic tool executors.\n type ExecContext struct {\n-\tWorkdir string\n-\tStderr  io.Writer\n-\tVerbose bool\n+\tWorkdir      string\n+\tStderr       io.Writer\n+\tVerbose      bool\n+\tAllowedHosts []string\n }\n \n // ToolEntry holds a tool's definition and executor functions.\ndiff --git a/internal/tool/tool.go b/internal/tool/tool.go\nindex f1c1d29..f43065b 100644\n--- a/internal/tool/tool.go\n+++ b/internal/tool/tool.go\n@@ -38,6 +38,7 @@ type ExecuteOptions struct {\n \tBudgetTracker *budget.BudgetTracker\n \tAgentsDir     string // value of --agents-dir flag (may be empty)\n \tAgentsBase    string // parent agent's resolved workdir (for auto-discovery)\n+\tAllowedHosts  []string\n }\n \n // CallAgentTool returns the call_agent tool definition for LLM tool calling.\n@@ -145,6 +146,12 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n \t}\n \n+\t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n+\teffectiveAllowedHosts := cfg.AllowedHosts\n+\tif len(effectiveAllowedHosts) == 0 {\n+\t\teffectiveAllowedHosts = opts.AllowedHosts\n+\t}\n+\n \t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n \tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n \tif err != nil {\n@@ -303,6 +310,7 @@ func ExecuteCallAgent(ctx context.Context, call provider.ToolCall, opts ExecuteO\n \t// Step 14: Run conversation loop (or single-shot if no tools)\n \trunOpts := opts\n \trunOpts.MCPRouter = mcpRouter\n+\trunOpts.AllowedHosts = effectiveAllowedHosts\n \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)\n \tif err != nil {\n \t\tdurationMs := time.Since(start).Milliseconds()\n@@ -408,6 +416,7 @@ func runConversationLoop(ctx context.Context, prov provider.Provider, req *provi\n \t\t\t\t\tBudgetTracker: opts.BudgetTracker,\n \t\t\t\t\tAgentsDir:     opts.AgentsDir,\n \t\t\t\t\tAgentsBase:    toolWorkdir, // sub-agent's workdir becomes the new base\n+\t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n \t\t\t\t}\n \t\t\t\tresults[i] = ExecuteCallAgent(ctx, tc, subOpts)\n \t\t\t} else {\n@@ -435,7 +444,7 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Regis\n \t\treturn result\n \t}\n \n-\texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose}\n+\texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n \tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n \tif dispatchErr != nil {\n \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\ndiff --git a/internal/tool/url_fetch.go b/internal/tool/url_fetch.go\nindex 9ae6000..12dacf8 100644\n--- a/internal/tool/url_fetch.go\n+++ b/internal/tool/url_fetch.go\n@@ -5,6 +5,7 @@ import (\n \t\"fmt\"\n \t\"io\"\n \t\"mime\"\n+\t\"net\"\n \t\"net/http\"\n \t\"net/url\"\n \t\"strings\"\n@@ -12,6 +13,7 @@ import (\n \n \t\"golang.org/x/net/html\"\n \n+\t\"github.com/jrswab/axe/internal/hostcheck\"\n \t\"github.com/jrswab/axe/internal/provider\"\n \t\"github.com/jrswab/axe/internal/toolname\"\n )\n@@ -20,6 +22,14 @@ const maxReadBytes = 10000\n \n var urlFetchTimeout = 15 * time.Second\n \n+// urlFetchResolver is the DNS resolver used for host validation.\n+// Override in tests to inject fake DNS responses.\n+var urlFetchResolver hostcheck.Resolver = net.DefaultResolver\n+\n+// urlFetchCheckHost is the host validation function.\n+// Override in tests to bypass private IP / allowlist checks.\n+var urlFetchCheckHost = hostcheck.CheckHost\n+\n func truncateURL(urlStr string, maxLen int) string {\n \tif len(urlStr) <= maxLen {\n \t\treturn urlStr\n@@ -126,6 +136,11 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\t}\n \t}\n \n+\t// Host allowlist and private IP check.\n+\tif _, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver); hostErr != nil {\n+\t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n+\t}\n+\n \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n \tdefer cancel()\n \n@@ -134,7 +149,19 @@ func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\n \n-\tresp, err := http.DefaultClient.Do(req)\n+\tclient := &http.Client{\n+\t\tCheckRedirect: func(req *http.Request, via []*http.Request) error {\n+\t\t\tif _, err := urlFetchCheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver); err != nil {\n+\t\t\t\treturn err\n+\t\t\t}\n+\t\t\tif len(via) >= 10 {\n+\t\t\t\treturn fmt.Errorf(\"too many redirects\")\n+\t\t\t}\n+\t\t\treturn nil\n+\t\t},\n+\t}\n+\n+\tresp, err := client.Do(req)\n \tif err != nil {\n \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n \t}\ndiff --git a/internal/tool/url_fetch_test.go b/internal/tool/url_fetch_test.go\nindex f3dd2bc..707a277 100644\n--- a/internal/tool/url_fetch_test.go\n+++ b/internal/tool/url_fetch_test.go\n@@ -6,14 +6,38 @@ import (\n \t\"net\"\n \t\"net/http\"\n \t\"net/http/httptest\"\n+\t\"net/url\"\n \t\"strings\"\n \t\"testing\"\n \t\"time\"\n \n+\t\"github.com/jrswab/axe/internal/hostcheck\"\n \t\"github.com/jrswab/axe/internal/provider\"\n )\n \n+// fakeURLFetchResolver is a test-only Resolver that returns preset addresses.\n+type fakeURLFetchResolver struct {\n+\taddrs []net.IPAddr\n+\terr   error\n+}\n+\n+func (f *fakeURLFetchResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {\n+\treturn f.addrs, f.err\n+}\n+\n+// skipHostCheck bypasses the host check for tests that use httptest.NewServer\n+// (which binds to 127.0.0.1, a private IP that would otherwise be rejected).\n+func skipHostCheck(t *testing.T) {\n+\tt.Helper()\n+\torig := urlFetchCheckHost\n+\turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n+\t\treturn net.ParseIP(\"127.0.0.1\"), nil\n+\t}\n+\tt.Cleanup(func() { urlFetchCheckHost = orig })\n+}\n+\n func TestURLFetch_Success(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"hello world\"))\n \t}))\n@@ -101,6 +125,7 @@ func TestURLFetch_NoScheme(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusNotFound)\n \t\t_, _ = w.Write([]byte(\"not found\"))\n@@ -122,6 +147,7 @@ func TestURLFetch_Non2xxStatus_404(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusInternalServerError)\n \t\t_, _ = w.Write([]byte(\"internal error\"))\n@@ -143,6 +169,7 @@ func TestURLFetch_Non2xxStatus_500(t *testing.T) {\n }\n \n func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n+\tskipHostCheck(t)\n \tlargeBody := strings.Repeat(\"A\", 20000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(largeBody))\n@@ -167,6 +194,7 @@ func TestURLFetch_LargeResponseTruncation(t *testing.T) {\n }\n \n func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n+\tskipHostCheck(t)\n \texactBody := strings.Repeat(\"B\", 10000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(exactBody))\n@@ -188,6 +216,7 @@ func TestURLFetch_ExactLimitNotTruncated(t *testing.T) {\n }\n \n func TestURLFetch_ContextCancellation(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\ttimer := time.NewTimer(10 * time.Second)\n \t\tdefer timer.Stop()\n@@ -213,6 +242,7 @@ func TestURLFetch_ContextCancellation(t *testing.T) {\n }\n \n func TestURLFetch_ConnectionRefused(t *testing.T) {\n+\tskipHostCheck(t)\n \tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n \tif err != nil {\n \t\tt.Fatalf(\"net.Listen error: %v\", err)\n@@ -234,6 +264,7 @@ func TestURLFetch_ConnectionRefused(t *testing.T) {\n }\n \n func TestURLFetch_CallIDPassthrough(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"ok\"))\n \t}))\n@@ -249,6 +280,7 @@ func TestURLFetch_CallIDPassthrough(t *testing.T) {\n }\n \n func TestURLFetch_EmptyResponseBody(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusOK)\n \t}))\n@@ -266,6 +298,7 @@ func TestURLFetch_EmptyResponseBody(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n+\tskipHostCheck(t)\n \tlargeBody := strings.Repeat(\"C\", 20000)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.WriteHeader(http.StatusInternalServerError)\n@@ -288,6 +321,7 @@ func TestURLFetch_Non2xxWithLargeBody(t *testing.T) {\n }\n \n func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"ok\"))\n \t}))\n@@ -315,6 +349,7 @@ func TestURLFetch_VerboseLog_SanitizesURL(t *testing.T) {\n }\n \n func TestURLFetch_PerRequestTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t// Block longer than the per-request timeout\n \t\ttimer := time.NewTimer(2 * time.Second)\n@@ -349,6 +384,7 @@ func TestURLFetch_PerRequestTimeout(t *testing.T) {\n }\n \n func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\ttimer := time.NewTimer(2 * time.Second)\n \t\tdefer timer.Stop()\n@@ -379,6 +415,7 @@ func TestURLFetch_ParentContextWinsOverPerRequestTimeout(t *testing.T) {\n }\n \n func TestURLFetch_FastResponseUnaffectedByTimeout(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\t_, _ = w.Write([]byte(\"fast response\"))\n \t}))\n@@ -476,6 +513,7 @@ func TestStripHTML_NoHTMLTags(t *testing.T) {\n // Phase 1B: urlFetchExecute integration tests\n \n func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n \t\t_, _ = w.Write([]byte(\"<html><body><script>x</script><p>Visible</p></body></html>\"))\n@@ -495,6 +533,7 @@ func TestURLFetch_HTMLContentTypeStripsHTML(t *testing.T) {\n }\n \n func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html; charset=utf-8\")\n \t\t_, _ = w.Write([]byte(\"<p>Hello charset</p>\"))\n@@ -514,6 +553,7 @@ func TestURLFetch_HTMLContentTypeWithCharset(t *testing.T) {\n }\n \n func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"TEXT/HTML\")\n \t\t_, _ = w.Write([]byte(\"<p>Case test</p>\"))\n@@ -533,6 +573,7 @@ func TestURLFetch_HTMLContentTypeCaseInsensitive(t *testing.T) {\n }\n \n func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n \t\t_, _ = w.Write([]byte(`{\"key\": \"<b>value</b>\"}`))\n@@ -553,6 +594,7 @@ func TestURLFetch_NonHTMLContentTypeNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/plain\")\n \t\t_, _ = w.Write([]byte(\"<p>Not HTML</p>\"))\n@@ -572,6 +614,7 @@ func TestURLFetch_PlainTextNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \t// Note: Go's http.DetectContentType may auto-set Content-Type.\n \t// We explicitly set it to empty to test the missing header case.\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n@@ -594,6 +637,7 @@ func TestURLFetch_MissingContentTypeNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"text/html\")\n \t\tw.WriteHeader(http.StatusNotFound)\n@@ -620,6 +664,7 @@ func TestURLFetch_Non2xxHTMLStripped(t *testing.T) {\n }\n \n func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n+\tskipHostCheck(t)\n \tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tw.Header().Set(\"Content-Type\", \"application/json\")\n \t\tw.WriteHeader(http.StatusInternalServerError)\n@@ -643,6 +688,7 @@ func TestURLFetch_Non2xxNonHTMLNotStripped(t *testing.T) {\n }\n \n func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n+\tskipHostCheck(t)\n \t// Build HTML where raw size exceeds maxReadBytes but stripped text is small.\n \t// 9950 bytes of CSS in a <style> tag + small visible text.\n \tbigCSS := strings.Repeat(\"x\", 9950)\n@@ -668,3 +714,114 @@ func TestURLFetch_HTMLStrippedBeforeTruncation(t *testing.T) {\n \t\tt.Errorf(\"Content = %q, want contains %q\", result.Content, \"Short text\")\n \t}\n }\n+\n+// Phase 4: Allowlist and private IP tests\n+\n+func TestURLFetch_AllowlistPermitsMatchingHost(t *testing.T) {\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.WriteHeader(200)\n+\t\t_, _ = w.Write([]byte(\"ok\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\t// Extract hostname from test server URL (will be 127.0.0.1)\n+\tu, _ := url.Parse(ts.URL)\n+\thostname := u.Hostname()\n+\n+\t// Override host check: verify allowlist logic passes, bypass private IP check\n+\t// so the test server (127.0.0.1) is reachable.\n+\torig := urlFetchCheckHost\n+\turlFetchCheckHost = func(ctx context.Context, h string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n+\t\tif !hostcheck.IsAllowed(h, allowlist) {\n+\t\t\treturn nil, &net.AddrError{Err: \"not in allowed_hosts\", Addr: h}\n+\t\t}\n+\t\treturn net.ParseIP(\"127.0.0.1\"), nil\n+\t}\n+\tdefer func() { urlFetchCheckHost = orig }()\n+\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-1\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": ts.URL},\n+\t}, ExecContext{AllowedHosts: []string{hostname}})\n+\n+\tif result.IsError {\n+\t\tt.Errorf(\"expected success, got error: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_AllowlistBlocksNonMatchingHost(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-2\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"https://blocked.example.com/page\"},\n+\t}, ExecContext{AllowedHosts: []string{\"allowed.example.com\"}})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for non-matching host\")\n+\t}\n+\tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_EmptyAllowlistPermitsAll(t *testing.T) {\n+\tskipHostCheck(t)\n+\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tw.WriteHeader(200)\n+\t\t_, _ = w.Write([]byte(\"ok\"))\n+\t}))\n+\tdefer ts.Close()\n+\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-3\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": ts.URL},\n+\t}, ExecContext{})\n+\n+\tif result.IsError {\n+\t\tt.Errorf(\"expected success with empty allowlist, got error: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_BlocksPrivateIP(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-4\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"http://192.168.1.1/data\"},\n+\t}, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for private IP\")\n+\t}\n+\tif !strings.Contains(result.Content, \"private\") {\n+\t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n+\t}\n+}\n+\n+func TestURLFetch_BlocksLoopbackIP(t *testing.T) {\n+\tentry := urlFetchEntry()\n+\t// Override resolver to avoid actual DNS and return a loopback address\n+\torig := urlFetchResolver\n+\turlFetchResolver = &fakeURLFetchResolver{\n+\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"127.0.0.1\")}},\n+\t}\n+\tdefer func() { urlFetchResolver = orig }()\n+\n+\tresult := entry.Execute(context.Background(), provider.ToolCall{\n+\t\tID:        \"test-5\",\n+\t\tName:      \"url_fetch\",\n+\t\tArguments: map[string]string{\"url\": \"http://evil.example.com/steal\"},\n+\t}, ExecContext{})\n+\n+\tif !result.IsError {\n+\t\tt.Error(\"expected error for loopback IP\")\n+\t}\n+\tif !strings.Contains(result.Content, \"private\") {\n+\t\tt.Errorf(\"expected 'private' in error, got: %s\", result.Content)\n+\t}\n+}\n",
+              "exit": 0,
+              "description": "Get full diff of all changes",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020509382,
+              "end": 1774020509417
+            }
+          },
+          "id": "prt_d0bdcbcae001iDwh1zlaPn6g4p",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01RAETEib8crM8ytKHZJAnKM",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go</path>\n<type>file</type>\n<content>1: package hostcheck\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net\"\n7: \t\"strings\"\n8: )\n9: \n10: // Resolver performs DNS lookups. *net.Resolver satisfies this interface.\n11: type Resolver interface {\n12: \tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n13: }\n14: \n15: var privateRanges []*net.IPNet\n16: \n17: func init() {\n18: \tcidrs := []string{\n19: \t\t\"0.0.0.0/8\",      // \"this\" network\n20: \t\t\"10.0.0.0/8\",     // RFC 1918\n21: \t\t\"100.64.0.0/10\",  // CGNAT\n22: \t\t\"127.0.0.0/8\",    // loopback\n23: \t\t\"169.254.0.0/16\", // link-local\n24: \t\t\"172.16.0.0/12\",  // RFC 1918\n25: \t\t\"192.168.0.0/16\", // RFC 1918\n26: \t\t\"::1/128\",        // IPv6 loopback\n27: \t\t\"fe80::/10\",      // IPv6 link-local\n28: \t}\n29: \tfor _, cidr := range cidrs {\n30: \t\t_, network, err := net.ParseCIDR(cidr)\n31: \t\tif err != nil {\n32: \t\t\tpanic(fmt.Sprintf(\"hostcheck: invalid CIDR %q: %v\", cidr, err))\n33: \t\t}\n34: \t\tprivateRanges = append(privateRanges, network)\n35: \t}\n36: }\n37: \n38: // IsAllowed reports whether hostname is permitted by allowlist.\n39: // An empty allowlist permits every hostname.\n40: func IsAllowed(hostname string, allowlist []string) bool {\n41: \tif len(allowlist) == 0 {\n42: \t\treturn true\n43: \t}\n44: \tfor _, entry := range allowlist {\n45: \t\tif strings.EqualFold(hostname, entry) {\n46: \t\t\treturn true\n47: \t\t}\n48: \t}\n49: \treturn false\n50: }\n51: \n52: // IsPrivateIP reports whether ip falls within any private/reserved range.\n53: func IsPrivateIP(ip net.IP) bool {\n54: \t// Normalise to 4-byte form for IPv4 so net.IPNet.Contains works correctly.\n55: \tif v4 := ip.To4(); v4 != nil {\n56: \t\tip = v4\n57: \t}\n58: \tfor _, network := range privateRanges {\n59: \t\tif network.Contains(ip) {\n60: \t\t\treturn true\n61: \t\t}\n62: \t}\n63: \treturn false\n64: }\n65: \n66: // CheckHost validates hostname against allowlist and ensures it resolves only\n67: // to public IP addresses. It returns the first resolved IP on success.\n68: func CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) (net.IP, error) {\n69: \t// Step 1: allowlist check.\n70: \tif !IsAllowed(hostname, allowlist) {\n71: \t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n72: \t}\n73: \n74: \t// Step 2: raw IP literal — skip DNS entirely.\n75: \tif ip := net.ParseIP(hostname); ip != nil {\n76: \t\tif IsPrivateIP(ip) {\n77: \t\t\treturn nil, fmt.Errorf(\"address %s is a private/reserved IP\", hostname)\n78: \t\t}\n79: \t\treturn ip, nil\n80: \t}\n81: \n82: \t// Step 3: DNS resolution.\n83: \taddrs, err := resolver.LookupIPAddr(ctx, hostname)\n84: \tif err != nil {\n85: \t\treturn nil, err\n86: \t}\n87: \n88: \t// Step 4: reject if any resolved address is private.\n89: \tfor _, addr := range addrs {\n90: \t\tif IsPrivateIP(addr.IP) {\n91: \t\t\treturn nil, fmt.Errorf(\"host %q resolves to private address %s\", hostname, addr.IP)\n92: \t\t}\n93: \t}\n94: \n95: \t// Step 5: return first address.\n96: \tif len(addrs) == 0 {\n97: \t\treturn nil, fmt.Errorf(\"host %q resolved to no addresses\", hostname)\n98: \t}\n99: \treturn addrs[0].IP, nil\n100: }\n\n(End of file - total 100 lines)\n</content>",
+            "title": "internal/hostcheck/hostcheck.go",
+            "metadata": {
+              "preview": "package hostcheck\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net\"\n\t\"strings\"\n)\n\n// Resolver performs DNS lookups. *net.Resolver satisfies this interface.\ntype Resolver interface {\n\tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n}\n\nvar privateRanges []*net.IPNet\n\nfunc init() {\n\tcidrs := []string{\n\t\t\"0.0.0.0/8\",      // \"this\" network\n\t\t\"10.0.0.0/8\",     // RFC 1918",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020510242,
+              "end": 1774020510252
+            }
+          },
+          "id": "prt_d0bdcbecb001ZRtL3lueo8bWXm",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_013oAAzLDY37L3LkVpyxW1nC",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go</path>\n<type>file</type>\n<content>1: package hostcheck_test\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net\"\n7: \t\"strings\"\n8: \t\"testing\"\n9: \n10: \t\"github.com/jrswab/axe/internal/hostcheck\"\n11: )\n12: \n13: // fakeResolver is a test double for the Resolver interface.\n14: type fakeResolver struct {\n15: \taddrs []net.IPAddr\n16: \terr   error\n17: }\n18: \n19: func (f *fakeResolver) LookupIPAddr(_ context.Context, _ string) ([]net.IPAddr, error) {\n20: \treturn f.addrs, f.err\n21: }\n22: \n23: // panicResolver panics if called — used to assert DNS is never consulted.\n24: type panicResolver struct{}\n25: \n26: func (p *panicResolver) LookupIPAddr(_ context.Context, host string) ([]net.IPAddr, error) {\n27: \tpanic(fmt.Sprintf(\"LookupIPAddr should not have been called for %q\", host))\n28: }\n29: \n30: // ---------------------------------------------------------------------------\n31: // IsAllowed\n32: // ---------------------------------------------------------------------------\n33: \n34: func TestIsAllowed(t *testing.T) {\n35: \tt.Parallel()\n36: \n37: \ttests := []struct {\n38: \t\tname      string\n39: \t\thostname  string\n40: \t\tallowlist []string\n41: \t\twant      bool\n42: \t}{\n43: \t\t{\n44: \t\t\tname:      \"empty allowlist allows any hostname\",\n45: \t\t\thostname:  \"anything.com\",\n46: \t\t\tallowlist: []string{},\n47: \t\t\twant:      true,\n48: \t\t},\n49: \t\t{\n50: \t\t\tname:      \"exact match returns true\",\n51: \t\t\thostname:  \"api.example.com\",\n52: \t\t\tallowlist: []string{\"api.example.com\"},\n53: \t\t\twant:      true,\n54: \t\t},\n55: \t\t{\n56: \t\t\tname:      \"non-match returns false\",\n57: \t\t\thostname:  \"other.com\",\n58: \t\t\tallowlist: []string{\"api.example.com\"},\n59: \t\t\twant:      false,\n60: \t\t},\n61: \t\t{\n62: \t\t\tname:      \"case-insensitive match\",\n63: \t\t\thostname:  \"API.Example.COM\",\n64: \t\t\tallowlist: []string{\"api.example.com\"},\n65: \t\t\twant:      true,\n66: \t\t},\n67: \t\t{\n68: \t\t\tname:      \"subdomain does not match parent entry\",\n69: \t\t\thostname:  \"sub.api.example.com\",\n70: \t\t\tallowlist: []string{\"api.example.com\"},\n71: \t\t\twant:      false,\n72: \t\t},\n73: \t\t{\n74: \t\t\tname:      \"parent domain does not match child entry\",\n75: \t\t\thostname:  \"example.com\",\n76: \t\t\tallowlist: []string{\"api.example.com\"},\n77: \t\t\twant:      false,\n78: \t\t},\n79: \t}\n80: \n81: \tfor _, tc := range tests {\n82: \t\tt.Run(tc.name, func(t *testing.T) {\n83: \t\t\tt.Parallel()\n84: \t\t\tgot := hostcheck.IsAllowed(tc.hostname, tc.allowlist)\n85: \t\t\tif got != tc.want {\n86: \t\t\t\tt.Errorf(\"IsAllowed(%q, %v) = %v; want %v\", tc.hostname, tc.allowlist, got, tc.want)\n87: \t\t\t}\n88: \t\t})\n89: \t}\n90: }\n91: \n92: // ---------------------------------------------------------------------------\n93: // IsPrivateIP\n94: // ---------------------------------------------------------------------------\n95: \n96: func TestIsPrivateIP(t *testing.T) {\n97: \tt.Parallel()\n98: \n99: \ttests := []struct {\n100: \t\tname string\n101: \t\tip   string\n102: \t\twant bool\n103: \t}{\n104: \t\t{\"loopback IPv4\", \"127.0.0.1\", true},\n105: \t\t{\"loopback IPv6\", \"::1\", true},\n106: \t\t{\"RFC 1918 10/8\", \"10.0.0.1\", true},\n107: \t\t{\"RFC 1918 172.16/12 start\", \"172.16.0.1\", true},\n108: \t\t{\"RFC 1918 192.168/16\", \"192.168.1.1\", true},\n109: \t\t{\"link-local IPv4\", \"169.254.1.1\", true},\n110: \t\t{\"link-local IPv6\", \"fe80::1\", true},\n111: \t\t{\"this network\", \"0.0.0.1\", true},\n112: \t\t{\"CGNAT\", \"100.64.0.1\", true},\n113: \t\t{\"public IPv4\", \"8.8.8.8\", false},\n114: \t\t{\"public IPv6\", \"2001:4860:4860::8888\", false},\n115: \t\t{\"just below RFC 1918 172.16/12\", \"172.15.255.255\", false},\n116: \t\t{\"RFC 1918 172.16/12 boundary start\", \"172.16.0.0\", true},\n117: \t\t{\"RFC 1918 172.16/12 boundary end\", \"172.31.255.255\", true},\n118: \t\t{\"just above RFC 1918 172.16/12\", \"172.32.0.0\", false},\n119: \t}\n120: \n121: \tfor _, tc := range tests {\n122: \t\tt.Run(tc.name, func(t *testing.T) {\n123: \t\t\tt.Parallel()\n124: \t\t\tip := net.ParseIP(tc.ip)\n125: \t\t\tif ip == nil {\n126: \t\t\t\tt.Fatalf(\"invalid test IP: %q\", tc.ip)\n127: \t\t\t}\n128: \t\t\tgot := hostcheck.IsPrivateIP(ip)\n129: \t\t\tif got != tc.want {\n130: \t\t\t\tt.Errorf(\"IsPrivateIP(%s) = %v; want %v\", tc.ip, got, tc.want)\n131: \t\t\t}\n132: \t\t})\n133: \t}\n134: }\n135: \n136: // ---------------------------------------------------------------------------\n137: // CheckHost\n138: // ---------------------------------------------------------------------------\n139: \n140: func TestCheckHost(t *testing.T) {\n141: \tt.Parallel()\n142: \n143: \ttests := []struct {\n144: \t\tname      string\n145: \t\thostname  string\n146: \t\tallowlist []string\n147: \t\tresolver  hostcheck.Resolver\n148: \t\twantIP    net.IP\n149: \t\twantErr   string // substring expected in error, empty = no error\n150: \t}{\n151: \t\t{\n152: \t\t\tname:      \"allowlist non-empty, hostname not in list\",\n153: \t\t\thostname:  \"evil.com\",\n154: \t\t\tallowlist: []string{\"api.example.com\"},\n155: \t\t\tresolver:  &fakeResolver{},\n156: \t\t\twantErr:   \"not in allowed_hosts\",\n157: \t\t},\n158: \t\t{\n159: \t\t\tname:      \"allowlist non-empty, hostname in list, resolves to public IP\",\n160: \t\t\thostname:  \"api.example.com\",\n161: \t\t\tallowlist: []string{\"api.example.com\"},\n162: \t\t\tresolver: &fakeResolver{\n163: \t\t\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"8.8.8.8\")}},\n164: \t\t\t},\n165: \t\t\twantIP:  net.ParseIP(\"8.8.8.8\"),\n166: \t\t\twantErr: \"\",\n167: \t\t},\n168: \t\t{\n169: \t\t\tname:      \"allowlist non-empty, hostname in list, resolves to private IP\",\n170: \t\t\thostname:  \"api.example.com\",\n171: \t\t\tallowlist: []string{\"api.example.com\"},\n172: \t\t\tresolver: &fakeResolver{\n173: \t\t\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"10.0.0.1\")}},\n174: \t\t\t},\n175: \t\t\twantErr: \"private address\",\n176: \t\t},\n177: \t\t{\n178: \t\t\tname:      \"empty allowlist, resolves to public IP\",\n179: \t\t\thostname:  \"open.example.com\",\n180: \t\t\tallowlist: []string{},\n181: \t\t\tresolver: &fakeResolver{\n182: \t\t\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"8.8.8.8\")}},\n183: \t\t\t},\n184: \t\t\twantIP:  net.ParseIP(\"8.8.8.8\"),\n185: \t\t\twantErr: \"\",\n186: \t\t},\n187: \t\t{\n188: \t\t\tname:      \"empty allowlist, resolves to private IP\",\n189: \t\t\thostname:  \"internal.example.com\",\n190: \t\t\tallowlist: []string{},\n191: \t\t\tresolver: &fakeResolver{\n192: \t\t\t\taddrs: []net.IPAddr{{IP: net.ParseIP(\"10.0.0.1\")}},\n193: \t\t\t},\n194: \t\t\twantErr: \"private address\",\n195: \t\t},\n196: \t\t{\n197: \t\t\tname:      \"raw private IP literal bypasses DNS\",\n198: \t\t\thostname:  \"192.168.1.1\",\n199: \t\t\tallowlist: []string{},\n200: \t\t\tresolver:  &panicResolver{},\n201: \t\t\twantErr:   \"private\",\n202: \t\t},\n203: \t\t{\n204: \t\t\tname:      \"raw public IP literal with empty allowlist\",\n205: \t\t\thostname:  \"8.8.8.8\",\n206: \t\t\tallowlist: []string{},\n207: \t\t\tresolver:  &panicResolver{},\n208: \t\t\twantIP:    net.ParseIP(\"8.8.8.8\"),\n209: \t\t\twantErr:   \"\",\n210: \t\t},\n211: \t\t{\n212: \t\t\tname:      \"raw public IP with non-empty allowlist is rejected\",\n213: \t\t\thostname:  \"8.8.8.8\",\n214: \t\t\tallowlist: []string{\"example.com\"},\n215: \t\t\tresolver:  &panicResolver{},\n216: \t\t\twantErr:   \"not in allowed_hosts\",\n217: \t\t},\n218: \t\t{\n219: \t\t\tname:      \"mixed IPs (public + private) are blocked\",\n220: \t\t\thostname:  \"mixed.example.com\",\n221: \t\t\tallowlist: []string{},\n222: \t\t\tresolver: &fakeResolver{\n223: \t\t\t\taddrs: []net.IPAddr{\n224: \t\t\t\t\t{IP: net.ParseIP(\"8.8.8.8\")},\n225: \t\t\t\t\t{IP: net.ParseIP(\"10.0.0.1\")},\n226: \t\t\t\t},\n227: \t\t\t},\n228: \t\t\twantErr: \"private address\",\n229: \t\t},\n230: \t\t{\n231: \t\t\tname:      \"DNS resolution error is returned\",\n232: \t\t\thostname:  \"bad.example.com\",\n233: \t\t\tallowlist: []string{},\n234: \t\t\tresolver:  &fakeResolver{err: fmt.Errorf(\"dns timeout\")},\n235: \t\t\twantErr:   \"dns timeout\",\n236: \t\t},\n237: \t}\n238: \n239: \tfor _, tc := range tests {\n240: \t\tt.Run(tc.name, func(t *testing.T) {\n241: \t\t\tt.Parallel()\n242: \t\t\tgotIP, err := hostcheck.CheckHost(context.Background(), tc.hostname, tc.allowlist, tc.resolver)\n243: \n244: \t\t\tif tc.wantErr != \"\" {\n245: \t\t\t\tif err == nil {\n246: \t\t\t\t\tt.Fatalf(\"expected error containing %q; got nil\", tc.wantErr)\n247: \t\t\t\t}\n248: \t\t\t\tif !strings.Contains(err.Error(), tc.wantErr) {\n249: \t\t\t\t\tt.Errorf(\"error = %q; want substring %q\", err.Error(), tc.wantErr)\n250: \t\t\t\t}\n251: \t\t\t\treturn\n252: \t\t\t}\n253: \n254: \t\t\tif err != nil {\n255: \t\t\t\tt.Fatalf(\"unexpected error: %v\", err)\n256: \t\t\t}\n257: \n258: \t\t\tif tc.wantIP != nil && !tc.wantIP.Equal(gotIP) {\n259: \t\t\t\tt.Errorf(\"IP = %v; want %v\", gotIP, tc.wantIP)\n260: \t\t\t}\n261: \t\t})\n262: \t}\n263: }\n\n(End of file - total 263 lines)\n</content>",
+            "title": "internal/hostcheck/hostcheck_test.go",
+            "metadata": {
+              "preview": "package hostcheck_test\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net\"\n\t\"strings\"\n\t\"testing\"\n\n\t\"github.com/jrswab/axe/internal/hostcheck\"\n)\n\n// fakeResolver is a test double for the Resolver interface.\ntype fakeResolver struct {\n\taddrs []net.IPAddr\n\terr   error\n}\n\nfunc (f *fakeResolver) LookupIPAddr(_ context.Context, _ string) ([]net.IPAddr, error) {\n\treturn f.addrs, f.err",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020510689,
+              "end": 1774020510694
+            }
+          },
+          "id": "prt_d0bdcc2320016ANnec60HqsJvz",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_implement.md</path>\n<type>file</type>\n<content>1: # 040 — Output Allowlist Implementation Guide\n2: \n3: Spec: `docs/plans/040_output_allowlist_spec.md`\n4: \n5: ---\n6: \n7: ## Section 1: Context Summary\n8: \n9: The `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n10: \n11: ---\n12: \n13: ## Section 2: Implementation Checklist\n14: \n15: ### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n16: \n17: - [ ] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n18:   - New package `hostcheck` with three exported functions:\n19:     - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n20:     - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.\n21:     - `CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) error` — the combined check used by `url_fetch`. Steps: (1) if `allowlist` is non-empty and `hostname` is not in it, return an error naming the blocked host. (2) If `hostname` is a raw IP literal, parse it and check `IsPrivateIP`; return an error naming the blocked IP if private. (3) Otherwise, resolve `hostname` via `resolver.LookupIPAddr(ctx, hostname)`. (4) If any resolved IP is private, return an error naming the blocked IP. (5) Return `nil` (allowed). The `Resolver` is an interface: `type Resolver interface { LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) }` — this allows tests to inject a fake resolver without real DNS.\n22:   - Error messages must be actionable (spec R8): `\"host %q is not in allowed_hosts\"` for allowlist violations, `\"host %q resolves to private address %s\"` for private IP violations.\n23: \n24: - [ ] **Task 1b: Create `internal/hostcheck/hostcheck_test.go`**\n25:   - Tests for `IsAllowed`:\n26:     - Empty allowlist returns `true` for any hostname.\n27:     - Non-empty allowlist: exact match returns `true`, non-match returns `false`.\n28:     - Case-insensitive: `\"API.Example.COM\"` matches allowlist entry `\"api.example.com\"`.\n29:     - Subdomain does not match: `\"sub.api.example.com\"` does not match `\"api.example.com\"`.\n30:     - Parent domain does not match: `\"example.com\"` does not match `\"api.example.com\"`.\n31:   - Tests for `IsPrivateIP`:\n32:     - Each blocked range has at least one positive test case: `127.0.0.1`, `::1`, `10.0.0.1`, `172.16.0.1`, `192.168.1.1`, `169.254.1.1`, `fe80::1`, `0.0.0.1`, `100.64.0.1`.\n33:     - Public IPs return `false`: `8.8.8.8`, `2001:4860:4860::8888`.\n34:     - Boundary cases: `172.15.255.255` (not private), `172.16.0.0` (private), `172.31.255.255` (private), `172.32.0.0` (not private).\n35:   - Tests for `CheckHost`:\n36:     - Use a fake `Resolver` that returns controlled IPs.\n37:     - Allowlist non-empty, hostname not in list → error.\n38:     - Allowlist non-empty, hostname in list, resolves to public IP → nil.\n39:     - Allowlist non-empty, hostname in list, resolves to private IP → error (spec E2).\n40:     - Allowlist empty, resolves to public IP → nil.\n41:     - Allowlist empty, resolves to private IP → error.\n42:     - Raw IP literal in hostname (e.g. `\"192.168.1.1\"`) → private IP error, no DNS lookup.\n43:     - Raw public IP literal (e.g. `\"8.8.8.8\"`) with empty allowlist → nil.\n44:     - Raw public IP literal with non-empty allowlist → error (IPs don't match hostname entries, spec E3).\n45:     - Hostname resolves to mixed public + private IPs → error (spec E1: any private = blocked).\n46:     - DNS resolution error → return the DNS error (not silently allow).\n47: \n48: - [ ] **Task 2: Add `AllowedHosts` to `AgentConfig` — `internal/agent/agent.go: AgentConfig` struct (line 68)**\n49:   - Add field `AllowedHosts []string \\`toml:\"allowed_hosts\"\\`` to the `AgentConfig` struct. Place it after the `Tools` field (line 76) to group network-related config together.\n50:   - No changes to `Validate()` — spec R12 says entries are not validated at load time.\n51: \n52: - [ ] **Task 2b: Test TOML decode of `AllowedHosts` — `internal/agent/agent_test.go`**\n53:   - Add a test that decodes a TOML string containing `allowed_hosts = [\"api.example.com\", \"docs.example.com\"]` and asserts `cfg.AllowedHosts` equals `[]string{\"api.example.com\", \"docs.example.com\"}`.\n54:   - Add a test that decodes a TOML string with no `allowed_hosts` field and asserts `cfg.AllowedHosts` is `nil`.\n55:   - Add a test that decodes `allowed_hosts = []` and asserts `cfg.AllowedHosts` is empty (length 0).\n56:   - Follow the existing pattern: raw TOML string → `tomlDecode(input, &cfg)` → assert fields.\n57: \n58: - [ ] **Task 3: Add `AllowedHosts` to `ExecContext` — `internal/tool/registry.go: ExecContext` struct (line 13)**\n59:   - Add field `AllowedHosts []string` to the `ExecContext` struct.\n60: \n61: ### Phase 2 — Wiring (tasks 4, 5, 6 depend on Phase 1; tasks 5 and 6 are parallelizable with each other)\n62: \n63: - [ ] **Task 4: Gate `url_fetch` — `internal/tool/url_fetch.go: urlFetchExecute()` (line 97)**\n64:   - After the existing scheme check (line 127) and before the HTTP request is built (line 132), add a call to `hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, net.DefaultResolver)`.\n65:   - If `CheckHost` returns an error, return `provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}` immediately. Do not make the HTTP request.\n66:   - Replace `http.DefaultClient.Do(req)` with a request that pins to a resolved IP to prevent DNS rebinding between the check and the connection. Do this by creating a custom `http.Transport` with a `DialContext` that connects to a known-safe resolved IP (the first public IP returned by `CheckHost`). To support this, change `CheckHost` to return the safe IP alongside the nil error: `CheckHost(...) (net.IP, error)` — returns the first non-private resolved IP on success, or `nil, error` on failure. When the hostname is a raw public IP literal, return that IP directly.\n67:   - For redirect safety (spec E9): set `CheckRedirect` on the per-request `http.Client` to validate each redirect URL against the same allowlist and private IP check before following it. If a redirect target fails the check, return `http.ErrUseLastResponse` to stop following.\n68: \n69: - [ ] **Task 4b: Tests for `url_fetch` allowlist enforcement — `internal/tool/url_fetch_test.go`**\n70:   - Follow the existing test pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.\n71:   - Test: allowlist configured, URL hostname matches → request succeeds (200 from test server).\n72:   - Test: allowlist configured, URL hostname does not match → `ToolResult.IsError == true`, content mentions \"not in allowed_hosts\".\n73:   - Test: no allowlist (empty), public test server → request succeeds.\n74:   - Test: private IP blocking — URL with `127.0.0.1` → blocked regardless of allowlist. (Use a raw IP URL; no real connection attempted.)\n75:   - Test: redirect from allowed host to disallowed host → blocked. (Use `httptest.NewServer` that returns a 301 to a different test server whose hostname is not in the allowlist.)\n76:   - Note: testing DNS resolution behavior requires the fake `Resolver` from `hostcheck`. Inject it by making the resolver a field on `ExecContext` or by adding a package-level `var` (like `urlFetchTimeout`) that tests can override. Choose whichever pattern is already established — the existing `urlFetchTimeout` var override pattern (line 21) is the precedent.\n77: \n78: - [ ] **Task 5: Thread `AllowedHosts` into `ExecContext` at top level — `cmd/run.go: dispatchToolCall()` (line 745)**\n79:   - In `cmd/run.go: dispatchToolCall()` (line 759), add `AllowedHosts` to the `tool.ExecContext` literal. The value comes from the `cfg.AllowedHosts` field. This requires adding `allowedHosts []string` as a parameter to `dispatchToolCall()`.\n80:   - Update the `dispatchToolCall()` call site in `executeToolCalls()` (line 687) to pass `cfg.AllowedHosts` through.\n81:   - Update the `executeToolCalls()` signature and its call site at line 488 to accept and forward `cfg.AllowedHosts`.\n82: \n83: - [ ] **Task 6a: Add `AllowedHosts` to `ExecuteOptions` — `internal/tool/tool.go: ExecuteOptions` struct (line 28)**\n84:   - Add field `AllowedHosts []string` to `ExecuteOptions`.\n85: \n86: - [ ] **Task 6b: Propagate `AllowedHosts` in `ExecuteCallAgent()` — `internal/tool/tool.go: ExecuteCallAgent()` (line 75)**\n87:   - After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist:\n88:     ```\n89:     effectiveAllowedHosts = cfg.AllowedHosts          // sub-agent's own list\n90:     if len(effectiveAllowedHosts) == 0 {\n91:         effectiveAllowedHosts = opts.AllowedHosts      // inherit parent's list\n92:     }\n93:     ```\n94:   - Pass `effectiveAllowedHosts` into the `ExecContext` built at line 438 (inside `dispatchToolCall` in tool.go) — this requires threading it through `runConversationLoop` and into `dispatchToolCall`.\n95:   - Pass `effectiveAllowedHosts` into the recursive `ExecuteOptions` built at lines 398–411 (inside `runConversationLoop`) so sub-sub-agents inherit correctly.\n96: \n97: - [ ] **Task 6c: Thread `AllowedHosts` through `runConversationLoop()` — `internal/tool/tool.go: runConversationLoop()` (line 347)**\n98:   - Add `allowedHosts []string` parameter to `runConversationLoop()` signature.\n99:   - In `dispatchToolCall()` (line 429), pass `allowedHosts` into the `ExecContext` at line 438.\n100:   - In the recursive `subOpts` (lines 398–411), set `AllowedHosts: allowedHosts`.\n101:   - Update the call site of `runConversationLoop` inside `ExecuteCallAgent()` (line 306) to pass `effectiveAllowedHosts`.\n102: \n103: - [ ] **Task 6d: Set `AllowedHosts` on `ExecuteOptions` in `cmd/run.go` — `cmd/run.go: executeToolCalls()` (line 690)**\n104:   - In the `tool.ExecuteOptions` literal at lines 690–703, add `AllowedHosts: cfg.AllowedHosts`.\n105: \n106: ### Phase 3 — Integration (depends on all of Phase 2)\n107: \n108: - [ ] **Task 7: Integration tests — `cmd/`**\n109:   - Add integration tests that compile the binary and run end-to-end, following the pattern in `cmd/run_integration_test.go`.\n110:   - Test cases:\n111:     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch an allowed URL → succeeds.\n112:     - Agent with `allowed_hosts = [\"httpbin.org\"]` and `url_fetch` tool: LLM asked to fetch a disallowed URL → tool returns error.\n113:     - Agent with no `allowed_hosts`: LLM asked to fetch a public URL → succeeds (backwards compatible).\n114:     - Private IP blocking: agent asked to fetch `http://127.0.0.1` → blocked regardless of allowlist.\n115:     - Sub-agent inheritance: parent has `allowed_hosts`, sub-agent has none → sub-agent inherits parent's list.\n116:     - Sub-agent override: parent has `allowed_hosts`, sub-agent defines its own → sub-agent uses its own list.\n117:   - Note: integration tests that involve actual LLM calls may need to use the mock server from `internal/testutil/mockserver.go`. Design the test so the LLM response includes a `url_fetch` tool call to a `httptest.NewServer`, and verify the allowlist/block behavior on the tool execution side.\n118: \n119: ### Parallel Work Map\n120: \n121: ```\n122: Phase 1 (all parallel):\n123:   Task 1a + 1b ─┐\n124:   Task 2  + 2b ─┤\n125:   Task 3  ──────┘\n126:                  │\n127: Phase 2:         ▼\n128:   Task 4 + 4b ──── (depends on 1a, 1b, 3)\n129:   Task 5 ───────── (depends on 2, 3)      ← parallel with Task 6\n130:   Task 6a–6d ───── (depends on 2, 3)      ← parallel with Task 5\n131:                  │\n132: Phase 3:         ▼\n133:   Task 7 ───────── (depends on 4, 5, 6)\n134: ```\n\n(End of file - total 134 lines)\n</content>",
+            "title": "docs/plans/040_output_allowlist_implement.md",
+            "metadata": {
+              "preview": "# 040 — Output Allowlist Implementation Guide\n\nSpec: `docs/plans/040_output_allowlist_spec.md`\n\n---\n\n## Section 1: Context Summary\n\nThe `url_fetch` built-in tool lets the LLM make HTTP GET requests to arbitrary URLs, creating a prompt injection → SSRF attack surface. There is currently no mechanism to restrict which hosts the LLM may contact. This implementation adds a per-agent `allowed_hosts` TOML field that gates `url_fetch` requests by hostname, plus unconditional private IP blocking that prevents `url_fetch` from ever contacting loopback, RFC 1918, link-local, or CGNAT addresses — regardless of allowlist configuration. Sub-agents inherit the parent's allowlist as a fallback unless they define their own. All host validation logic lives in a new `internal/hostcheck/` package.\n\n---\n\n## Section 2: Implementation Checklist\n\n### Phase 1 — Foundation (parallelizable: tasks 1–3 have no dependencies on each other)\n\n- [ ] **Task 1a: Create `internal/hostcheck/hostcheck.go`**\n  - New package `hostcheck` with three exported functions:\n    - `IsAllowed(hostname string, allowlist []string) bool` — returns `true` if `allowlist` is empty (allow-all mode) or if `hostname` matches any entry (case-insensitive). Matching is exact — no wildcards, no subdomain matching.\n    - `IsPrivateIP(ip net.IP) bool` — returns `true` if `ip` falls within any of: `127.0.0.0/8`, `::1/128`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `fe80::/10`, `0.0.0.0/8`, `100.64.0.0/10`. Define the CIDR ranges as package-level `net.IPNet` values parsed once at init.",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020511169,
+              "end": 1774020511176
+            }
+          },
+          "id": "prt_d0bdcc3e7001CB8MJiXbbqsjGj",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md</path>\n<type>file</type>\n<content>1: # 040 -- Output Allowlist Spec\n2: \n3: # Milestone Document\n4: docs/plans/000_milestones.md\n5: \n6: GitHub Issue: https://github.com/jrswab/axe/issues/24\n7: \n8: ---\n9: \n10: ## Section 1: Context & Constraints\n11: \n12: ### Problem\n13: \n14: The `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n15: \n16: There is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n17: \n18: ### Codebase Structure Relevant to This Milestone\n19: \n20: **Agent configuration** (`internal/agent/agent.go`):\n21: \n22: The `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n23: \n24: **Tool execution context** (`internal/tool/registry.go`):\n25: \n26: The `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n27: \n28: **`url_fetch` tool** (`internal/tool/url_fetch.go`):\n29: \n30: Makes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n31: \n32: **Top-level run** (`cmd/run.go`):\n33: \n34: Builds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n35: \n36: **Sub-agent delegation** (`internal/tool/tool.go`):\n37: \n38: The `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n39: \n40: **New package**: `internal/hostcheck/`\n41: \n42: All host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n43: \n44: ### Decisions Already Made\n45: \n46: **1. Default: allow-all when no `allowed_hosts` is configured.**\n47: \n48: An empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n49: \n50: **2. Only `url_fetch` is gated.**\n51: \n52: `web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n53: \n54: **3. Private IP blocking is unconditional and separate from the allowlist.**\n55: \n56: Regardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n57: \n58: The following IP ranges are always blocked:\n59: \n60: | Range | Classification |\n61: |---|---|\n62: | `127.0.0.0/8` | IPv4 loopback |\n63: | `::1/128` | IPv6 loopback |\n64: | `10.0.0.0/8` | RFC 1918 private |\n65: | `172.16.0.0/12` | RFC 1918 private |\n66: | `192.168.0.0/16` | RFC 1918 private |\n67: | `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n68: | `fe80::/10` | IPv6 link-local |\n69: | `0.0.0.0/8` | This network |\n70: | `100.64.0.0/10` | CGNAT / shared address space |\n71: \n72: **4. Private IP check must happen after DNS resolution.**\n73: \n74: Checking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n75: \n76: **5. Allowlist matching is hostname/domain-only in v1.**\n77: \n78: CIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n79: \n80: **6. Sub-agent propagation uses inheritance with explicit override.**\n81: \n82: Each agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n83: \n84: This behavior means:\n85: - A sub-agent can be more restrictive than its parent (define a subset of hosts).\n86: - A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n87: - A sub-agent with no opinion inherits the parent's restrictions.\n88: \n89: ### Approaches Ruled Out\n90: \n91: **Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n92: \n93: **Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n94: \n95: **Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n96: \n97: **Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n98: \n99: **Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n100: \n101: ### Constraints and Assumptions\n102: \n103: - The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n104: - All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n105: - Private IP blocking applies universally — it cannot be disabled by any configuration.\n106: - Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n107: - Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n108: - The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n109: - DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n110: \n111: ---\n112: \n113: ## Section 2: Requirements\n114: \n115: ### R1: New `allowed_hosts` field in agent configuration\n116: \n117: The agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n118: \n119: ### R2: Host validation is a distinct, independently testable unit\n120: \n121: All logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n122: \n123: ### R3: Private IP ranges are always blocked\n124: \n125: `url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n126: \n127: ### R4: Private IP check is performed after DNS resolution\n128: \n129: The hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n130: \n131: ### R5: Allowlist check behavior when `allowed_hosts` is configured\n132: \n133: When `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n134: \n135: ### R6: Allowlist check behavior when `allowed_hosts` is empty\n136: \n137: When `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n138: \n139: ### R7: Hostname matching is exact in v1\n140: \n141: An allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n142: \n143: ### R8: Rejection produces a clear, actionable error message\n144: \n145: When a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n146: \n147: ### R9: `allowed_hosts` is threaded through the execution context\n148: \n149: The effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n150: \n151: ### R10: Sub-agent inheritance rule\n152: \n153: When a sub-agent is invoked:\n154: \n155: - If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n156: - If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n157: - If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n158: \n159: This rule is applied recursively at every level of the sub-agent tree.\n160: \n161: ### R11: Sub-agent propagation for recursive depth\n162: \n163: The effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n164: \n165: ### R12: No validation of `allowed_hosts` entries at load time\n166: \n167: Entries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n168: \n169: ### R13: `web_search`, MCP connections, and provider connections are unaffected\n170: \n171: This feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n172: \n173: ---\n174: \n175: ## Edge Cases\n176: \n177: ### E1: Hostname resolves to both public and private IPs\n178: \n179: If DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n180: \n181: ### E2: `allowed_hosts` contains an entry that resolves to a private IP\n182: \n183: An operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n184: \n185: ### E3: URL uses an IP address directly instead of a hostname\n186: \n187: If the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n188: \n189: ### E4: URL uses `localhost` or similar aliases\n190: \n191: `localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n192: \n193: ### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n194: \n195: An `allowed_hosts = []` in a sub-agent TOML is treated as \"not defined\" — the parent's list is inherited. This is consistent with TOML semantics where an omitted field and an empty list are functionally equivalent for this feature. The inheritance rule triggers on \"empty at load time,\" regardless of whether the field was explicitly set or defaulted.\n196: \n197: ### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n198: \n199: Both inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n200: \n201: ### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n202: \n203: The sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n204: \n205: ### E8: Allowlist entry with a port\n206: \n207: A `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n208: \n209: ### E9: Redirect following\n210: \n211: If the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n212: \n213: ---\n214: \n215: ## Parallel Work Structure\n216: \n217: The following tasks have no dependencies on each other and may be implemented concurrently:\n218: \n219: - **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n220: - **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n221: - **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n222: \n223: The following tasks have dependencies:\n224: \n225: - **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n226: - **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n227: - **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n228: - **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n(End of file - total 228 lines)\n</content>",
+            "title": "docs/plans/040_output_allowlist_spec.md",
+            "metadata": {
+              "preview": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020511375,
+              "end": 1774020511378
+            }
+          },
+          "id": "prt_d0bdcc5c60014v6VJKr4s385ZJ",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "cost": 0.0878525,
+          "tokens": {
+            "total": 12944,
+            "input": 3,
+            "output": 371,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 12570
+            }
+          },
+          "id": "prt_d0bdcc6c8001gJ1CO5RkQXKnGE",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcae34001TiKTw2AXemr0J5"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020511533,
+          "completed": 1774020518267
+        },
+        "parentID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.15845875,
+        "tokens": {
+          "total": 35976,
+          "input": 1,
+          "output": 314,
+          "reasoning": 0,
+          "cache": {
+            "read": 12570,
+            "write": 23091
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bdcc72d001EHt0ZX2096F93l",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "id": "prt_d0bdcd089001nkN06SsQiI92As",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        },
+        {
+          "type": "text",
+          "text": "Now let me check a few more things to verify correctness — the spec mentions DNS rebinding protection (pinning to resolved IP) and the redirect behavior:",
+          "time": {
+            "start": 1774020515238,
+            "end": 1774020515238
+          },
+          "id": "prt_d0bdcd089002uNccUtopL6HrCG",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_0118TD5MwCTXEQ2cjteQbcUo",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"io\"\n7: \t\"mime\"\n8: \t\"net\"\n9: \t\"net/http\"\n10: \t\"net/url\"\n11: \t\"strings\"\n12: \t\"time\"\n13: \n14: \t\"golang.org/x/net/html\"\n15: \n16: \t\"github.com/jrswab/axe/internal/hostcheck\"\n17: \t\"github.com/jrswab/axe/internal/provider\"\n18: \t\"github.com/jrswab/axe/internal/toolname\"\n19: )\n20: \n21: const maxReadBytes = 10000\n22: \n23: var urlFetchTimeout = 15 * time.Second\n24: \n25: // urlFetchResolver is the DNS resolver used for host validation.\n26: // Override in tests to inject fake DNS responses.\n27: var urlFetchResolver hostcheck.Resolver = net.DefaultResolver\n28: \n29: // urlFetchCheckHost is the host validation function.\n30: // Override in tests to bypass private IP / allowlist checks.\n31: var urlFetchCheckHost = hostcheck.CheckHost\n32: \n33: func truncateURL(urlStr string, maxLen int) string {\n34: \tif len(urlStr) <= maxLen {\n35: \t\treturn urlStr\n36: \t}\n37: \treturn urlStr[:maxLen] + \"...\"\n38: }\n39: \n40: func sanitizeURL(urlStr string) string {\n41: \tparsedURL, err := url.Parse(urlStr)\n42: \tif err != nil {\n43: \t\treturn \"invalid-url\"\n44: \t}\n45: \n46: \tif parsedURL.Scheme == \"\" || parsedURL.Host == \"\" {\n47: \t\treturn \"invalid-url\"\n48: \t}\n49: \n50: \tpath := parsedURL.EscapedPath()\n51: \tif path == \"\" {\n52: \t\treturn parsedURL.Scheme + \"://\" + parsedURL.Host\n53: \t}\n54: \n55: \treturn parsedURL.Scheme + \"://\" + parsedURL.Host + path\n56: }\n57: \n58: func urlFetchEntry() ToolEntry {\n59: \treturn ToolEntry{\n60: \t\tDefinition: urlFetchDefinition,\n61: \t\tExecute:    urlFetchExecute,\n62: \t}\n63: }\n64: \n65: func urlFetchDefinition() provider.Tool {\n66: \treturn provider.Tool{\n67: \t\tName:        toolname.URLFetch,\n68: \t\tDescription: \"Fetch content from a URL using HTTP GET and return the response body as text.\",\n69: \t\tParameters: map[string]provider.ToolParameter{\n70: \t\t\t\"url\": {\n71: \t\t\t\tType:        \"string\",\n72: \t\t\t\tDescription: \"The URL to fetch.\",\n73: \t\t\t\tRequired:    true,\n74: \t\t\t},\n75: \t\t},\n76: \t}\n77: }\n78: \n79: func stripHTML(raw string) string {\n80: \tdoc, err := html.Parse(strings.NewReader(raw))\n81: \tif err != nil {\n82: \t\treturn raw\n83: \t}\n84: \n85: \tvar b strings.Builder\n86: \tvar walk func(*html.Node)\n87: \twalk = func(n *html.Node) {\n88: \t\tif n.Type == html.ElementNode && (n.Data == \"script\" || n.Data == \"style\") {\n89: \t\t\tb.WriteByte(' ')\n90: \t\t\treturn\n91: \t\t}\n92: \t\tif n.Type == html.TextNode {\n93: \t\t\tb.WriteString(n.Data)\n94: \t\t}\n95: \t\tfor c := n.FirstChild; c != nil; c = c.NextSibling {\n96: \t\t\twalk(c)\n97: \t\t}\n98: \t\tif n.Type == html.ElementNode {\n99: \t\t\tb.WriteByte(' ')\n100: \t\t}\n101: \t}\n102: \twalk(doc)\n103: \n104: \treturn strings.Join(strings.Fields(b.String()), \" \")\n105: }\n106: \n107: func urlFetchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n108: \turlStr := call.Arguments[\"url\"]\n109: \tstatusCode := 0\n110: \n111: \tdefer func() {\n112: \t\tsafeURL := truncateURL(sanitizeURL(urlStr), 120)\n113: \t\tsummary := fmt.Sprintf(\"url %q\", safeURL)\n114: \t\tif statusCode != 0 {\n115: \t\t\tsummary = fmt.Sprintf(\"url %q (HTTP %d)\", safeURL, statusCode)\n116: \t\t} else if result.IsError {\n117: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateURL(result.Content, 120))\n118: \t\t}\n119: \t\ttoolVerboseLog(ec, toolname.URLFetch, result, summary)\n120: \t}()\n121: \n122: \tif urlStr == \"\" {\n123: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n124: \t}\n125: \n126: \tparsedURL, err := url.Parse(urlStr)\n127: \tif err != nil {\n128: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n129: \t}\n130: \n131: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n132: \t\treturn provider.ToolResult{\n133: \t\t\tCallID:  call.ID,\n134: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n135: \t\t\tIsError: true,\n136: \t\t}\n137: \t}\n138: \n139: \t// Host allowlist and private IP check.\n140: \tif _, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver); hostErr != nil {\n141: \t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n142: \t}\n143: \n144: \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n145: \tdefer cancel()\n146: \n147: \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n148: \tif err != nil {\n149: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n150: \t}\n151: \n152: \tclient := &http.Client{\n153: \t\tCheckRedirect: func(req *http.Request, via []*http.Request) error {\n154: \t\t\tif _, err := urlFetchCheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver); err != nil {\n155: \t\t\t\treturn err\n156: \t\t\t}\n157: \t\t\tif len(via) >= 10 {\n158: \t\t\t\treturn fmt.Errorf(\"too many redirects\")\n159: \t\t\t}\n160: \t\t\treturn nil\n161: \t\t},\n162: \t}\n163: \n164: \tresp, err := client.Do(req)\n165: \tif err != nil {\n166: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n167: \t}\n168: \tdefer func() {\n169: \t\t_ = resp.Body.Close()\n170: \t}()\n171: \tstatusCode = resp.StatusCode\n172: \n173: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n174: \tif err != nil {\n175: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n176: \t}\n177: \n178: \tbodyStr := string(body)\n179: \n180: \t// Strip HTML if Content-Type is text/html\n181: \tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n182: \tif mediaType == \"text/html\" {\n183: \t\tbodyStr = stripHTML(bodyStr)\n184: \t}\n185: \n186: \tif len(bodyStr) > maxReadBytes {\n187: \t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n188: \t}\n189: \n190: \tif resp.StatusCode < 200 || resp.StatusCode >= 300 {\n191: \t\treturn provider.ToolResult{\n192: \t\t\tCallID:  call.ID,\n193: \t\t\tContent: fmt.Sprintf(\"HTTP %d: %s\", resp.StatusCode, bodyStr),\n194: \t\t\tIsError: true,\n195: \t\t}\n196: \t}\n197: \n198: \treturn provider.ToolResult{CallID: call.ID, Content: bodyStr, IsError: false}\n199: }\n\n(End of file - total 199 lines)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"io\"\n\t\"mime\"\n\t\"net\"\n\t\"net/http\"\n\t\"net/url\"\n\t\"strings\"\n\t\"time\"\n\n\t\"golang.org/x/net/html\"\n\n\t\"github.com/jrswab/axe/internal/hostcheck\"\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020516577,
+              "end": 1774020516581
+            }
+          },
+          "id": "prt_d0bdcd5a7001NGndcUaZfO2TkL",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "runConversationLoop",
+              "include": "*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool"
+            },
+            "output": "Found 3 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 314: \tresp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)\n  Line 353: // runConversationLoop runs the multi-turn conversation loop for a sub-agent.\n  Line 355: func runConversationLoop(ctx context.Context, prov provider.Provider, req *provider.Request, cfg *agent.AgentConfig, registry *Registry, depth int, opts ExecuteOptions, toolWorkdir string) (*provider.Response, error) {",
+            "title": "runConversationLoop",
+            "metadata": {
+              "matches": 3,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020517526,
+              "end": 1774020517543
+            }
+          },
+          "id": "prt_d0bdcdae3001QvdeJf4QOr2hZb",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01D4xZ5ihuiKVCSxGqystEiB",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "dispatchToolCall",
+              "include": "*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool"
+            },
+            "output": "Found 3 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 404: \t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, opts, toolWorkdir)\n  Line 423: \t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, opts, toolWorkdir)\n  Line 438: func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {",
+            "title": "dispatchToolCall",
+            "metadata": {
+              "matches": 3,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020518151,
+              "end": 1774020518165
+            }
+          },
+          "id": "prt_d0bdcde98001ptF1t0hRep7aNS",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "cost": 0.15845875,
+          "tokens": {
+            "total": 35976,
+            "input": 1,
+            "output": 314,
+            "reasoning": 0,
+            "cache": {
+              "read": 12570,
+              "write": 23091
+            }
+          },
+          "id": "prt_d0bdce11f001lC4za1jqhoQZcH",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcc72d001EHt0ZX2096F93l"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020518268,
+          "completed": 1774020525311
+        },
+        "parentID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.04720425,
+        "tokens": {
+          "total": 39242,
+          "input": 1,
+          "output": 373,
+          "reasoning": 0,
+          "cache": {
+            "read": 35661,
+            "write": 3207
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bdce17c0017G06UqqD3UIDBl",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "id": "prt_d0bdced46001tZ9K7zw5GPcd3I",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        },
+        {
+          "type": "text",
+          "text": "Let me also check the `dispatchToolCall` in `tool.go` more closely and look for a missing piece — the spec calls for DNS rebinding protection via a custom `Transport` with `DialContext`:",
+          "time": {
+            "start": 1774020522536,
+            "end": 1774020522536
+          },
+          "id": "prt_d0bdced46002ZG82m6HvgFBe1t",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01KkCUtf2JK889wCWjn3iWEE",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 430,
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>430: \t\t\tToolResults: results,\n431: \t\t}\n432: \t\treq.Messages = append(req.Messages, toolMsg)\n433: \t}\n434: \n435: \treturn nil, fmt.Errorf(\"sub-agent exceeded maximum conversation turns (%d)\", maxConversationTurns)\n436: }\n437: \n438: func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {\n439: \tif opts.MCPRouter != nil && opts.MCPRouter.Has(tc.Name) {\n440: \t\tresult, err := opts.MCPRouter.Dispatch(ctx, tc)\n441: \t\tif err != nil {\n442: \t\t\treturn provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}\n443: \t\t}\n444: \t\treturn result\n445: \t}\n446: \n447: \texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n448: \tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n449: \tif dispatchErr != nil {\n450: \t\treturn provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}\n451: \t}\n452: \treturn result\n453: }\n454: \n455: // errorResult creates an error ToolResult for a sub-agent failure.\n456: func errorResult(callID, agentName, errMsg string, opts ExecuteOptions) provider.ToolResult {\n457: \tif opts.Verbose && opts.Stderr != nil {\n458: \t\t_, _ = fmt.Fprintf(opts.Stderr, \"[sub-agent] %q failed: %s\\n\", agentName, errMsg)\n459: \t}\n\n(Showing lines 430-459 of 485. Use offset=460 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\t\t\tToolResults: results,\n\t\t}\n\t\treq.Messages = append(req.Messages, toolMsg)\n\t}\n\n\treturn nil, fmt.Errorf(\"sub-agent exceeded maximum conversation turns (%d)\", maxConversationTurns)\n}\n\nfunc dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {\n\tif opts.MCPRouter != nil && opts.MCPRouter.Has(tc.Name) {\n\t\tresult, err := opts.MCPRouter.Dispatch(ctx, tc)\n\t\tif err != nil {\n\t\t\treturn provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}\n\t\t}\n\t\treturn result\n\t}\n\n\texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n\tresult, dispatchErr := registry.Dispatch(ctx, tc, execCtx)\n\tif dispatchErr != nil {",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020523109,
+              "end": 1774020523113
+            }
+          },
+          "id": "prt_d0bdcf22a001kFmLTaoq8XBr4y",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Kzr7ELup97LMihMszZksYH",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "DialContext|Transport|dns.rebind",
+              "include": "*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool"
+            },
+            "output": "No files found",
+            "title": "DialContext|Transport|dns.rebind",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020524337,
+              "end": 1774020524350
+            }
+          },
+          "id": "prt_d0bdcf467001scRXv04EINLmp9",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "fc00|fd00|fc00::/7",
+              "include": "*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck"
+            },
+            "output": "No files found",
+            "title": "fc00|fd00|fc00::/7",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020525201,
+              "end": 1774020525214
+            }
+          },
+          "id": "prt_d0bdcf933001B7jO23l8b7vNzE",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "cost": 0.04720425,
+          "tokens": {
+            "total": 39242,
+            "input": 1,
+            "output": 373,
+            "reasoning": 0,
+            "cache": {
+              "read": 35661,
+              "write": 3207
+            }
+          },
+          "id": "prt_d0bdcfc9f001ep6vDGw2qVzgsG",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdce17c0017G06UqqD3UIDBl"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020525311,
+          "completed": 1774020530607
+        },
+        "parentID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0320265,
+        "tokens": {
+          "total": 40139,
+          "input": 1,
+          "output": 248,
+          "reasoning": 0,
+          "cache": {
+            "read": 38868,
+            "write": 1022
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bdcfcff001ibdRafyZpdaKIt",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "id": "prt_d0bdd0668001jI5OQ9FpZHuUFp",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcfcff001ibdRafyZpdaKIt"
+        },
+        {
+          "type": "text",
+          "text": "Now let me verify one more thing — the `nil` allowlist vs empty `[]string{}` behavior for sub-agent inheritance:",
+          "time": {
+            "start": 1774020529226,
+            "end": 1774020529226
+          },
+          "id": "prt_d0bdd0669001oW5zEnjCReIxxh",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcfcff001ibdRafyZpdaKIt"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01BRXS3dZXAxUZ7uutfB1sH1",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 140,
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>140: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load agent %q: %s\", agentName, err), opts)\n141: \t}\n142: \n143: \t// Step 7: Parse sub-agent's model\n144: \tprovName, modelName, err := parseModel(cfg.Model)\n145: \tif err != nil {\n146: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n147: \t}\n148: \n149: \t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n150: \teffectiveAllowedHosts := cfg.AllowedHosts\n151: \tif len(effectiveAllowedHosts) == 0 {\n152: \t\teffectiveAllowedHosts = opts.AllowedHosts\n153: \t}\n154: \n155: \t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n156: \tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n157: \tif err != nil {\n158: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve workdir for agent %q: %s\", agentName, err), opts)\n159: \t}\n160: \n161: \tfiles, err := resolve.Files(cfg.Files, workdir)\n162: \tif err != nil {\n163: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve files for agent %q: %s\", agentName, err), opts)\n164: \t}\n165: \n166: \tconfigDir, err := xdg.GetConfigDir()\n167: \tif err != nil {\n168: \t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to get config dir: %s\", err), opts)\n169: \t}\n\n(Showing lines 140-169 of 485. Use offset=170 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to load agent %q: %s\", agentName, err), opts)\n\t}\n\n\t// Step 7: Parse sub-agent's model\n\tprovName, modelName, err := parseModel(cfg.Model)\n\tif err != nil {\n\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"invalid model for agent %q: %s\", agentName, err), opts)\n\t}\n\n\t// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's\n\teffectiveAllowedHosts := cfg.AllowedHosts\n\tif len(effectiveAllowedHosts) == 0 {\n\t\teffectiveAllowedHosts = opts.AllowedHosts\n\t}\n\n\t// Step 8: Resolve sub-agent's working directory, files, skill, system prompt\n\tworkdir, err := resolve.Workdir(\"\", cfg.Workdir)\n\tif err != nil {\n\t\treturn errorResult(call.ID, agentName, fmt.Sprintf(\"failed to resolve workdir for agent %q: %s\", agentName, err), opts)\n\t}",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774020529484,
+              "end": 1774020529492
+            }
+          },
+          "id": "prt_d0bdd0c5b001FVk31u9hUltKv6",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcfcff001ibdRafyZpdaKIt"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_019vXaz8jueoFT8uYHPaAYVU",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "Timeout.*client|client\\.Timeout",
+              "include": "*.go",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool"
+            },
+            "output": "No files found",
+            "title": "Timeout.*client|client\\.Timeout",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774020530491,
+              "end": 1774020530511
+            }
+          },
+          "id": "prt_d0bdd0d4e0016bBZlMr21dkZ5K",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcfcff001ibdRafyZpdaKIt"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "cost": 0.0320265,
+          "tokens": {
+            "total": 40139,
+            "input": 1,
+            "output": 248,
+            "reasoning": 0,
+            "cache": {
+              "read": 38868,
+              "write": 1022
+            }
+          },
+          "id": "prt_d0bdd1151001zZTaVUPawinVhY",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdcfcff001ibdRafyZpdaKIt"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774020530608,
+          "completed": 1774020574841
+        },
+        "parentID": "msg_d0bdcae2d001c9UBkZIZYHd8Hk",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0685,
+        "tokens": {
+          "total": 42496,
+          "input": 1,
+          "output": 1721,
+          "reasoning": 0,
+          "cache": {
+            "read": 39890,
+            "write": 884
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0bdd11b0001sUpkECfihFuLkA",
+        "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "id": "prt_d0bdd1c48001Obkgu3X55OXfqe",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdd11b0001sUpkECfihFuLkA"
+        },
+        {
+          "type": "text",
+          "text": "I've now reviewed all the changes thoroughly. Here is my review:\n\n---\n\n## Code Review: ISS-24/allow-list-connections (SSRF Protection)\n\n### Critical Issues\n\n1. **DNS rebinding vulnerability — `CheckHost` resolves DNS, but the HTTP client makes a second, independent DNS resolution when connecting. An attacker's DNS server can return a public IP on the first query (passes `CheckHost`) and a private IP on the second (when `http.Client` actually connects).** The implementation plan (Task 4, `040_output_allowlist_implement.md`) explicitly calls for a custom `http.Transport` with `DialContext` that pins the connection to the IP returned by `CheckHost`, but this was not implemented. The resolved IP from `CheckHost` is discarded (assigned to `_`).\n\n   - In `@internal/tool/url_fetch.go` at the host-check call site (line 140), the resolved IP is discarded: `if _, hostErr := urlFetchCheckHost(...)`. Capture the returned IP and use it to create a custom `http.Transport` with a `DialContext` that connects to that specific IP (setting the `Host` header appropriately). This eliminates the TOCTOU gap between DNS resolution for validation and DNS resolution for connection. Apply the same pinning logic inside the `CheckRedirect` callback, where the resolved IP from the redirect check is also currently discarded.\n\n2. **The `CheckRedirect` callback also discards the resolved IP (line 154), so redirect targets are equally vulnerable to DNS rebinding.** The same pinning approach from item 1 must apply to redirects. However, `CheckRedirect` cannot modify the transport per-redirect in the standard `http.Client` API. An alternative is to use a `RoundTripper` wrapper that performs `CheckHost` and dials the resolved IP for every outgoing request (initial and redirects), rather than splitting validation across `CheckRedirect` and the pre-request check.\n\n   - In `@internal/tool/url_fetch.go`, refactor the host validation so it happens inside a custom `http.Transport.DialContext` rather than in a separate pre-check plus `CheckRedirect` callback. This way, every connection (including redirects) is validated and pinned to the resolved IP atomically, with no TOCTOU window.\n\n3. **Missing IPv6 Unique Local Addresses (`fc00::/7`) from the private ranges.** The `fc00::/7` range (covers `fc00::/8` and `fd00::/8`) is the IPv6 equivalent of RFC 1918 private addresses. An attacker could use a `fd00::` address to bypass the private IP check and reach internal network resources.\n\n   - In `@internal/hostcheck/hostcheck.go`, add `\"fc00::/7\"` to the `cidrs` slice in the `init()` function (after line 28, the `fe80::/10` entry). Also add test cases in `@internal/hostcheck/hostcheck_test.go` for `TestIsPrivateIP`: `{\"unique local IPv6\", \"fd00::1\", true}` and `{\"unique local IPv6 fc00\", \"fc00::1\", true}`.\n\n### Moderate Issues\n\n4. **No `Timeout` on the custom `http.Client` (line 152).** The original code used `http.DefaultClient` which also has no timeout, so this isn't a regression — but the implementation creates a new `http.Client` per request and only relies on the context timeout from `reqCtx`. If the context timeout is accidentally removed or changed in a future refactor, there's no safety net. The `http.Client.Timeout` field provides a defense-in-depth layer.\n\n   - In `@internal/tool/url_fetch.go`, set `Timeout: urlFetchTimeout` on the `http.Client` struct literal at line 152, matching the context timeout already applied to `reqCtx`.\n\n5. **Missing test for redirect from allowed host to disallowed host (spec E9).** The implementation plan (Task 4b) explicitly calls for a test where an allowed host redirects to a disallowed host and the redirect is blocked. This test case is absent from `url_fetch_test.go`.\n\n   - In `@internal/tool/url_fetch_test.go`, add a test `TestURLFetch_RedirectToDisallowedHostBlocked` that sets up two `httptest.NewServer` instances — the first returns a 301 redirect to the second. Configure the allowlist to include only the first server's hostname. Assert that the result is an error containing `\"not in allowed_hosts\"`. Use the `urlFetchCheckHost` override pattern to validate the allowlist logic without being blocked by the private IP check on `127.0.0.1`.\n\n6. **The `TestURLFetch_AllowlistPermitsMatchingHost` test (line 717) uses a custom `urlFetchCheckHost` that bypasses the private IP check but only validates allowlist membership via `hostcheck.IsAllowed`. This means it doesn't test the actual `CheckHost` code path for the \"allowed host\" scenario — it tests a mocked version.** While other tests in `hostcheck_test.go` cover `CheckHost` directly, there's no integration-level test in `url_fetch_test.go` that verifies the real `CheckHost` is wired in correctly for the success path.\n\n   - In `@internal/tool/url_fetch_test.go`, consider restructuring `TestURLFetch_AllowlistPermitsMatchingHost` to use a fake resolver (via `urlFetchResolver`) that returns a public IP for the test server's hostname, rather than replacing `urlFetchCheckHost` entirely. This way the real `CheckHost` logic is exercised end-to-end: allowlist passes, DNS resolves to public IP, request succeeds.\n\n### Minor Issues\n\n7. **The `urlFetchCheckHost` and `urlFetchResolver` package-level vars (lines 27, 31) are mutable global state, which the spec (R9) says to avoid: \"No global state. No package-level variables.\"** The `urlFetchTimeout` var predates this feature and set the precedent, so this is pragmatic. But R9 is explicit. The resolver could instead be a field on `ExecContext` (as the implementation plan mentions as an alternative).\n\n   - No action required for this PR — note for future cleanup. The existing `urlFetchTimeout` pattern is already established, and changing this now would increase scope. Document the deviation from R9 in a comment if desired.\n\n8. **`TestURLFetch_BlocksPrivateIP` (line 786) tests `http://192.168.1.1/data` with an empty allowlist. This works because `CheckHost` detects the raw IP literal as private. However, the test relies on the real `urlFetchCheckHost` (no override) which will call `net.DefaultResolver` for non-IP hostnames.** This specific test is fine since `192.168.1.1` is a raw IP literal and skips DNS, but the coupling to the real `CheckHost` means the test would make real DNS calls if the URL were changed to a hostname. The `TestURLFetch_BlocksLoopbackIP` test (line 800) correctly overrides the resolver.\n\n   - No action required — the test is correct as-is. Just noting the asymmetry for awareness.",
+          "time": {
+            "start": 1774020574714,
+            "end": 1774020574714
+          },
+          "id": "prt_d0bdd1c48002bji8nJm0DEPGfN",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdd11b0001sUpkECfihFuLkA"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "234aa69dceb3c0520d95c13509c547a4cd7e92c4",
+          "cost": 0.0685,
+          "tokens": {
+            "total": 42496,
+            "input": 1,
+            "output": 1721,
+            "reasoning": 0,
+            "cache": {
+              "read": 39890,
+              "write": 884
+            }
+          },
+          "id": "prt_d0bddbe120011EGc27OS7y18cT",
+          "sessionID": "ses_2f42351d9ffeeoGNAqVKg7HpCA",
+          "messageID": "msg_d0bdd11b0001sUpkECfihFuLkA"
+        }
+      ]
+    }
+  ]
+}
