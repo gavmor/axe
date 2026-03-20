@@ -1,0 +1,16 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run these commands and return ALL output:
+
+1. `go build ./...`
+2. `go test ./internal/hostcheck/`
+3. `go test ./internal/agent/`
+4. `go test ./internal/tool/`
+5. `go test ./cmd/`
+
+If any fail, return the full error output.
+
