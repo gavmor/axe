@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "760acb56ca92",
+  "session_id": "ses_2f38cdd00ffexBON02raOmPosW",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T18:22:01.388642Z",
+  "branch": "master",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "internal/mcpclient/mcpclient.go",
+    "CHANGELOG.md",
+    "README.md",
+    "cmd/root.go",
+    "cmd/version_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "e4d218b11f74",
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 84970,
+    "cache_read_tokens": 376221,
+    "output_tokens": 8760,
+    "api_call_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T18:22:01.329419Z",
+    "agent_lines": 110,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 110,
+    "agent_percentage": 100
+  }
+}

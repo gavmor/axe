@@ -1,0 +1,471 @@
+Time to make an annotated tag and push it to GitHub.
+
+---
+
+We need to update the code to have correct new version and we need to update @README.md to have information about these changes so the user knows how to use them.
+Called the Read tool with the following input: {"filePath":"/Users/jaronswab/go/src/github.com/jrswab/axe/README.md"}
+<path>/Users/jaronswab/go/src/github.com/jrswab/axe/README.md</path>
+<type>file</type>
+<content>1: # Axe
+2: 
+3: ![axe banner](banner.png)
+4: 
+5: A CLI tool for managing and running LLM-powered agents.
+6: 
+7: ## Why Axe?
+8: 
+9: Most AI tooling assumes you want a chatbot. A long-running session with a massive context window doing everything at once. But that's not how good software works. Good software is small, focused, and composable.
+10: 
+11: Axe treats LLM agents the same way Unix treats programs. Each agent does one thing well. You define it in a TOML file, give it a focused skill, and run it from the command line. Pipe data in, get results out. Chain agents together. Trigger them from cron, git hooks, or CI. Whatever you already use. No daemon, no GUI, no framework to buy into. Just a binary and your configs.
+12: 
+13: ## Overview
+14: 
+15: Axe orchestrates LLM-powered agents defined via TOML configuration files. Each agent has its own system prompt, model selection, skill files, context files, working directory, persistent memory, and the ability to delegate to sub-agents.
+16: 
+17: Axe is the executor, not the scheduler. It is designed to be composed with standard Unix tools — cron, git hooks, pipes, file watchers — rather than reinventing scheduling or workflow orchestration.
+18: 
+19: ## Features
+20: 
+21: - **Multi-provider support** — Anthropic, OpenAI, Ollama (local models), OpenCode, and AWS Bedrock
+22: - **TOML-based agent configuration** — declarative, version-controllable agent definitions
+23: - **Sub-agent delegation** — agents can call other agents via LLM tool use, with depth limiting and parallel execution
+24: - **Persistent memory** — timestamped markdown logs that carry context across runs
+25: - **Memory garbage collection** — LLM-assisted pattern analysis and trimming
+26: - **Skill system** — reusable instruction sets that can be shared across agents
+27: - **Stdin piping** — pipe any output directly into an agent (`git diff | axe run reviewer`)
+28: - **Dry-run mode** — inspect resolved context without calling the LLM
+29: - **JSON output** — structured output with metadata for scripting
+30: - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search
+31: - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport
+32: - **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)
+33: - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library
+34: 
+35: ## Installation
+36: 
+37: Requires Go 1.25+.
+38: 
+39: ```bash
+40: go install github.com/jrswab/axe@latest
+41: ```
+42: 
+43: Or build from source:
+44: 
+45: ```bash
+46: git clone https://github.com/jrswab/axe.git
+47: cd axe
+48: go build .
+49: ```
+50: 
+51: ## Quick Start
+52: 
+53: Initialize the configuration directory:
+54: 
+55: ```bash
+56: axe config init
+57: ```
+58: 
+59: This creates the directory structure at `$XDG_CONFIG_HOME/axe/` with a sample skill and a default `config.toml` for provider credentials.
+60: 
+61: Scaffold a new agent:
+62: 
+63: ```bash
+64: axe agents init my-agent
+65: ```
+66: 
+67: Edit its configuration:
+68: 
+69: ```bash
+70: axe agents edit my-agent
+71: ```
+72: 
+73: Run the agent:
+74: 
+75: ```bash
+76: axe run my-agent
+77: ```
+78: 
+79: Pipe input from other tools:
+80: 
+81: ```bash
+82: git diff --cached | axe run pr-reviewer
+83: cat error.log | axe run log-analyzer
+84: ```
+85: 
+86: ## Examples
+87: 
+88: The [`examples/`](examples/) directory contains ready-to-run agents you can copy into your config and use immediately. Includes a code reviewer, commit message generator, and text summarizer — each with a focused SKILL.md.
+89: 
+90: ```bash
+91: # Copy an example agent into your config
+92: cp examples/code-reviewer/code-reviewer.toml "$(axe config path)/agents/"
+93: cp -r examples/code-reviewer/skills/ "$(axe config path)/skills/"
+94: 
+95: # Set your API key and run
+96: export ANTHROPIC_API_KEY="your-key-here"
+97: git diff | axe run code-reviewer
+98: ```
+99: 
+100: See [`examples/README.md`](examples/README.md) for full setup instructions.
+101: 
+102: ## Docker
+103: 
+104: Axe provides a Docker image for running agents in an isolated, hardened container.
+105: 
+106: ### Build the Image
+107: 
+108: ```bash
+109: docker build -t axe .
+110: ```
+111: 
+112: Multi-architecture builds (linux/amd64, linux/arm64) are supported via buildx:
+113: 
+114: ```bash
+115: docker buildx build --platform linux/amd64,linux/arm64 -t axe:latest .
+116: ```
+117: 
+118: ### Run an Agent
+119: 
+120: Mount your config directory and pass API keys as environment variables:
+121: 
+122: ```bash
+123: docker run --rm \
+124:   -v ./my-config:/home/axe/.config/axe \
+125:   -e ANTHROPIC_API_KEY \
+126:   axe run my-agent
+127: ```
+128: 
+129: Pipe stdin with the `-i` flag:
+130: 
+131: ```bash
+132: git diff | docker run --rm -i \
+133:   -v ./my-config:/home/axe/.config/axe \
+134:   -e ANTHROPIC_API_KEY \
+135:   axe run pr-reviewer
+136: ```
+137: 
+138: Without a config volume mounted, axe exits with code 2 (config error) because no agent TOML files exist.
+139: 
+140: ### Running a Single Agent
+141: 
+142: The examples above mount the entire config directory. If you only need to run one agent with one skill, mount just those files to their expected XDG paths inside the container. No `config.toml` is needed when API keys are passed via environment variables.
+143: 
+144: ```bash
+145: docker run --rm -i \
+146:   -e ANTHROPIC_API_KEY \
+147:   -v ./agents/reviewer.toml:/home/axe/.config/axe/agents/reviewer.toml:ro \
+148:   -v ./skills/code-review/:/home/axe/.config/axe/skills/code-review/:ro \
+149:   axe run reviewer
+150: ```
+151: 
+152: The agent's `skill` field resolves automatically against the XDG config path inside the container, so no `--skill` flag is needed.
+153: 
+154: To use a **different skill** than the one declared in the agent's TOML, use the `--skill` flag to override it. In this case you only mount the replacement skill — the original skill declared in the TOML is ignored entirely:
+155: 
+156: ```bash
+157: docker run --rm -i \
+158:   -e ANTHROPIC_API_KEY \
+159:   -v ./agents/reviewer.toml:/home/axe/.config/axe/agents/reviewer.toml:ro \
+160:   -v ./alt-review.md:/home/axe/alt-review.md:ro \
+161:   axe run reviewer --skill /home/axe/alt-review.md
+162: ```
+163: 
+164: If the agent declares `sub_agents`, all referenced agent TOMLs and their skills must also be mounted.
+165: 
+166: ### Persistent Data
+167: 
+168: Agent memory persists across runs when you mount a data volume:
+169: 
+170: ```bash
+171: docker run --rm \
+172:   -v ./my-config:/home/axe/.config/axe \
+173:   -v axe-data:/home/axe/.local/share/axe \
+174:   -e ANTHROPIC_API_KEY \
+175:   axe run my-agent
+176: ```
+177: 
+178: ### Docker Compose
+179: 
+180: A `docker-compose.yml` is included for running axe alongside a local Ollama instance.
+181: 
+182: **Cloud provider only (no Ollama):**
+183: 
+184: ```bash
+185: docker compose run --rm axe run my-agent
+186: ```
+187: 
+188: **With Ollama sidecar:**
+189: 
+190: ```bash
+191: docker compose --profile ollama up -d ollama
+192: docker compose --profile cli run --rm axe run my-agent
+193: ```
+194: 
+195: **Pull an Ollama model:**
+196: 
+197: ```bash
+198: docker compose --profile ollama exec ollama ollama pull llama3
+199: ```
+200: 
+201: > **Note:** The compose `axe` service declares `depends_on: ollama`. Docker Compose will attempt to start the Ollama service whenever axe is started via compose, even for cloud-only runs. For cloud-only usage without Ollama, use `docker run` directly instead of `docker compose run`.
+202: 
+203: ### Ollama on the Host
+204: 
+205: If Ollama runs directly on the host (not via compose), point to it with:
+206: 
+207: - **Linux:** `--add-host=host.docker.internal:host-gateway -e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`
+208: - **macOS / Windows (Docker Desktop):** `-e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`
+209: 
+210: ### Security
+211: 
+212: The container runs with the following hardening by default (via compose):
+213: 
+214: - **Non-root user** — UID 10001
+215: - **Read-only root filesystem** — writable locations are the config mount, data mount, and `/tmp/axe` tmpfs
+216: - **All capabilities dropped** — `cap_drop: ALL`
+217: - **No privilege escalation** — `no-new-privileges:true`
+218: 
+219: These settings do not restrict outbound network access. To isolate an agent that only talks to a local Ollama instance, add `--network=none` and connect it to the shared Docker network manually.
+220: 
+221: ### Volume Mounts
+222: 
+223: | Container Path | Purpose | Default Access |
+224: |---|---|---|
+225: | `/home/axe/.config/axe/` | Agent TOML files, skills, `config.toml` | Read-write |
+226: | `/home/axe/.local/share/axe/` | Persistent memory files | Read-write |
+227: 
+228: Config is read-write because `axe config init` and `axe agents init` write into it. Mount as `:ro` if you only run agents.
+229: 
+230: ### Environment Variables
+231: 
+232: | Variable | Required | Purpose |
+233: |---|---|---|
+234: | `ANTHROPIC_API_KEY` | If using Anthropic | API authentication |
+235: | `OPENAI_API_KEY` | If using OpenAI | API authentication |
+236: | `AXE_OLLAMA_BASE_URL` | If using Ollama | Ollama endpoint (default in compose: `http://ollama:11434`) |
+237: | `AXE_ANTHROPIC_BASE_URL` | No | Override Anthropic API endpoint |
+238: | `AXE_OPENAI_BASE_URL` | No | Override OpenAI API endpoint |
+239: | `AXE_OPENCODE_BASE_URL` | No | Override OpenCode API endpoint |
+240: | `TAVILY_API_KEY` | If using web_search | Tavily web search API key |
+241: | `AXE_WEB_SEARCH_BASE_URL` | No | Override web search endpoint |
+242: 
+243: ## CLI Reference
+244: 
+245: ### Commands
+246: 
+247: | Command | Description |
+248: |---|---|
+249: | `axe run <agent>` | Run an agent |
+250: | `axe agents list` | List all configured agents |
+251: | `axe agents show <agent>` | Display an agent's full configuration |
+252: | `axe agents init <agent>` | Scaffold a new agent TOML file |
+253: | `axe agents edit <agent>` | Open an agent TOML in `$EDITOR` |
+254: | `axe config path` | Print the configuration directory path |
+255: | `axe config init` | Initialize the config directory with defaults |
+256: | `axe gc <agent>` | Run memory garbage collection for an agent |
+257: | `axe gc --all` | Run GC on all memory-enabled agents |
+258: | `axe version` | Print the current version |
+259: 
+260: ### Run Flags
+261: 
+262: | Flag | Default | Description |
+263: |---|---|---|
+264: | `--model <provider/model>` | from TOML | Override the model (e.g. `anthropic/claude-sonnet-4-20250514`) |
+265: | `--skill <path>` | from TOML | Override the skill file path |
+266: | `--workdir <path>` | from TOML or cwd | Override the working directory |
+267: | `--timeout <seconds>` | 120 | Request timeout |
+268: | `--dry-run` | false | Show resolved context without calling the LLM |
+269: | `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |
+270: | `--json` | false | Wrap output in a JSON envelope with metadata |
+271: 
+272: ## Agent Configuration
+273: 
+274: Agents are defined as TOML files in `$XDG_CONFIG_HOME/axe/agents/`.
+275: 
+276: ```toml
+277: name = "pr-reviewer"
+278: description = "Reviews pull requests for issues and improvements"
+279: model = "anthropic/claude-sonnet-4-20250514"
+280: system_prompt = "You are a senior code reviewer. Be concise and actionable."
+281: skill = "skills/code-review/SKILL.md"
+282: files = ["src/**/*.go", "CONTRIBUTING.md"]
+283: workdir = "/home/user/projects/myapp"
+284: tools = ["read_file", "list_directory", "run_command"]
+285: sub_agents = ["test-runner", "lint-checker"]
+286: 
+287: [sub_agents_config]
+288: max_depth = 3       # maximum nesting depth (hard max: 5)
+289: parallel = true     # run sub-agents concurrently
+290: timeout = 120       # per sub-agent timeout in seconds
+291: 
+292: [memory]
+293: enabled = true
+294: last_n = 10         # load last N entries into context
+295: max_entries = 100   # warn when exceeded
+296: 
+297: [[mcp_servers]]
+298: name = "my-tools"
+299: url = "https://my-mcp-server.example.com/sse"
+300: transport = "sse"
+301: headers = { Authorization = "Bearer ${MY_TOKEN}" }
+302: 
+303: [params]
+304: temperature = 0.3
+305: max_tokens = 4096
+306: 
+307: [retry]
+308: max_retries = 3           # retry up to 3 times on transient errors
+309: backoff = "exponential"   # "exponential", "linear", or "fixed"
+310: initial_delay_ms = 500    # base delay before first retry
+311: max_delay_ms = 30000      # maximum delay cap
+312: 
+313: [[mcp_servers]]
+314: name = "filesystem"
+315: transport = "stdio"
+316: command = "/usr/local/bin/mcp-server-filesystem"
+317: args = ["--root", "/home/user/projects"]
+318: ```
+319: 
+320: All fields except `name` and `model` are optional.
+321: 
+322: ### Retry
+323: 
+324: Agents can retry on transient LLM provider errors — rate limits (429), server
+325: errors (5xx), and timeouts. Retry is opt-in and disabled by default.
+326: 
+327: | Field | Default | Description |
+328: |---|---|---|
+329: | `max_retries` | 0 | Number of retry attempts after the initial request. 0 disables retry. |
+330: | `backoff` | `"exponential"` | Strategy: `"exponential"` (with jitter), `"linear"`, or `"fixed"` |
+331: | `initial_delay_ms` | 500 | Base delay in milliseconds before the first retry |
+332: | `max_delay_ms` | 30000 | Maximum delay cap in milliseconds |
+333: 
+334: Only transient errors are retried. Authentication errors (401/403) and bad
+335: requests (400) are never retried. When `--verbose` is enabled, each retry
+336: attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`
+337: field for observability.
+338: 
+339: ## Tools
+340: 
+341: Agents can use built-in tools to interact with the filesystem and run commands. When tools are enabled, the agent enters a conversation loop — the LLM can make tool calls, receive results, and continue reasoning for up to 50 turns.
+342: 
+343: ### Built-in Tools
+344: 
+345: | Tool | Description |
+346: |---|---|
+347: | `list_directory` | List contents of a directory relative to the working directory |
+348: | `read_file` | Read file contents with line-numbered output and optional pagination (offset/limit) |
+349: | `write_file` | Create or overwrite a file, creating parent directories as needed |
+350: | `edit_file` | Find and replace exact text in a file, with optional replace-all mode |
+351: | `run_command` | Execute a shell command via `sh -c` and return combined output |
+352: | `url_fetch` | Fetch URL content with HTML stripping and truncation |
+353: | `web_search` | Search the web and return results |
+354: | `call_agent` | Delegate a task to a sub-agent (controlled via `sub_agents`, not `tools`) |
+355: 
+356: Enable tools by adding them to the agent's `tools` field:
+357: 
+358: ```toml
+359: tools = ["read_file", "list_directory", "run_command"]
+360: ```
+361: 
+362: The `call_agent` tool is not listed in `tools` — it is automatically available when `sub_agents` is configured and the depth limit has not been reached.
+363: 
+364: ### Path Security
+365: 
+366: All file tools (`list_directory`, `read_file`, `write_file`, `edit_file`) are sandboxed to the agent's working directory. Absolute paths, `..` traversal, and symlink escapes are rejected.
+367: 
+368: ### Parallel Execution
+369: 
+370: When an LLM returns multiple tool calls in a single turn, they run concurrently by default. This applies to both built-in tools and sub-agent calls. Disable with `parallel = false` in `[sub_agents_config]`.
+371: 
+372: ### MCP Tools
+373: 
+374: Agents can use tools from external [MCP](https://modelcontextprotocol.io/)
+375: servers. Declare servers in the agent TOML with `[[mcp_servers]]`:
+376: 
+377: ```toml
+378: [[mcp_servers]]
+379: name = "my-tools"
+380: url = "https://my-mcp-server.example.com/sse"
+381: transport = "sse"
+382: headers = { Authorization = "Bearer ${MY_TOKEN}" }
+383: ```
+384: 
+385: At startup, axe connects to each declared server, discovers available tools via
+386: `tools/list`, and makes them available to the LLM alongside built-in tools.
+387: 
+388: | Field | Required | Description |
+389: |---|---|---|
+390: | `name` | Yes | Human-readable identifier for the server |
+391: | `url` | Yes | MCP server endpoint URL |
+392: | `transport` | Yes | `"sse"` or `"streamable-http"` |
+393: | `headers` | No | HTTP headers; values support `${ENV_VAR}` interpolation |
+394: 
+395: MCP tools are controlled entirely by `[[mcp_servers]]` — they are not listed in
+396: the `tools` field. If an MCP tool has the same name as an enabled built-in tool,
+397: the built-in takes precedence.
+398: 
+399: ## Skills
+400: 
+401: Skills are reusable instruction sets that provide an agent with domain-specific knowledge and workflows. They are defined as `SKILL.md` files following the community SKILL.md format.
+402: 
+403: ### Skill Resolution
+404: 
+405: The `skill` field in an agent TOML is resolved in order:
+406: 
+407: 1. **Absolute path** — used as-is (e.g. `/home/user/skills/SKILL.md`)
+408: 2. **Relative to config dir** — e.g. `skills/code-review/SKILL.md` resolves to `$XDG_CONFIG_HOME/axe/skills/code-review/SKILL.md`
+409: 3. **Bare name** — e.g. `code-review` resolves to `$XDG_CONFIG_HOME/axe/skills/code-review/SKILL.md`
+410: 
+411: ### Script Paths
+412: 
+413: Skills often reference helper scripts. Since `run_command` executes in the agent's `workdir` (not the skill directory), **script paths in SKILL.md must be absolute**. Relative paths will fail because the scripts don't exist in the agent's working directory.
+414: 
+415: ```
+416: # Correct — absolute path
+417: /home/user/.config/axe/skills/my-skill/scripts/fetch.sh <args>
+418: 
+419: # Wrong — relative path won't resolve from the agent's workdir
+420: scripts/fetch.sh <args>
+421: ```
+422: 
+423: ### Directory Structure
+424: 
+425: ```
+426: $XDG_CONFIG_HOME/axe/
+427: ├── config.toml
+428: ├── agents/
+429: │   └── my-agent.toml
+430: └── skills/
+431:     └── my-skill/
+432:         ├── SKILL.md
+433:         └── scripts/
+434:             └── fetch.sh
+435: ```
+436: 
+437: ## Providers
+438: 
+439: | Provider | API Key Env Var | Default Base URL |
+440: |---|---|---|
+441: | Anthropic | `ANTHROPIC_API_KEY` | `https://api.anthropic.com` |
+442: | OpenAI | `OPENAI_API_KEY` | `https://api.openai.com` |
+443: | Ollama | (none required) | `http://localhost:11434` |
+444: | OpenCode | `OPENCODE_API_KEY` | Configurable |
+445: | AWS Bedrock | (uses AWS credentials) | Region-based |
+446: 
+447: **AWS Bedrock Configuration:**
+448: - Region: Set via `AWS_REGION` environment variable or `[providers.bedrock] region = "us-east-1"` in config.toml
+449: - Credentials: Uses environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or `~/.aws/credentials` file (supports `AWS_PROFILE` and `AWS_SHARED_CREDENTIALS_FILE`)
+450: - Model IDs: Use full Bedrock model IDs (e.g., `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0`)
+451: 
+452: Base URLs can be overridden with `AXE_<PROVIDER>_BASE_URL` environment variables or in `config.toml`.
+453: 
+454: ## License
+455: 
+456: Apache-2.0. See [LICENSE](LICENSE).
+
+(End of file - total 456 lines)
+</content>
+
+---
+
+update the code, push to master, verify, and then push the new tag (ask about the tag first).
