@@ -1,0 +1,136 @@
+You are implementing Track A of a refactoring in the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe.
+
+## Context
+
+The file `internal/tool/tool.go` has inline logic at lines 149-154 for computing effective allowed hosts during sub-agent delegation:
+
+```go
+// Compute effective allowed hosts: sub-agent's own list wins (even if empty),
+// else inherit parent's when not explicitly set (nil).
+effectiveAllowedHosts := cfg.AllowedHosts
+if effectiveAllowedHosts == nil {
+    effectiveAllowedHosts = opts.AllowedHosts
+}
+```
+
+The test `TestEffectiveAllowedHosts` in `internal/tool/tool_test.go` (lines 838-894) duplicates this logic instead of calling the production code. It also uses weak assertions (`wantLen`/`wantNil`) instead of full slice comparison.
+
+## What to do (TDD — Red/Green/Refactor)
+
+### Step 1: Write the failing test first (Red)
+
+Edit `internal/tool/tool_test.go`:
+
+1. Add `"reflect"` to the import block (it already has `"context"`, `"encoding/json"`, `"fmt"`, `"io"`, `"net/http"`, `"net/http/httptest"`, `"os"`, `"path/filepath"`, `"strings"`, `"testing"`, `"time"`, and imports from the project).
+
+2. Replace the ENTIRE `TestEffectiveAllowedHosts` function (lines 838-894) with this:
+
+```go
+// TestEffectiveAllowedHosts tests the nil-vs-empty-slice inheritance logic used in ExecuteCallAgent.
+// nil sub-agent AllowedHosts → inherit parent list; []string{} → use empty (clear parent list).
+func TestEffectiveAllowedHosts(t *testing.T) {
+	tests := []struct {
+		name      string
+		subAgent  []string // cfg.AllowedHosts (nil or empty or populated)
+		parent    []string // opts.AllowedHosts
+		wantHosts []string // expected effective result (nil-aware via DeepEqual)
+	}{
+		{
+			name:      "nil sub-agent inherits parent list",
+			subAgent:  nil,
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"api.example.com"},
+		},
+		{
+			name:      "empty sub-agent clears parent list",
+			subAgent:  []string{},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{},
+		},
+		{
+			name:      "populated sub-agent uses own list",
+			subAgent:  []string{"docs.example.com"},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"docs.example.com"},
+		},
+		{
+			name:      "nil sub-agent with nil parent stays nil",
+			subAgent:  nil,
+			parent:    nil,
+			wantHosts: nil,
+		},
+		{
+			name:      "populated sub-agent with multiple hosts",
+			subAgent:  []string{"a.example.com", "b.example.com"},
+			parent:    []string{"api.example.com"},
+			wantHosts: []string{"a.example.com", "b.example.com"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			effective := EffectiveAllowedHosts(tc.subAgent, tc.parent)
+
+			if !reflect.DeepEqual(effective, tc.wantHosts) {
+				t.Errorf("EffectiveAllowedHosts(%v, %v) = %v, want %v", tc.subAgent, tc.parent, effective, tc.wantHosts)
+			}
+		})
+	}
+}
+```
+
+### Step 2: Run the test to confirm it fails (Red)
+
+Run: `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestEffectiveAllowedHosts -v`
+
+It should fail because `EffectiveAllowedHosts` doesn't exist yet. Confirm the compilation error.
+
+### Step 3: Implement the production code (Green)
+
+Edit `internal/tool/tool.go`:
+
+1. Add this function BEFORE the `ExecuteCallAgent` function (before the line that starts `func ExecuteCallAgent`). A good place is right after the `CallAgentTool` function (which ends around line 70-ish). Find the right spot — it should be after the type definitions and before `ExecuteCallAgent`:
+
+```go
+// EffectiveAllowedHosts returns the effective allowed hosts for a sub-agent.
+// If subAgent is non-nil (even if empty), it is used as-is.
+// If subAgent is nil, parent is inherited.
+func EffectiveAllowedHosts(subAgent, parent []string) []string {
+	if subAgent == nil {
+		return parent
+	}
+	return subAgent
+}
+```
+
+2. Replace the inline logic at lines 149-154 with a call to the new function:
+
+Replace:
+```go
+	// Compute effective allowed hosts: sub-agent's own list wins (even if empty),
+	// else inherit parent's when not explicitly set (nil).
+	effectiveAllowedHosts := cfg.AllowedHosts
+	if effectiveAllowedHosts == nil {
+		effectiveAllowedHosts = opts.AllowedHosts
+	}
+```
+
+With:
+```go
+	effectiveAllowedHosts := EffectiveAllowedHosts(cfg.AllowedHosts, opts.AllowedHosts)
+```
+
+### Step 4: Run the test to confirm it passes (Green)
+
+Run: `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -run TestEffectiveAllowedHosts -v`
+
+All 5 test cases should pass.
+
+### Step 5: Run the broader test suite to check for regressions
+
+Run: `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/ -v -count=1 2>&1 | tail -50`
+
+Report back:
+1. The compilation error from Step 2 (Red)
+2. The passing output from Step 4 (Green)
+3. Any failures from Step 5 (only report FAIL lines, not all output)
