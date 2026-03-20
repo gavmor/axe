@@ -1,0 +1,983 @@
+{
+  "info": {
+    "id": "ses_2f3af1e71ffeGITKEftFiotBhn",
+    "slug": "swift-pixel",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f3bb05feffe3HcKPaSXyAOpDh",
+    "title": "Update spec doc with changes (@general subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 23,
+      "deletions": 0,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774028120462,
+      "updated": 1774028137860
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774028120472
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/plans/040_output_allowlist_spec.md",
+              "before": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):\n\nThe `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n\n**Tool execution context** (`internal/tool/registry.go`):\n\nThe `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n\n**`url_fetch` tool** (`internal/tool/url_fetch.go`):\n\nMakes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n\n**Top-level run** (`cmd/run.go`):\n\nBuilds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n\n**Sub-agent delegation** (`internal/tool/tool.go`):\n\nThe `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n\n**New package**: `internal/hostcheck/`\n\nAll host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n\n### Decisions Already Made\n\n**1. Default: allow-all when no `allowed_hosts` is configured.**\n\nAn empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n\n**2. Only `url_fetch` is gated.**\n\n`web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n\n**3. Private IP blocking is unconditional and separate from the allowlist.**\n\nRegardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n\nThe following IP ranges are always blocked:\n\n| Range | Classification |\n|---|---|\n| `127.0.0.0/8` | IPv4 loopback |\n| `::1/128` | IPv6 loopback |\n| `10.0.0.0/8` | RFC 1918 private |\n| `172.16.0.0/12` | RFC 1918 private |\n| `192.168.0.0/16` | RFC 1918 private |\n| `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n| `fe80::/10` | IPv6 link-local |\n| `0.0.0.0/8` | This network |\n| `100.64.0.0/10` | CGNAT / shared address space |\n\n**4. Private IP check must happen after DNS resolution.**\n\nChecking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n\n**5. Allowlist matching is hostname/domain-only in v1.**\n\nCIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n\n**6. Sub-agent propagation uses inheritance with explicit override.**\n\nEach agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n\nThis behavior means:\n- A sub-agent can be more restrictive than its parent (define a subset of hosts).\n- A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n- A sub-agent with no opinion inherits the parent's restrictions.\n\n### Approaches Ruled Out\n\n**Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n\n**Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n\n**Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n\n**Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n\n**Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n\n### Constraints and Assumptions\n\n- The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n- All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n- Private IP blocking applies universally — it cannot be disabled by any configuration.\n- Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n- Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n- The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n- DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n\n---\n\n## Section 2: Requirements\n\n### R1: New `allowed_hosts` field in agent configuration\n\nThe agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n\n### R2: Host validation is a distinct, independently testable unit\n\nAll logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n\n### R3: Private IP ranges are always blocked\n\n`url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n\n### R4: Private IP check is performed after DNS resolution\n\nThe hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n\n### R5: Allowlist check behavior when `allowed_hosts` is configured\n\nWhen `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n\n### R6: Allowlist check behavior when `allowed_hosts` is empty\n\nWhen `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n\n### R7: Hostname matching is exact in v1\n\nAn allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n\n### R8: Rejection produces a clear, actionable error message\n\nWhen a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n\n### R9: `allowed_hosts` is threaded through the execution context\n\nThe effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n\n### R10: Sub-agent inheritance rule\n\nWhen a sub-agent is invoked:\n\n- If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n- If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n- If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n\nThis rule is applied recursively at every level of the sub-agent tree.\n\n### R11: Sub-agent propagation for recursive depth\n\nThe effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n\n### R12: No validation of `allowed_hosts` entries at load time\n\nEntries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n\n### R13: `web_search`, MCP connections, and provider connections are unaffected\n\nThis feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n\n---\n\n## Edge Cases\n\n### E1: Hostname resolves to both public and private IPs\n\nIf DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n\n### E2: `allowed_hosts` contains an entry that resolves to a private IP\n\nAn operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n\n### E3: URL uses an IP address directly instead of a hostname\n\nIf the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n\n### E4: URL uses `localhost` or similar aliases\n\n`localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n\n### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n\nAn omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n\n### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n\nBoth inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n\n### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n\nThe sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n\n### E8: Allowlist entry with a port\n\nA `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n\n### E9: Redirect following\n\nIf the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n\n---\n\n## Parallel Work Structure\n\nThe following tasks have no dependencies on each other and may be implemented concurrently:\n\n- **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n- **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n- **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n\nThe following tasks have dependencies:\n\n- **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n- **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n- **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n",
+              "after": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):\n\nThe `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n\n**Tool execution context** (`internal/tool/registry.go`):\n\nThe `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n\n**`url_fetch` tool** (`internal/tool/url_fetch.go`):\n\nMakes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n\n**Top-level run** (`cmd/run.go`):\n\nBuilds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n\n**Sub-agent delegation** (`internal/tool/tool.go`):\n\nThe `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n\n**New package**: `internal/hostcheck/`\n\nAll host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n\n### Decisions Already Made\n\n**1. Default: allow-all when no `allowed_hosts` is configured.**\n\nAn empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n\n**2. Only `url_fetch` is gated.**\n\n`web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n\n**3. Private IP blocking is unconditional and separate from the allowlist.**\n\nRegardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n\nThe following IP ranges are always blocked:\n\n| Range | Classification |\n|---|---|\n| `127.0.0.0/8` | IPv4 loopback |\n| `::1/128` | IPv6 loopback |\n| `10.0.0.0/8` | RFC 1918 private |\n| `172.16.0.0/12` | RFC 1918 private |\n| `192.168.0.0/16` | RFC 1918 private |\n| `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n| `fe80::/10` | IPv6 link-local |\n| `0.0.0.0/8` | This network |\n| `100.64.0.0/10` | CGNAT / shared address space |\n\n**4. Private IP check must happen after DNS resolution.**\n\nChecking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n\n**5. Allowlist matching is hostname/domain-only in v1.**\n\nCIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n\n**6. Sub-agent propagation uses inheritance with explicit override.**\n\nEach agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n\nThis behavior means:\n- A sub-agent can be more restrictive than its parent (define a subset of hosts).\n- A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n- A sub-agent with no opinion inherits the parent's restrictions.\n\n### Approaches Ruled Out\n\n**Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n\n**Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n\n**Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n\n**Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n\n**Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n\n### Constraints and Assumptions\n\n- The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n- All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n- Private IP blocking applies universally — it cannot be disabled by any configuration.\n- Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n- Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n- The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n- DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n\n---\n\n## Section 2: Requirements\n\n### R1: New `allowed_hosts` field in agent configuration\n\nThe agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n\n### R2: Host validation is a distinct, independently testable unit\n\nAll logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n\n### R3: Private IP ranges are always blocked\n\n`url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n\n### R4: Private IP check is performed after DNS resolution\n\nThe hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n\n### R5: Allowlist check behavior when `allowed_hosts` is configured\n\nWhen `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n\n### R6: Allowlist check behavior when `allowed_hosts` is empty\n\nWhen `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n\n### R7: Hostname matching is exact in v1\n\nAn allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n\n### R8: Rejection produces a clear, actionable error message\n\nWhen a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n\n### R9: `allowed_hosts` is threaded through the execution context\n\nThe effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n\n### R10: Sub-agent inheritance rule\n\nWhen a sub-agent is invoked:\n\n- If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n- If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n- If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n\nThis rule is applied recursively at every level of the sub-agent tree.\n\n### R11: Sub-agent propagation for recursive depth\n\nThe effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n\n### R12: No validation of `allowed_hosts` entries at load time\n\nEntries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n\n### R13: `web_search`, MCP connections, and provider connections are unaffected\n\nThis feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n\n---\n\n## Edge Cases\n\n### E1: Hostname resolves to both public and private IPs\n\nIf DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n\n### E2: `allowed_hosts` contains an entry that resolves to a private IP\n\nAn operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n\n### E3: URL uses an IP address directly instead of a hostname\n\nIf the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n\n### E4: URL uses `localhost` or similar aliases\n\n`localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n\n### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n\nAn omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n\n### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n\nBoth inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n\n### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n\nThe sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n\n### E8: Allowlist entry with a port\n\nA `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n\n### E9: Redirect following\n\nIf the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n\n---\n\n## Parallel Work Structure\n\nThe following tasks have no dependencies on each other and may be implemented concurrently:\n\n- **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n- **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n- **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n\nThe following tasks have dependencies:\n\n- **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n- **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n- **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n---\n\n## Post-Implementation Refinements\n\nThe following changes were made after the initial implementation to improve testability and code quality. These do not alter any production behavior or security properties.\n\n### R14: Sub-agent allowlist inheritance is an exported, testable function\n\nThe nil-vs-empty inheritance logic for `allowed_hosts` propagation (described in R10 and R11) is encapsulated in the exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` in `internal/tool/tool.go`. `ExecuteCallAgent` calls this function rather than implementing the logic inline. This ensures the inheritance rule is tested directly against the production code path, not a duplicated copy.\n\n### R15: `url_fetch` host validation dependencies are injected, not global\n\nThe `url_fetch` tool executor uses a `urlFetcher` struct (unexported, in `internal/tool/url_fetch.go`) that holds its DNS resolver, host-check function, and HTTP timeout as instance fields. The production constructor `newURLFetcher()` wires the same defaults previously held by package-level variables (`net.DefaultResolver`, `hostcheck.CheckHost`, `15s`). Tests construct per-test instances with injected fakes, eliminating mutable package-level state and enabling safe parallel test execution.\n\n### Affected files\n\n| File | Change |\n|---|---|\n| `internal/tool/tool.go` | Extracted `EffectiveAllowedHosts()` function; `ExecuteCallAgent` calls it |\n| `internal/tool/tool_test.go` | `TestEffectiveAllowedHosts` calls production function; uses `reflect.DeepEqual` for nil-aware slice comparison |\n| `internal/tool/url_fetch.go` | Replaced 3 mutable `var` declarations with `urlFetcher` struct and `newURLFetcher()` constructor |\n| `internal/tool/url_fetch_test.go` | Removed `skipHostCheck()` global-mutation helper; all tests use per-instance `urlFetcher` |\n",
+              "additions": 23,
+              "deletions": 0,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c50e197001UJbtPxHf83a5Wg",
+        "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Update the spec document at `/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md` to document the post-implementation refinements made to the codebase.\n\nRead the current file first, then append a new section at the end (after line 228) with the following content:\n\n```markdown\n\n---\n\n## Post-Implementation Refinements\n\nThe following changes were made after the initial implementation to improve testability and code quality. These do not alter any production behavior or security properties.\n\n### R14: Sub-agent allowlist inheritance is an exported, testable function\n\nThe nil-vs-empty inheritance logic for `allowed_hosts` propagation (described in R10 and R11) is encapsulated in the exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` in `internal/tool/tool.go`. `ExecuteCallAgent` calls this function rather than implementing the logic inline. This ensures the inheritance rule is tested directly against the production code path, not a duplicated copy.\n\n### R15: `url_fetch` host validation dependencies are injected, not global\n\nThe `url_fetch` tool executor uses a `urlFetcher` struct (unexported, in `internal/tool/url_fetch.go`) that holds its DNS resolver, host-check function, and HTTP timeout as instance fields. The production constructor `newURLFetcher()` wires the same defaults previously held by package-level variables (`net.DefaultResolver`, `hostcheck.CheckHost`, `15s`). Tests construct per-test instances with injected fakes, eliminating mutable package-level state and enabling safe parallel test execution.\n\n### Affected files\n\n| File | Change |\n|---|---|\n| `internal/tool/tool.go` | Extracted `EffectiveAllowedHosts()` function; `ExecuteCallAgent` calls it |\n| `internal/tool/tool_test.go` | `TestEffectiveAllowedHosts` calls production function; uses `reflect.DeepEqual` for nil-aware slice comparison |\n| `internal/tool/url_fetch.go` | Replaced 3 mutable `var` declarations with `urlFetcher` struct and `newURLFetcher()` constructor |\n| `internal/tool/url_fetch_test.go` | Removed `skipHostCheck()` global-mutation helper; all tests use per-instance `urlFetcher` |\n```\n\nMake sure to preserve the existing content exactly as-is. Only append the new section at the end.",
+          "id": "prt_d0c50e198001g1aCIufYnit7Fi",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50e197001UJbtPxHf83a5Wg"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774028120480,
+          "completed": 1774028122834
+        },
+        "parentID": "msg_d0c50e197001UJbtPxHf83a5Wg",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00857115,
+        "tokens": {
+          "total": 13657,
+          "input": 3,
+          "output": 90,
+          "reasoning": 0,
+          "cache": {
+            "read": 12653,
+            "write": 911
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c50e1a0001JktIPe5spAX0RT",
+        "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "c6cc62f41898f155eabecaa7beaf9f1a7f92f288",
+          "id": "prt_d0c50ea50001j5fbV2qND4QEgz",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50e1a0001JktIPe5spAX0RT"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01BXrkLkx6YExLrjnwJkUDBr",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md</path>\n<type>file</type>\n<content>1: # 040 -- Output Allowlist Spec\n2: \n3: # Milestone Document\n4: docs/plans/000_milestones.md\n5: \n6: GitHub Issue: https://github.com/jrswab/axe/issues/24\n7: \n8: ---\n9: \n10: ## Section 1: Context & Constraints\n11: \n12: ### Problem\n13: \n14: The `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n15: \n16: There is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n17: \n18: ### Codebase Structure Relevant to This Milestone\n19: \n20: **Agent configuration** (`internal/agent/agent.go`):\n21: \n22: The `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n23: \n24: **Tool execution context** (`internal/tool/registry.go`):\n25: \n26: The `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n27: \n28: **`url_fetch` tool** (`internal/tool/url_fetch.go`):\n29: \n30: Makes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n31: \n32: **Top-level run** (`cmd/run.go`):\n33: \n34: Builds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n35: \n36: **Sub-agent delegation** (`internal/tool/tool.go`):\n37: \n38: The `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n39: \n40: **New package**: `internal/hostcheck/`\n41: \n42: All host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n43: \n44: ### Decisions Already Made\n45: \n46: **1. Default: allow-all when no `allowed_hosts` is configured.**\n47: \n48: An empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n49: \n50: **2. Only `url_fetch` is gated.**\n51: \n52: `web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n53: \n54: **3. Private IP blocking is unconditional and separate from the allowlist.**\n55: \n56: Regardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n57: \n58: The following IP ranges are always blocked:\n59: \n60: | Range | Classification |\n61: |---|---|\n62: | `127.0.0.0/8` | IPv4 loopback |\n63: | `::1/128` | IPv6 loopback |\n64: | `10.0.0.0/8` | RFC 1918 private |\n65: | `172.16.0.0/12` | RFC 1918 private |\n66: | `192.168.0.0/16` | RFC 1918 private |\n67: | `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n68: | `fe80::/10` | IPv6 link-local |\n69: | `0.0.0.0/8` | This network |\n70: | `100.64.0.0/10` | CGNAT / shared address space |\n71: \n72: **4. Private IP check must happen after DNS resolution.**\n73: \n74: Checking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n75: \n76: **5. Allowlist matching is hostname/domain-only in v1.**\n77: \n78: CIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n79: \n80: **6. Sub-agent propagation uses inheritance with explicit override.**\n81: \n82: Each agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n83: \n84: This behavior means:\n85: - A sub-agent can be more restrictive than its parent (define a subset of hosts).\n86: - A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n87: - A sub-agent with no opinion inherits the parent's restrictions.\n88: \n89: ### Approaches Ruled Out\n90: \n91: **Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n92: \n93: **Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n94: \n95: **Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n96: \n97: **Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n98: \n99: **Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n100: \n101: ### Constraints and Assumptions\n102: \n103: - The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n104: - All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n105: - Private IP blocking applies universally — it cannot be disabled by any configuration.\n106: - Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n107: - Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n108: - The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n109: - DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n110: \n111: ---\n112: \n113: ## Section 2: Requirements\n114: \n115: ### R1: New `allowed_hosts` field in agent configuration\n116: \n117: The agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n118: \n119: ### R2: Host validation is a distinct, independently testable unit\n120: \n121: All logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n122: \n123: ### R3: Private IP ranges are always blocked\n124: \n125: `url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n126: \n127: ### R4: Private IP check is performed after DNS resolution\n128: \n129: The hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n130: \n131: ### R5: Allowlist check behavior when `allowed_hosts` is configured\n132: \n133: When `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n134: \n135: ### R6: Allowlist check behavior when `allowed_hosts` is empty\n136: \n137: When `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n138: \n139: ### R7: Hostname matching is exact in v1\n140: \n141: An allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n142: \n143: ### R8: Rejection produces a clear, actionable error message\n144: \n145: When a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n146: \n147: ### R9: `allowed_hosts` is threaded through the execution context\n148: \n149: The effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n150: \n151: ### R10: Sub-agent inheritance rule\n152: \n153: When a sub-agent is invoked:\n154: \n155: - If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n156: - If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n157: - If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n158: \n159: This rule is applied recursively at every level of the sub-agent tree.\n160: \n161: ### R11: Sub-agent propagation for recursive depth\n162: \n163: The effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n164: \n165: ### R12: No validation of `allowed_hosts` entries at load time\n166: \n167: Entries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n168: \n169: ### R13: `web_search`, MCP connections, and provider connections are unaffected\n170: \n171: This feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n172: \n173: ---\n174: \n175: ## Edge Cases\n176: \n177: ### E1: Hostname resolves to both public and private IPs\n178: \n179: If DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n180: \n181: ### E2: `allowed_hosts` contains an entry that resolves to a private IP\n182: \n183: An operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n184: \n185: ### E3: URL uses an IP address directly instead of a hostname\n186: \n187: If the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n188: \n189: ### E4: URL uses `localhost` or similar aliases\n190: \n191: `localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n192: \n193: ### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n194: \n195: An omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n196: \n197: ### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n198: \n199: Both inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n200: \n201: ### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n202: \n203: The sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n204: \n205: ### E8: Allowlist entry with a port\n206: \n207: A `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n208: \n209: ### E9: Redirect following\n210: \n211: If the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n212: \n213: ---\n214: \n215: ## Parallel Work Structure\n216: \n217: The following tasks have no dependencies on each other and may be implemented concurrently:\n218: \n219: - **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n220: - **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n221: - **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n222: \n223: The following tasks have dependencies:\n224: \n225: - **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n226: - **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n227: - **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n228: - **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n(End of file - total 228 lines)\n</content>",
+            "title": "docs/plans/040_output_allowlist_spec.md",
+            "metadata": {
+              "preview": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774028122711,
+              "end": 1774028122713
+            }
+          },
+          "id": "prt_d0c50ea500025E03WQvLY6i7Fv",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50e1a0001JktIPe5spAX0RT"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "c6cc62f41898f155eabecaa7beaf9f1a7f92f288",
+          "cost": 0.00857115,
+          "tokens": {
+            "total": 13657,
+            "input": 3,
+            "output": 90,
+            "reasoning": 0,
+            "cache": {
+              "read": 12653,
+              "write": 911
+            }
+          },
+          "id": "prt_d0c50ea6c001mQjsaKBTK6bi48",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50e1a0001JktIPe5spAX0RT"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774028122835,
+          "completed": 1774028137800
+        },
+        "parentID": "msg_d0c50e197001UJbtPxHf83a5Wg",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03308595,
+        "tokens": {
+          "total": 19202,
+          "input": 1,
+          "output": 700,
+          "reasoning": 0,
+          "cache": {
+            "read": 13564,
+            "write": 4937
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c50ead3001Kmjr1QFAAC6o4Q",
+        "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "c6cc62f41898f155eabecaa7beaf9f1a7f92f288",
+          "id": "prt_d0c50f138001vEho2GrUEQxkV4",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50ead3001Kmjr1QFAAC6o4Q"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md",
+              "oldString": "- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.",
+              "newString": "- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n---\n\n## Post-Implementation Refinements\n\nThe following changes were made after the initial implementation to improve testability and code quality. These do not alter any production behavior or security properties.\n\n### R14: Sub-agent allowlist inheritance is an exported, testable function\n\nThe nil-vs-empty inheritance logic for `allowed_hosts` propagation (described in R10 and R11) is encapsulated in the exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` in `internal/tool/tool.go`. `ExecuteCallAgent` calls this function rather than implementing the logic inline. This ensures the inheritance rule is tested directly against the production code path, not a duplicated copy.\n\n### R15: `url_fetch` host validation dependencies are injected, not global\n\nThe `url_fetch` tool executor uses a `urlFetcher` struct (unexported, in `internal/tool/url_fetch.go`) that holds its DNS resolver, host-check function, and HTTP timeout as instance fields. The production constructor `newURLFetcher()` wires the same defaults previously held by package-level variables (`net.DefaultResolver`, `hostcheck.CheckHost`, `15s`). Tests construct per-test instances with injected fakes, eliminating mutable package-level state and enabling safe parallel test execution.\n\n### Affected files\n\n| File | Change |\n|---|---|\n| `internal/tool/tool.go` | Extracted `EffectiveAllowedHosts()` function; `ExecuteCallAgent` calls it |\n| `internal/tool/tool_test.go` | `TestEffectiveAllowedHosts` calls production function; uses `reflect.DeepEqual` for nil-aware slice comparison |\n| `internal/tool/url_fetch.go` | Replaced 3 mutable `var` declarations with `urlFetcher` struct and `newURLFetcher()` constructor |\n| `internal/tool/url_fetch_test.go` | Removed `skipHostCheck()` global-mutation helper; all tests use per-instance `urlFetcher` |"
+            },
+            "output": "Edit applied successfully.",
+            "title": "docs/plans/040_output_allowlist_spec.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 66,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 66,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 111,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 362,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 362,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 474,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 474,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 248,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 248,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 253,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 253,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 305,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 305,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 308,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 308,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 313,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 313,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 349,
+                        "character": 45
+                      },
+                      "end": {
+                        "line": 349,
+                        "character": 56
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 353,
+                        "character": 41
+                      },
+                      "end": {
+                        "line": 353,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 369,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 369,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 372,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 372,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 377,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 377,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 409,
+                        "character": 45
+                      },
+                      "end": {
+                        "line": 409,
+                        "character": 56
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 413,
+                        "character": 41
+                      },
+                      "end": {
+                        "line": 413,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 474,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 474,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 479,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 479,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 530,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 530,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 535,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 535,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 590,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 590,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 593,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 593,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 598,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 598,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 669,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 669,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 674,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 674,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 741,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 741,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 746,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 746,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 910,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 910,
+                        "character": 32
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 915,
+                        "character": 27
+                      },
+                      "end": {
+                        "line": 915,
+                        "character": 38
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/command_validation_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 34,
+                        "character": 24
+                      },
+                      "end": {
+                        "line": 34,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 234,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 238,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/verbose_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md\n@@ -225,4 +225,27 @@\n - **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n - **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n - **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n - **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n+\n+---\n+\n+## Post-Implementation Refinements\n+\n+The following changes were made after the initial implementation to improve testability and code quality. These do not alter any production behavior or security properties.\n+\n+### R14: Sub-agent allowlist inheritance is an exported, testable function\n+\n+The nil-vs-empty inheritance logic for `allowed_hosts` propagation (described in R10 and R11) is encapsulated in the exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` in `internal/tool/tool.go`. `ExecuteCallAgent` calls this function rather than implementing the logic inline. This ensures the inheritance rule is tested directly against the production code path, not a duplicated copy.\n+\n+### R15: `url_fetch` host validation dependencies are injected, not global\n+\n+The `url_fetch` tool executor uses a `urlFetcher` struct (unexported, in `internal/tool/url_fetch.go`) that holds its DNS resolver, host-check function, and HTTP timeout as instance fields. The production constructor `newURLFetcher()` wires the same defaults previously held by package-level variables (`net.DefaultResolver`, `hostcheck.CheckHost`, `15s`). Tests construct per-test instances with injected fakes, eliminating mutable package-level state and enabling safe parallel test execution.\n+\n+### Affected files\n+\n+| File | Change |\n+|---|---|\n+| `internal/tool/tool.go` | Extracted `EffectiveAllowedHosts()` function; `ExecuteCallAgent` calls it |\n+| `internal/tool/tool_test.go` | `TestEffectiveAllowedHosts` calls production function; uses `reflect.DeepEqual` for nil-aware slice comparison |\n+| `internal/tool/url_fetch.go` | Replaced 3 mutable `var` declarations with `urlFetcher` struct and `newURLFetcher()` constructor |\n+| `internal/tool/url_fetch_test.go` | Removed `skipHostCheck()` global-mutation helper; all tests use per-instance `urlFetcher` |\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md",
+                "before": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):\n\nThe `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n\n**Tool execution context** (`internal/tool/registry.go`):\n\nThe `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n\n**`url_fetch` tool** (`internal/tool/url_fetch.go`):\n\nMakes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n\n**Top-level run** (`cmd/run.go`):\n\nBuilds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n\n**Sub-agent delegation** (`internal/tool/tool.go`):\n\nThe `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n\n**New package**: `internal/hostcheck/`\n\nAll host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n\n### Decisions Already Made\n\n**1. Default: allow-all when no `allowed_hosts` is configured.**\n\nAn empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n\n**2. Only `url_fetch` is gated.**\n\n`web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n\n**3. Private IP blocking is unconditional and separate from the allowlist.**\n\nRegardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n\nThe following IP ranges are always blocked:\n\n| Range | Classification |\n|---|---|\n| `127.0.0.0/8` | IPv4 loopback |\n| `::1/128` | IPv6 loopback |\n| `10.0.0.0/8` | RFC 1918 private |\n| `172.16.0.0/12` | RFC 1918 private |\n| `192.168.0.0/16` | RFC 1918 private |\n| `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n| `fe80::/10` | IPv6 link-local |\n| `0.0.0.0/8` | This network |\n| `100.64.0.0/10` | CGNAT / shared address space |\n\n**4. Private IP check must happen after DNS resolution.**\n\nChecking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n\n**5. Allowlist matching is hostname/domain-only in v1.**\n\nCIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n\n**6. Sub-agent propagation uses inheritance with explicit override.**\n\nEach agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n\nThis behavior means:\n- A sub-agent can be more restrictive than its parent (define a subset of hosts).\n- A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n- A sub-agent with no opinion inherits the parent's restrictions.\n\n### Approaches Ruled Out\n\n**Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n\n**Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n\n**Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n\n**Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n\n**Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n\n### Constraints and Assumptions\n\n- The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n- All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n- Private IP blocking applies universally — it cannot be disabled by any configuration.\n- Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n- Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n- The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n- DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n\n---\n\n## Section 2: Requirements\n\n### R1: New `allowed_hosts` field in agent configuration\n\nThe agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n\n### R2: Host validation is a distinct, independently testable unit\n\nAll logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n\n### R3: Private IP ranges are always blocked\n\n`url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n\n### R4: Private IP check is performed after DNS resolution\n\nThe hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n\n### R5: Allowlist check behavior when `allowed_hosts` is configured\n\nWhen `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n\n### R6: Allowlist check behavior when `allowed_hosts` is empty\n\nWhen `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n\n### R7: Hostname matching is exact in v1\n\nAn allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n\n### R8: Rejection produces a clear, actionable error message\n\nWhen a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n\n### R9: `allowed_hosts` is threaded through the execution context\n\nThe effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n\n### R10: Sub-agent inheritance rule\n\nWhen a sub-agent is invoked:\n\n- If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n- If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n- If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n\nThis rule is applied recursively at every level of the sub-agent tree.\n\n### R11: Sub-agent propagation for recursive depth\n\nThe effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n\n### R12: No validation of `allowed_hosts` entries at load time\n\nEntries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n\n### R13: `web_search`, MCP connections, and provider connections are unaffected\n\nThis feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n\n---\n\n## Edge Cases\n\n### E1: Hostname resolves to both public and private IPs\n\nIf DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n\n### E2: `allowed_hosts` contains an entry that resolves to a private IP\n\nAn operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n\n### E3: URL uses an IP address directly instead of a hostname\n\nIf the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n\n### E4: URL uses `localhost` or similar aliases\n\n`localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n\n### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n\nAn omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n\n### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n\nBoth inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n\n### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n\nThe sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n\n### E8: Allowlist entry with a port\n\nA `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n\n### E9: Redirect following\n\nIf the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n\n---\n\n## Parallel Work Structure\n\nThe following tasks have no dependencies on each other and may be implemented concurrently:\n\n- **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n- **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n- **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n\nThe following tasks have dependencies:\n\n- **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n- **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n- **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n",
+                "after": "# 040 -- Output Allowlist Spec\n\n# Milestone Document\ndocs/plans/000_milestones.md\n\nGitHub Issue: https://github.com/jrswab/axe/issues/24\n\n---\n\n## Section 1: Context & Constraints\n\n### Problem\n\nThe `url_fetch` built-in tool allows the LLM to make outgoing HTTP GET requests to arbitrary URLs. This creates a prompt injection → SSRF (Server-Side Request Forgery) attack surface: a malicious document or web page can instruct the LLM to fetch internal resources, cloud metadata endpoints, or other unintended targets.\n\nThere is currently no mechanism to restrict which hosts the LLM may contact via `url_fetch`. Operators have no way to express intent like \"this agent should only be allowed to fetch from api.example.com\" — or to harden an agent against fetching private network addresses even if no explicit allowlist is configured.\n\n### Codebase Structure Relevant to This Milestone\n\n**Agent configuration** (`internal/agent/agent.go`):\n\nThe `AgentConfig` struct is decoded directly from TOML. It holds all per-agent settings. The `Validate()` function performs sequential field validation after load. This is the source of truth for an agent's configuration at runtime.\n\n**Tool execution context** (`internal/tool/registry.go`):\n\nThe `ExecContext` struct is the cross-cutting data bag passed to every tool executor at call time. It currently carries workdir, stderr writer, and verbosity. It is the correct mechanism for threading per-agent runtime configuration into tools without coupling tool implementations to the agent loader.\n\n**`url_fetch` tool** (`internal/tool/url_fetch.go`):\n\nMakes outgoing HTTP GET requests on behalf of the LLM. It already enforces a scheme check (only `http`/`https` allowed). It uses `http.DefaultClient` for the actual request. There is no host validation today. This is the only tool that must be gated by this feature.\n\n**Top-level run** (`cmd/run.go`):\n\nBuilds the `ExecContext` for the root agent's tool dispatch. This is where agent-level configuration is threaded into the tool execution layer.\n\n**Sub-agent delegation** (`internal/tool/tool.go`):\n\nThe `ExecuteOptions` struct is the options bag passed from a parent agent to a sub-agent invocation. The `ExecuteCallAgent` function loads a sub-agent's TOML, constructs its execution context, and runs it. The `runConversationLoop` function also builds an `ExecContext` for sub-agent tool dispatch.\n\n**New package**: `internal/hostcheck/`\n\nAll host validation logic — allowlist matching, private IP blocking, and DNS resolution — must live in a single dedicated package. This keeps `url_fetch.go` clean, makes the logic independently testable, and provides a single authoritative place to audit security behavior.\n\n### Decisions Already Made\n\n**1. Default: allow-all when no `allowed_hosts` is configured.**\n\nAn empty `allowed_hosts` field means no restriction is applied. This preserves backwards compatibility for all existing agents that do not define the field. Operators must explicitly opt in to restriction.\n\n**2. Only `url_fetch` is gated.**\n\n`web_search` connects to a fixed Tavily API base URL that is user- or env-controlled, not LLM-controlled. MCP HTTP connections are user-configured in TOML at load time. LLM provider connections are also user-configured. None of these are driven by LLM output at request time, so they are not part of the prompt-injection attack surface and are out of scope.\n\n**3. Private IP blocking is unconditional and separate from the allowlist.**\n\nRegardless of whether `allowed_hosts` is configured, `url_fetch` must never contact private, loopback, or link-local addresses. This is a hardening baseline, not an allowlist feature. The two concerns (allowlist filtering and private IP blocking) are independent: a host can pass the allowlist check but still be blocked if it resolves to a private IP.\n\nThe following IP ranges are always blocked:\n\n| Range | Classification |\n|---|---|\n| `127.0.0.0/8` | IPv4 loopback |\n| `::1/128` | IPv6 loopback |\n| `10.0.0.0/8` | RFC 1918 private |\n| `172.16.0.0/12` | RFC 1918 private |\n| `192.168.0.0/16` | RFC 1918 private |\n| `169.254.0.0/16` | IPv4 link-local / AWS IMDS |\n| `fe80::/10` | IPv6 link-local |\n| `0.0.0.0/8` | This network |\n| `100.64.0.0/10` | CGNAT / shared address space |\n\n**4. Private IP check must happen after DNS resolution.**\n\nChecking only the hostname is insufficient — a DNS rebinding attack could resolve an allowed hostname to a private IP. The hostname must be resolved to its IP address(es), and each resolved IP must be checked against the blocked ranges before any connection is made.\n\n**5. Allowlist matching is hostname/domain-only in v1.**\n\nCIDR notation for allowlist entries (e.g., `10.0.1.0/24`) is deferred to a future milestone. v1 allowlist entries are strings matched against the request hostname only.\n\n**6. Sub-agent propagation uses inheritance with explicit override.**\n\nEach agent uses its own `allowed_hosts` from its own TOML. If a sub-agent's TOML does NOT define `allowed_hosts`, it inherits the parent's list as a fallback. If a sub-agent's TOML DOES define its own `allowed_hosts`, that list is used — the user explicitly configured that agent's permissions. This rule applies recursively through the sub-agent tree.\n\nThis behavior means:\n- A sub-agent can be more restrictive than its parent (define a subset of hosts).\n- A sub-agent can be less restrictive than its parent (define a wider or different set of hosts), because it is an explicit operator decision in the sub-agent's own TOML.\n- A sub-agent with no opinion inherits the parent's restrictions.\n\n### Approaches Ruled Out\n\n**Union (permissive merge)**: Combining parent and sub-agent lists would allow a sub-agent to widen the parent's restrictions. This is a security regression — a compromised or misconfigured sub-agent TOML could silently expand access beyond what the parent operator intended.\n\n**Parent always overrides sub-agent**: Ignoring the sub-agent's `allowed_hosts` when the parent has one silently discards intentional operator configuration. If an operator explicitly wrote `allowed_hosts` into a sub-agent's TOML, that decision must be respected.\n\n**Gating `web_search`**: The Tavily API base URL is configured by the user or environment, not by the LLM at request time. It is not an LLM-controlled attack surface and is out of scope.\n\n**Gating MCP server connections**: MCP server URLs are defined in agent TOML by the operator. They are user-configured at load time, not LLM-controlled. Out of scope.\n\n**Gating LLM provider connections**: Provider base URLs are user- or env-configured. Not LLM-controlled. Out of scope.\n\n### Constraints and Assumptions\n\n- The feature must be backwards compatible. Agents that do not define `allowed_hosts` must behave exactly as they do today.\n- All validation logic for host access is centralized in `internal/hostcheck/` and not duplicated elsewhere.\n- Private IP blocking applies universally — it cannot be disabled by any configuration.\n- Sub-agent propagation is recursive. The same inheritance-with-explicit-override rule applies at every depth level.\n- Allowlist matching in v1 is exact hostname matching only. No wildcard subdomain support, no CIDR, no regex.\n- The private IP check is performed on all resolved IP addresses for a hostname. If any resolved address is in a blocked range, the request is rejected.\n- DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client. The connection must be made to a known-safe resolved address.\n\n---\n\n## Section 2: Requirements\n\n### R1: New `allowed_hosts` field in agent configuration\n\nThe agent configuration must accept an optional `allowed_hosts` field containing a list of hostname strings. When the field is absent or empty, no host restriction is applied to `url_fetch` requests (allow-all).\n\n### R2: Host validation is a distinct, independently testable unit\n\nAll logic for determining whether a URL is allowed to be fetched — allowlist matching and private IP blocking — must be encapsulated in a single package. This package must be testable in isolation from the HTTP stack and from the tool registry.\n\n### R3: Private IP ranges are always blocked\n\n`url_fetch` must never successfully complete a request to a URL that resolves to any address in the private, loopback, link-local, CGNAT, or this-network IP ranges listed in Section 1. This applies whether or not `allowed_hosts` is configured. It is not configurable.\n\n### R4: Private IP check is performed after DNS resolution\n\nThe hostname in the request URL must be resolved to its IP address(es) before any connection is made. Each resolved IP address must be checked against the blocked ranges. If any resolved address falls within a blocked range, the request must be rejected. This prevents DNS rebinding attacks.\n\n### R5: Allowlist check behavior when `allowed_hosts` is configured\n\nWhen `allowed_hosts` is non-empty, `url_fetch` must reject any request whose URL hostname does not exactly match one of the entries in `allowed_hosts`. The allowlist check occurs before the private IP check; both must pass for a request to proceed.\n\n### R6: Allowlist check behavior when `allowed_hosts` is empty\n\nWhen `allowed_hosts` is empty (the default), no allowlist filtering is applied. Only the unconditional private IP check (R3) is enforced.\n\n### R7: Hostname matching is exact in v1\n\nAn allowlist entry of `api.example.com` permits requests to `api.example.com` and to nothing else. It does not permit `sub.api.example.com`, `example.com`, or `www.example.com`. Matching is case-insensitive (hostnames are not case-sensitive by specification), but no wildcard or prefix/suffix logic is applied.\n\n### R8: Rejection produces a clear, actionable error message\n\nWhen a `url_fetch` request is blocked — whether by the private IP check or the allowlist check — the error returned to the LLM must indicate which rule was violated and which host/IP triggered it. The LLM must have enough information to understand that the request was intentionally blocked, not that a network error occurred.\n\n### R9: `allowed_hosts` is threaded through the execution context\n\nThe effective allowlist for an agent must be available to `url_fetch` at call time via the same execution context mechanism used by all other per-agent tool configuration. No global state. No package-level variables.\n\n### R10: Sub-agent inheritance rule\n\nWhen a sub-agent is invoked:\n\n- If the sub-agent's TOML defines a non-empty `allowed_hosts`, that list is used as the sub-agent's effective allowlist.\n- If the sub-agent's TOML does NOT define `allowed_hosts` (empty), the parent agent's effective allowlist is inherited and used as the sub-agent's effective allowlist.\n- If both are empty, the sub-agent operates with no host restriction (allow-all), subject only to R3.\n\nThis rule is applied recursively at every level of the sub-agent tree.\n\n### R11: Sub-agent propagation for recursive depth\n\nThe effective allowlist used by a sub-agent must also be propagated as the \"parent allowlist\" to any sub-sub-agents that the sub-agent may invoke. This ensures the inheritance rule applies uniformly at all depths without requiring special handling at each level.\n\n### R12: No validation of `allowed_hosts` entries at load time\n\nEntries in `allowed_hosts` are not validated for syntax, resolvability, or reachability when the agent TOML is loaded. Any string is accepted. Invalid entries (e.g., a malformed hostname) will simply never match any request hostname and are silently ineffective. This avoids failing agent startup due to an unreachable host.\n\n### R13: `web_search`, MCP connections, and provider connections are unaffected\n\nThis feature must not alter the behavior of `web_search`, MCP server connections, or LLM provider connections in any way. These are explicitly out of scope.\n\n---\n\n## Edge Cases\n\n### E1: Hostname resolves to both public and private IPs\n\nIf DNS returns multiple addresses for a hostname (e.g., one public and one private), the request must be blocked if any resolved address is in a blocked range. A single private address in the response set is sufficient cause for rejection.\n\n### E2: `allowed_hosts` contains an entry that resolves to a private IP\n\nAn operator could misconfigure `allowed_hosts` with a hostname that itself resolves to a private address (e.g., `internal.corp.example.com`). The private IP check (R3) applies unconditionally and takes effect after the allowlist check passes. The request is blocked even though the hostname is on the allowlist. This is the correct and intended behavior — the private IP check is a safety rail, not an allowlist bypass.\n\n### E3: URL uses an IP address directly instead of a hostname\n\nIf the LLM provides a URL with a raw IP address (e.g., `http://192.168.1.1/data`), the private IP check applies to that IP directly (no DNS resolution needed). If the IP is in a blocked range, the request is rejected. If `allowed_hosts` is configured, a raw IP address in the URL will not match any hostname entry and the request is also rejected by the allowlist check.\n\n### E4: URL uses `localhost` or similar aliases\n\n`localhost` resolves to `127.0.0.1` (or `::1`), both of which are in blocked ranges. The private IP check catches this after resolution. No special casing for `localhost`, `0.0.0.0`, or other hostname aliases is required — DNS resolution handles them uniformly.\n\n### E5: Sub-agent defines an empty list explicitly vs. not defining the field at all\n\nAn omitted `allowed_hosts` field (nil at load time) causes the sub-agent to inherit the parent's list. An explicit `allowed_hosts = []` (non-nil, zero length) clears the parent's restrictions — the sub-agent operates with no host restriction, subject only to R3 (unconditional private IP blocking). This distinction allows operators to explicitly opt a sub-agent out of inherited restrictions when needed.\n\n### E6: Root agent has no `allowed_hosts`; sub-agent has no `allowed_hosts`\n\nBoth inherit \"allow-all.\" The only enforcement is the unconditional private IP block (R3). This is the backwards-compatible default.\n\n### E7: Root agent has `allowed_hosts`; sub-agent is invoked with `call_agent` but no tool calls\n\nThe sub-agent runs, produces text output, and returns. No `url_fetch` calls are made. The allowlist is threaded through but never evaluated. No behavioral difference from today.\n\n### E8: Allowlist entry with a port\n\nA `url_fetch` URL may include a port (e.g., `https://api.example.com:8443/endpoint`). The allowlist entry is matched against the hostname only (`api.example.com`), not the host+port combination. An entry of `api.example.com` permits requests to that host on any port, provided the scheme check and private IP check also pass.\n\n### E9: Redirect following\n\nIf the HTTP client follows a redirect (e.g., HTTP 301 from `https://allowed.example.com` to `https://other.example.com`), the redirected URL must also pass both the allowlist check and the private IP check before the redirected request is made. A redirect to a non-allowlisted host must be blocked.\n\n---\n\n## Parallel Work Structure\n\nThe following tasks have no dependencies on each other and may be implemented concurrently:\n\n- **Task 1**: Create `internal/hostcheck/` package with full test coverage (TDD). This package owns allowlist matching, private IP range definitions, DNS resolution, and the combined check used by `url_fetch`.\n- **Task 2**: Add `AllowedHosts []string` to `AgentConfig` with TOML tag and associated tests.\n- **Task 3**: Add `AllowedHosts []string` to `ExecContext`.\n\nThe following tasks have dependencies:\n\n- **Task 4** (depends on Tasks 1 and 3): Gate `url_fetch` using `hostcheck`, performing DNS-resolved private IP checks and allowlist checks before making the HTTP request. Includes tests for blocked and allowed cases.\n- **Task 5** (depends on Tasks 2 and 3): Thread `cfg.AllowedHosts` from the loaded agent config into `ExecContext` in the root agent run path.\n- **Task 6** (depends on Tasks 2 and 3): Add `AllowedHosts []string` to `ExecuteOptions`. Implement sub-agent propagation logic in `ExecuteCallAgent` and `runConversationLoop`.\n- **Task 7** (depends on Tasks 4, 5, and 6): Integration test covering: allowlist enforcement end-to-end, private IP blocking, sub-agent inheritance, and sub-agent explicit override.\n\n---\n\n## Post-Implementation Refinements\n\nThe following changes were made after the initial implementation to improve testability and code quality. These do not alter any production behavior or security properties.\n\n### R14: Sub-agent allowlist inheritance is an exported, testable function\n\nThe nil-vs-empty inheritance logic for `allowed_hosts` propagation (described in R10 and R11) is encapsulated in the exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` in `internal/tool/tool.go`. `ExecuteCallAgent` calls this function rather than implementing the logic inline. This ensures the inheritance rule is tested directly against the production code path, not a duplicated copy.\n\n### R15: `url_fetch` host validation dependencies are injected, not global\n\nThe `url_fetch` tool executor uses a `urlFetcher` struct (unexported, in `internal/tool/url_fetch.go`) that holds its DNS resolver, host-check function, and HTTP timeout as instance fields. The production constructor `newURLFetcher()` wires the same defaults previously held by package-level variables (`net.DefaultResolver`, `hostcheck.CheckHost`, `15s`). Tests construct per-test instances with injected fakes, eliminating mutable package-level state and enabling safe parallel test execution.\n\n### Affected files\n\n| File | Change |\n|---|---|\n| `internal/tool/tool.go` | Extracted `EffectiveAllowedHosts()` function; `ExecuteCallAgent` calls it |\n| `internal/tool/tool_test.go` | `TestEffectiveAllowedHosts` calls production function; uses `reflect.DeepEqual` for nil-aware slice comparison |\n| `internal/tool/url_fetch.go` | Replaced 3 mutable `var` declarations with `urlFetcher` struct and `newURLFetcher()` constructor |\n| `internal/tool/url_fetch_test.go` | Removed `skipHostCheck()` global-mutation helper; all tests use per-instance `urlFetcher` |\n",
+                "additions": 23,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1774028137596,
+              "end": 1774028137646
+            }
+          },
+          "id": "prt_d0c50f138002TS4cjTxoeavQA5",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50ead3001Kmjr1QFAAC6o4Q"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.03308595,
+          "tokens": {
+            "total": 19202,
+            "input": 1,
+            "output": 700,
+            "reasoning": 0,
+            "cache": {
+              "read": 13564,
+              "write": 4937
+            }
+          },
+          "id": "prt_d0c5124b00010U34mZ1nlxk02K",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50ead3001Kmjr1QFAAC6o4Q"
+        },
+        {
+          "type": "patch",
+          "hash": "c6cc62f41898f155eabecaa7beaf9f1a7f92f288",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md"
+          ],
+          "id": "prt_d0c512546001msL1ZHbjYnEcUc",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c50ead3001Kmjr1QFAAC6o4Q"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774028137801,
+          "completed": 1774028140454
+        },
+        "parentID": "msg_d0c50e197001UJbtPxHf83a5Wg",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00902955,
+        "tokens": {
+          "total": 19270,
+          "input": 1,
+          "output": 53,
+          "reasoning": 0,
+          "cache": {
+            "read": 18501,
+            "write": 715
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c512549001U6M5vFlppWtGUl",
+        "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "id": "prt_d0c512cfc001eChhfc1EYW0V5m",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c512549001U6M5vFlppWtGUl"
+        },
+        {
+          "type": "text",
+          "text": "The new section has been appended at the end of the file. The existing 228 lines are untouched; the post-implementation refinements section starts at line 230 (after a blank line and the `---` separator).",
+          "time": {
+            "start": 1774028140261,
+            "end": 1774028140261
+          },
+          "id": "prt_d0c512cfc002Ouvy1qGrCy33Xs",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c512549001U6M5vFlppWtGUl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "d6c9b544b5bf6a042c2fc2e94477ce85878c68bf",
+          "cost": 0.00902955,
+          "tokens": {
+            "total": 19270,
+            "input": 1,
+            "output": 53,
+            "reasoning": 0,
+            "cache": {
+              "read": 18501,
+              "write": 715
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3af1e71ffeGITKEftFiotBhn",
+          "messageID": "msg_d0c512549001U6M5vFlppWtGUl"
+        }
+      ]
+    }
+  ]
+}
