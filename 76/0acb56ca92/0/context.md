@@ -1,0 +1,17 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe, commit and push the v1.5.0 release prep changes.
+
+Run these commands in order:
+
+1. `cd /Users/jaronswab/go/src/github.com/jrswab/axe && git add -A`
+2. `git status` (return the output so I can see what's staged)
+3. `git commit -m "Update changelog and version for v1.5.0"`
+4. `git push origin master`
+
+Return the full output of each command.
+
