@@ -1,0 +1,634 @@
+{
+  "info": {
+    "id": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+    "slug": "calm-knight",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f38cdd00ffexBON02raOmPosW",
+    "title": "Review all v1.5.0 changes (@review subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774030849344,
+      "updated": 1774030869865
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774030849348
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "review",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Review the current uncommitted changes in the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe. Run `git diff` and check for:\n\n1. **Version bumps**: Verify \"1.5.0\" appears in cmd/root.go, internal/mcpclient/mcpclient.go, and cmd/version_test.go — and that \"1.4.0\" no longer appears in those files.\n\n2. **CHANGELOG.md**: Verify the new [1.5.0] section is properly formatted with correct Keep a Changelog structure, the date is 2026-03-20, and the reference link at the bottom is correct.\n\n3. **README.md**: Check that:\n   - The three new features appear in the Features list\n   - The Run Flags table has --max-tokens and --agents-dir rows\n   - The Exit Codes table exists with codes 0-4\n   - The Agent Configuration example TOML includes `allowed_hosts` and `[budget]`\n   - The Output Allowlist section exists with a behavior table\n   - The Token Budget section exists with TOML and flag examples\n   - The Local Agent Directories section exists with auto-discovery, override, resolution order, and smart scaffolding\n   - No existing content was accidentally removed or corrupted\n   - All markdown tables are properly formatted (pipes aligned, header separators present)\n   - No broken markdown (unclosed code blocks, etc.)\n\nReturn any issues found, or confirm everything looks correct.",
+          "id": "prt_d0c7a8544001zFrmRof0TC0AOw",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030849358,
+          "completed": 1774030853198
+        },
+        "parentID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08179,
+        "tokens": {
+          "total": 12688,
+          "input": 3,
+          "output": 133,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 12552
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c7a854e0010HCy1YnXK06pcX",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "id": "prt_d0c7a8cd3001ZLn7Ieb1hXZw02",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a854e0010HCy1YnXK06pcX"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI'll load the auto-review skill and then examine the uncommitted changes systematically.",
+          "time": {
+            "start": 1774030852140,
+            "end": 1774030852140
+          },
+          "id": "prt_d0c7a8cd4001HKEAmjWBus81yG",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a854e0010HCy1YnXK06pcX"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "skill",
+          "state": {
+            "status": "completed",
+            "input": {
+              "name": "auto-review"
+            },
+            "output": "<skill_content name=\"auto-review\">\n# Skill: auto-review\n\nYour job is to provide a comprehesive review of current code changes.\n\n\n## Rules\n\n- Always use the Context7 MCP for library/API documentation, code generation, setup, or configuration steps.\n- Check for the following:\n    - bugs\n    - security issues\n    - code drift\n    - performance bottlenecks\n    - poor maintainability\n\n## Steps\n\nWith a @general subagent:\n1. Use `git diff HEAD` to get the changes.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it’s intended to do, especially for user-facing or critical paths.\n    - Prioritize clear variable and function names, simple logic, and minimal complexity.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks. Tests should be as maintainable as production code.\n    - Avoid nitpicks that block progress unless they are critical. Use “nit” labels for minor style issues and mark non-blocking feedback clearly.\n3. Your review output MUST be a markdown list and include:\n    - A prompt for an LLM coding agent to fix the code. This prompt MUST be a specific and only address the fix needed.\n    - Make sure to mention the file name prepend with `@` in the prompt.\n4. Once the review is complete, return the review to the caller.\n\nBase directory for this skill: file:///Users/jaronswab/.config/opencode/skills/auto-review\nRelative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.\nNote: file list is sampled.\n\n<skill_files>\n\n</skill_files>\n</skill_content>",
+            "title": "Loaded skill: auto-review",
+            "metadata": {
+              "name": "auto-review",
+              "dir": "/Users/jaronswab/.config/opencode/skills/auto-review",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030852682,
+              "end": 1774030852700
+            }
+          },
+          "id": "prt_d0c7a902d0010xkOJfPf25KHCu",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a854e0010HCy1YnXK06pcX"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff --stat",
+              "description": "Show diff summary of uncommitted changes"
+            },
+            "output": " CHANGELOG.md                    | 12 ++++++\n README.md                       | 93 +++++++++++++++++++++++++++++++++++++++++\n cmd/root.go                     |  2 +-\n cmd/version_test.go             |  6 +--\n internal/mcpclient/mcpclient.go |  2 +-\n 5 files changed, 110 insertions(+), 5 deletions(-)\n",
+            "title": "Show diff summary of uncommitted changes",
+            "metadata": {
+              "output": " CHANGELOG.md                    | 12 ++++++\n README.md                       | 93 +++++++++++++++++++++++++++++++++++++++++\n cmd/root.go                     |  2 +-\n cmd/version_test.go             |  6 +--\n internal/mcpclient/mcpclient.go |  2 +-\n 5 files changed, 110 insertions(+), 5 deletions(-)\n",
+              "exit": 0,
+              "description": "Show diff summary of uncommitted changes",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030853025,
+              "end": 1774030853074
+            }
+          },
+          "id": "prt_d0c7a924b001dfLGCXY40wBVwz",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a854e0010HCy1YnXK06pcX"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "cost": 0.08179,
+          "tokens": {
+            "total": 12688,
+            "input": 3,
+            "output": 133,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 12552
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a854e0010HCy1YnXK06pcX"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030853199,
+          "completed": 1774030858517
+        },
+        "parentID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0153435,
+        "tokens": {
+          "total": 13457,
+          "input": 1,
+          "output": 182,
+          "reasoning": 0,
+          "cache": {
+            "read": 12552,
+            "write": 722
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c7a944f001oGHgQpmIOqRGOx",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "id": "prt_d0c7a9f5b001f9AWS4SsIPVgbE",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a944f001oGHgQpmIOqRGOx"
+        },
+        {
+          "type": "text",
+          "text": "Good. Let me now get the full diff and read the affected files to do a thorough review.",
+          "time": {
+            "start": 1774030856682,
+            "end": 1774030856682
+          },
+          "id": "prt_d0c7a9f5c001reLaqRHMNE4zMO",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a944f001oGHgQpmIOqRGOx"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01QbG2EKMzB5rM881o13fAFc",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get full diff of all uncommitted changes"
+            },
+            "output": "diff --git a/CHANGELOG.md b/CHANGELOG.md\nindex 1af46e5..1a29f57 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.\n The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n \n+## [1.5.0] - 2026-03-20\n+\n+### Added\n+- Output allowlist for outgoing connections (#45)\n+- Local agent directory support (#41)\n+- Token budget limits per agent run (#37)\n+\n+### Changed\n+- Consolidate Docker release workflow (#44)\n+- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n+\n ## [1.4.0] - 2026-03-17\n \n ### Added\n@@ -70,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0\n - staticcheck/errcheck lint issues\n - Duplicate error silencing, glob validation, and nil ExitError guard\n \n+[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\ndiff --git a/README.md b/README.md\nindex 7268b6d..b5f6ac4 100644\n--- a/README.md\n+++ b/README.md\n@@ -25,9 +25,12 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand\n - **Memory garbage collection** — LLM-assisted pattern analysis and trimming\n - **Skill system** — reusable instruction sets that can be shared across agents\n - **Stdin piping** — pipe any output directly into an agent (`git diff | axe run reviewer`)\n+- **Local agent directories** — auto-discovers agents from `<cwd>/axe/agents/` before the global config, or use `--agents-dir` to point anywhere\n - **Dry-run mode** — inspect resolved context without calling the LLM\n - **JSON output** — structured output with metadata for scripting\n - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search\n+- **Output allowlist** — restrict `url_fetch` and `web_search` to specific hostnames; private/reserved IPs are always blocked (SSRF protection)\n+- **Token budgets** — cap cumulative token usage per agent run via `[budget]` config or `--max-tokens` flag\n - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport\n - **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)\n - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library\n@@ -265,9 +268,21 @@ Config is read-write because `axe config init` and `axe agents init` write into\n | `--skill <path>` | from TOML | Override the skill file path |\n | `--workdir <path>` | from TOML or cwd | Override the working directory |\n | `--timeout <seconds>` | 120 | Request timeout |\n+| `--max-tokens <int>` | 0 (unlimited) | Cap cumulative token usage for the run (exit code 4 if exceeded) |\n | `--dry-run` | false | Show resolved context without calling the LLM |\n | `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |\n | `--json` | false | Wrap output in a JSON envelope with metadata |\n+| `--agents-dir <path>` | (auto-discover) | Override agent search directory |\n+\n+### Exit Codes\n+\n+| Code | Meaning |\n+|---|---|\n+| 0 | Success |\n+| 1 | Runtime error |\n+| 2 | Configuration error |\n+| 3 | Provider/network error |\n+| 4 | Token budget exceeded |\n \n ## Agent Configuration\n \n@@ -283,6 +298,7 @@ files = [\"src/**/*.go\", \"CONTRIBUTING.md\"]\n workdir = \"/home/user/projects/myapp\"\n tools = [\"read_file\", \"list_directory\", \"run_command\"]\n sub_agents = [\"test-runner\", \"lint-checker\"]\n+allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n \n [sub_agents_config]\n max_depth = 3       # maximum nesting depth (hard max: 5)\n@@ -304,6 +320,9 @@ headers = { Authorization = \"Bearer ${MY_TOKEN}\" }\n temperature = 0.3\n max_tokens = 4096\n \n+[budget]\n+max_tokens = 50000    # 0 = unlimited (default)\n+\n [retry]\n max_retries = 3           # retry up to 3 times on transient errors\n backoff = \"exponential\"   # \"exponential\", \"linear\", or \"fixed\"\n@@ -336,6 +355,43 @@ requests (400) are never retried. When `--verbose` is enabled, each retry\n attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`\n field for observability.\n \n+### Output Allowlist\n+\n+Agents that use `url_fetch` or `web_search` can be restricted to specific hostnames with the `allowed_hosts` field:\n+\n+```toml\n+allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n+```\n+\n+| Behavior | Detail |\n+|---|---|\n+| Empty or absent | All public hostnames allowed |\n+| Non-empty list | Only exact hostname matches permitted (case-insensitive, no wildcard subdomains) |\n+| Private IPs | Always blocked regardless of allowlist — loopback, link-local, RFC 1918, CGNAT, IPv6 private |\n+| Redirects | Each redirect destination is re-validated against the allowlist and private IP check |\n+| Sub-agents | Inherit the parent's `allowed_hosts` unless the sub-agent TOML explicitly sets its own |\n+\n+### Token Budget\n+\n+Cap cumulative token usage (input + output, across all turns and sub-agent calls) for a single run:\n+\n+```toml\n+[budget]\n+max_tokens = 50000   # 0 = unlimited (default)\n+```\n+\n+Or override via flag:\n+\n+```bash\n+axe run my-agent --max-tokens 10000\n+```\n+\n+The flag takes precedence over TOML when set to a value greater than zero.\n+\n+When the budget is exceeded, the current response is returned but no further tool calls execute. The process exits with **code 4**. Memory is not appended on a budget-exceeded run.\n+\n+With `--verbose`, each turn logs cumulative usage to stderr. With `--json`, the output envelope includes `budget_max_tokens`, `budget_used_tokens`, and `budget_exceeded` fields (omitted when unlimited).\n+\n ## Tools\n \n Agents can use built-in tools to interact with the filesystem and run commands. When tools are enabled, the agent enters a conversation loop — the LLM can make tool calls, receive results, and continue reasoning for up to 50 turns.\n@@ -434,6 +490,43 @@ $XDG_CONFIG_HOME/axe/\n             └── fetch.sh\n ```\n \n+## Local Agent Directories\n+\n+By default, agents are loaded from `$XDG_CONFIG_HOME/axe/agents/`. Axe also supports project-local agent directories for per-repo agent definitions.\n+\n+### Auto-Discovery\n+\n+If `<cwd>/axe/agents/` exists, axe searches it before the global config directory. A local agent with the same name as a global agent shadows the global one.\n+\n+```\n+my-project/\n+└── axe/\n+    └── agents/\n+        └── my-agent.toml   ← found automatically\n+```\n+\n+### Explicit Override\n+\n+Use `--agents-dir` to point to any directory:\n+\n+```bash\n+axe run my-agent --agents-dir ./custom/agents\n+```\n+\n+This flag is available on all commands: `run`, `agents list`, `agents show`, `agents init`, `agents edit`, and `gc`.\n+\n+### Resolution Order\n+\n+1. `--agents-dir` (if provided)\n+2. `<cwd>/axe/agents/` (auto-discovered)\n+3. `$XDG_CONFIG_HOME/axe/agents/` (global fallback)\n+\n+The first directory containing a matching `<name>.toml` wins.\n+\n+### Smart Scaffolding\n+\n+`axe agents init <name>` writes to `<cwd>/axe/agents/` if that directory already exists, otherwise falls back to the global config directory.\n+\n ## Providers\n \n | Provider | API Key Env Var | Default Base URL |\ndiff --git a/cmd/root.go b/cmd/root.go\nindex afccdad..907f254 100644\n--- a/cmd/root.go\n+++ b/cmd/root.go\n@@ -9,7 +9,7 @@ import (\n )\n \n // Version is the hardcoded version constant for the CLI.\n-const Version = \"1.4.0\"\n+const Version = \"1.5.0\"\n \n var rootCmd = &cobra.Command{\n \tUse:   \"axe\",\ndiff --git a/cmd/version_test.go b/cmd/version_test.go\nindex fba2f90..c328ecb 100644\n--- a/cmd/version_test.go\n+++ b/cmd/version_test.go\n@@ -16,14 +16,14 @@ func TestVersionCommand_Output(t *testing.T) {\n \t}\n \n \tgot := buf.String()\n-\twant := \"axe version 1.4.0\\n\"\n+\twant := \"axe version 1.5.0\\n\"\n \tif got != want {\n \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n \t}\n }\n \n func TestVersionConstant(t *testing.T) {\n-\tif Version != \"1.4.0\" {\n-\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.4.0\")\n+\tif Version != \"1.5.0\" {\n+\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.5.0\")\n \t}\n }\ndiff --git a/internal/mcpclient/mcpclient.go b/internal/mcpclient/mcpclient.go\nindex f4b506f..12c515a 100644\n--- a/internal/mcpclient/mcpclient.go\n+++ b/internal/mcpclient/mcpclient.go\n@@ -40,7 +40,7 @@ func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n \t}\n \n-\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.4.0\"}, nil)\n+\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.5.0\"}, nil)\n \tsession, err := client.Connect(ctx, transport, nil)\n \tif err != nil {\n \t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n",
+            "title": "Get full diff of all uncommitted changes",
+            "metadata": {
+              "output": "diff --git a/CHANGELOG.md b/CHANGELOG.md\nindex 1af46e5..1a29f57 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.\n The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n \n+## [1.5.0] - 2026-03-20\n+\n+### Added\n+- Output allowlist for outgoing connections (#45)\n+- Local agent directory support (#41)\n+- Token budget limits per agent run (#37)\n+\n+### Changed\n+- Consolidate Docker release workflow (#44)\n+- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n+\n ## [1.4.0] - 2026-03-17\n \n ### Added\n@@ -70,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0\n - staticcheck/errcheck lint issues\n - Duplicate error silencing, glob validation, and nil ExitError guard\n \n+[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\ndiff --git a/README.md b/README.md\nindex 7268b6d..b5f6ac4 100644\n--- a/README.md\n+++ b/README.md\n@@ -25,9 +25,12 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand\n - **Memory garbage collection** — LLM-assisted pattern analysis and trimming\n - **Skill system** — reusable instruction sets that can be shared across agents\n - **Stdin piping** — pipe any output directly into an agent (`git diff | axe run reviewer`)\n+- **Local agent directories** — auto-discovers agents from `<cwd>/axe/agents/` before the global config, or use `--agents-dir` to point anywhere\n - **Dry-run mode** — inspect resolved context without calling the LLM\n - **JSON output** — structured output with metadata for scripting\n - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search\n+- **Output allowlist** — restrict `url_fetch` and `web_search` to specific hostnames; private/reserved IPs are always blocked (SSRF protection)\n+- **Token budgets** — cap cumulative token usage per agent run via `[budget]` config or `--max-tokens` flag\n - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport\n - **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)\n - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library\n@@ -265,9 +268,21 @@ Config is read-write because `axe config init` and `axe agents init` write into\n | `--skill <path>` | from TOML | Override the skill file path |\n | `--workdir <path>` | from TOML or cwd | Override the working directory |\n | `--timeout <seconds>` | 120 | Request timeout |\n+| `--max-tokens <int>` | 0 (unlimited) | Cap cumulative token usage for the run (exit code 4 if exceeded) |\n | `--dry-run` | false | Show resolved context without calling the LLM |\n | `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |\n | `--json` | false | Wrap output in a JSON envelope with metadata |\n+| `--agents-dir <path>` | (auto-discover) | Override agent search directory |\n+\n+### Exit Codes\n+\n+| Code | Meaning |\n+|---|---|\n+| 0 | Success |\n+| 1 | Runtime error |\n+| 2 | Configuration error |\n+| 3 | Provider/network error |\n+| 4 | Token budget exceeded |\n \n ## Agent Configuration\n \n@@ -283,6 +298,7 @@ files = [\"src/**/*.go\", \"CONTRIBUTING.md\"]\n workdir = \"/home/user/projects/myapp\"\n tools = [\"read_file\", \"list_directory\", \"run_command\"]\n sub_agents = [\"test-runner\", \"lint-checker\"]\n+allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n \n [sub_agents_config]\n max_depth = 3       # maximum nesting depth (hard max: 5)\n@@ -304,6 +320,9 @@ headers = { Authorization = \"Bearer ${MY_TOKEN}\" }\n temperature = 0.3\n max_tokens = 4096\n \n+[budget]\n+max_tokens = 50000    # 0 = unlimited (default)\n+\n [retry]\n max_retries = 3           # retry up to 3 times on transient errors\n backoff = \"exponential\"   # \"exponential\", \"linear\", or \"fixed\"\n@@ -336,6 +355,43 @@ requests (400) are never retried. When `--verbose` is enabled, each retry\n attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`\n field for observability.\n \n+### Output Allowlist\n+\n+Agents that use `url_fetch` or `web_search` can be restricted to specific hostnames with the `allowed_hosts` field:\n+\n+```toml\n+allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n+```\n+\n+| Behavior | Detail |\n+|---|---|\n+| Empty or absent | All public hostnames allowed |\n+| Non-empty list | Only exact hostname matches permitted (case-insensitive, no wildcard subdomains) |\n+| Private IPs | Always blocked regardless of allowlist — loopback, link-local, RFC 1918, CGNAT, IPv6 private |\n+| Redirects | Each redirect destination is re-validated against the allowlist and private IP check |\n+| Sub-agents | Inherit the parent's `allowed_hosts` unless the sub-agent TOML explicitly sets its own |\n+\n+### Token Budget\n+\n+Cap cumulative token usage (input + output, across all turns and sub-agent calls) for a single run:\n+\n+```toml\n+[budget]\n+max_tokens = 50000   # 0 = unlimited (default)\n+```\n+\n+Or override via flag:\n+\n+```bash\n+axe run my-agent --max-tokens 10000\n+```\n+\n+The flag takes precedence over TOML when set to a value greater than zero.\n+\n+When the budget is exceeded, the current response is returned but no further tool calls execute. The process exits with **code 4**. Memory is not appended on a budget-exceeded run.\n+\n+With `--verbose`, each turn logs cumulative usage to stderr. With `--json`, the output envelope includes `budget_max_tokens`, `budget_used_tokens`, and `budget_exceeded` fields (omitted when unlimited).\n+\n ## Tools\n \n Agents can use built-in tools to interact with the filesystem and run commands. When tools are enabled, the agent enters a conversation loop — the LLM can make tool calls, receive results, and continue reasoning for up to 50 turns.\n@@ -434,6 +490,43 @@ $XDG_CONFIG_HOME/axe/\n             └── fetch.sh\n ```\n \n+## Local Agent Directories\n+\n+By default, agents are loaded from `$XDG_CONFIG_HOME/axe/agents/`. Axe also supports project-local agent directories for per-repo agent definitions.\n+\n+### Auto-Discovery\n+\n+If `<cwd>/axe/agents/` exists, axe searches it before the global config directory. A local agent with the same name as a global agent shadows the global one.\n+\n+```\n+my-project/\n+└── axe/\n+    └── agents/\n+        └── my-agent.toml   ← found automatically\n+```\n+\n+### Explicit Override\n+\n+Use `--agents-dir` to point to any directory:\n+\n+```bash\n+axe run my-agent --agents-dir ./custom/agents\n+```\n+\n+This flag is available on all commands: `run`, `agents list`, `agents show`, `agents init`, `agents edit`, and `gc`.\n+\n+### Resolution Order\n+\n+1. `--agents-dir` (if provided)\n+2. `<cwd>/axe/agents/` (auto-discovered)\n+3. `$XDG_CONFIG_HOME/axe/agents/` (global fallback)\n+\n+The first directory containing a matching `<name>.toml` wins.\n+\n+### Smart Scaffolding\n+\n+`axe agents init <name>` writes to `<cwd>/axe/agents/` if that directory already exists, otherwise falls back to the global config directory.\n+\n ## Providers\n \n | Provider | API Key Env Var | Default Base URL |\ndiff --git a/cmd/root.go b/cmd/root.go\nindex afccdad..907f254 100644\n--- a/cmd/root.go\n+++ b/cmd/root.go\n@@ -9,7 +9,7 @@ import (\n )\n \n // Version is the hardcoded version constant for the CLI.\n-const Version = \"1.4.0\"\n+const Version = \"1.5.0\"\n \n var rootCmd = &cobra.Command{\n \tUse:   \"axe\",\ndiff --git a/cmd/version_test.go b/cmd/version_test.go\nindex fba2f90..c328ecb 100644\n--- a/cmd/version_test.go\n+++ b/cmd/version_test.go\n@@ -16,14 +16,14 @@ func TestVersionCommand_Output(t *testing.T) {\n \t}\n \n \tgot := buf.String()\n-\twant := \"axe version 1.4.0\\n\"\n+\twant := \"axe version 1.5.0\\n\"\n \tif got != want {\n \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n \t}\n }\n \n func TestVersionConstant(t *testing.T) {\n-\tif Version != \"1.4.0\" {\n-\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.4.0\")\n+\tif Version != \"1.5.0\" {\n+\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.5.0\")\n \t}\n }\ndiff --git a/internal/mcpclient/mcpclient.go b/internal/mcpclient/mcpclient.go\nindex f4b506f..12c515a 100644\n--- a/internal/mcpclient/mcpclient.go\n+++ b/internal/mcpclient/mcpclient.go\n@@ -40,7 +40,7 @@ func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n \t}\n \n-\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.4.0\"}, nil)\n+\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.5.0\"}, nil)\n \tsession, err := client.Connect(ctx, transport, nil)\n \tif err != nil {\n \t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n",
+              "exit": 0,
+              "description": "Get full diff of all uncommitted changes",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030857134,
+              "end": 1774030857159
+            }
+          },
+          "id": "prt_d0c7aa1eb001RUBekkD6sbRwlE",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a944f001oGHgQpmIOqRGOx"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD -- cmd/root.go cmd/version_test.go internal/mcpclient/mcpclient.go",
+              "description": "Get version-related file diffs"
+            },
+            "output": "diff --git a/cmd/root.go b/cmd/root.go\nindex afccdad..907f254 100644\n--- a/cmd/root.go\n+++ b/cmd/root.go\n@@ -9,7 +9,7 @@ import (\n )\n \n // Version is the hardcoded version constant for the CLI.\n-const Version = \"1.4.0\"\n+const Version = \"1.5.0\"\n \n var rootCmd = &cobra.Command{\n \tUse:   \"axe\",\ndiff --git a/cmd/version_test.go b/cmd/version_test.go\nindex fba2f90..c328ecb 100644\n--- a/cmd/version_test.go\n+++ b/cmd/version_test.go\n@@ -16,14 +16,14 @@ func TestVersionCommand_Output(t *testing.T) {\n \t}\n \n \tgot := buf.String()\n-\twant := \"axe version 1.4.0\\n\"\n+\twant := \"axe version 1.5.0\\n\"\n \tif got != want {\n \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n \t}\n }\n \n func TestVersionConstant(t *testing.T) {\n-\tif Version != \"1.4.0\" {\n-\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.4.0\")\n+\tif Version != \"1.5.0\" {\n+\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.5.0\")\n \t}\n }\ndiff --git a/internal/mcpclient/mcpclient.go b/internal/mcpclient/mcpclient.go\nindex f4b506f..12c515a 100644\n--- a/internal/mcpclient/mcpclient.go\n+++ b/internal/mcpclient/mcpclient.go\n@@ -40,7 +40,7 @@ func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n \t}\n \n-\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.4.0\"}, nil)\n+\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.5.0\"}, nil)\n \tsession, err := client.Connect(ctx, transport, nil)\n \tif err != nil {\n \t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n",
+            "title": "Get version-related file diffs",
+            "metadata": {
+              "output": "diff --git a/cmd/root.go b/cmd/root.go\nindex afccdad..907f254 100644\n--- a/cmd/root.go\n+++ b/cmd/root.go\n@@ -9,7 +9,7 @@ import (\n )\n \n // Version is the hardcoded version constant for the CLI.\n-const Version = \"1.4.0\"\n+const Version = \"1.5.0\"\n \n var rootCmd = &cobra.Command{\n \tUse:   \"axe\",\ndiff --git a/cmd/version_test.go b/cmd/version_test.go\nindex fba2f90..c328ecb 100644\n--- a/cmd/version_test.go\n+++ b/cmd/version_test.go\n@@ -16,14 +16,14 @@ func TestVersionCommand_Output(t *testing.T) {\n \t}\n \n \tgot := buf.String()\n-\twant := \"axe version 1.4.0\\n\"\n+\twant := \"axe version 1.5.0\\n\"\n \tif got != want {\n \t\tt.Errorf(\"version output = %q, want %q\", got, want)\n \t}\n }\n \n func TestVersionConstant(t *testing.T) {\n-\tif Version != \"1.4.0\" {\n-\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.4.0\")\n+\tif Version != \"1.5.0\" {\n+\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.5.0\")\n \t}\n }\ndiff --git a/internal/mcpclient/mcpclient.go b/internal/mcpclient/mcpclient.go\nindex f4b506f..12c515a 100644\n--- a/internal/mcpclient/mcpclient.go\n+++ b/internal/mcpclient/mcpclient.go\n@@ -40,7 +40,7 @@ func Connect(ctx context.Context, cfg agent.MCPServerConfig) (*Client, error) {\n \t\treturn nil, fmt.Errorf(\"unsupported MCP transport %q\", cfg.Transport)\n \t}\n \n-\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.4.0\"}, nil)\n+\tclient := mcp.NewClient(&mcp.Implementation{Name: \"axe\", Version: \"1.5.0\"}, nil)\n \tsession, err := client.Connect(ctx, transport, nil)\n \tif err != nil {\n \t\treturn nil, fmt.Errorf(\"connect MCP server %q: %w\", cfg.Name, err)\n",
+              "exit": 0,
+              "description": "Get version-related file diffs",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030858331,
+              "end": 1774030858354
+            }
+          },
+          "id": "prt_d0c7aa3b0001vxGMCJ1KyUOvpW",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a944f001oGHgQpmIOqRGOx"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "cost": 0.0153435,
+          "tokens": {
+            "total": 13457,
+            "input": 1,
+            "output": 182,
+            "reasoning": 0,
+            "cache": {
+              "read": 12552,
+              "write": 722
+            }
+          },
+          "id": "prt_d0c7aa8be001omhBxYB6HwV8hS",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7a944f001oGHgQpmIOqRGOx"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030858518,
+          "completed": 1774030864830
+        },
+        "parentID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.036517,
+        "tokens": {
+          "total": 17560,
+          "input": 1,
+          "output": 165,
+          "reasoning": 0,
+          "cache": {
+            "read": 13274,
+            "write": 4120
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c7aa916001uGaZbOz2wSyKfZ",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "id": "prt_d0c7ab0db001bf5rZ9Gw1e1hJv",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7aa916001uGaZbOz2wSyKfZ"
+        },
+        {
+          "type": "text",
+          "text": "Now let me read the full CHANGELOG.md and relevant sections of README.md to verify nothing was corrupted:",
+          "time": {
+            "start": 1774030861810,
+            "end": 1774030861810
+          },
+          "id": "prt_d0c7ab0db0028DTPzQ0KXLfzru",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7aa916001uGaZbOz2wSyKfZ"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01H5bZRZQoEc1zEj6U7zVWDL",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md</path>\n<type>file</type>\n<content>1: # Changelog\n2: \n3: All notable changes to this project will be documented in this file.\n4: \n5: The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n6: and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n7: \n8: ## [1.5.0] - 2026-03-20\n9: \n10: ### Added\n11: - Output allowlist for outgoing connections (#45)\n12: - Local agent directory support (#41)\n13: - Token budget limits per agent run (#37)\n14: \n15: ### Changed\n16: - Consolidate Docker release workflow (#44)\n17: - Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n18: \n19: ## [1.4.0] - 2026-03-17\n20: \n21: ### Added\n22: - AWS Bedrock provider support (#18)\n23: - Retry logic for intermittent LLM provider failures (#35)\n24: \n25: ### Fixed\n26: - Add path sandbox enforcement to `run_command` tool (#31)\n27: - Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n28: \n29: ## [1.3.0] - 2026-03-15\n30: \n31: ### Added\n32: - Google Gemini provider support\n33: - MiniMax provider support (#27)\n34: - GHCR docker publish workflow on version tags (#33)\n35: \n36: ### Fixed\n37: - Use max_completion_tokens for OpenAI provider (#34)\n38: \n39: ## [1.2.0] - 2026-03-10\n40: \n41: ### Added\n42: - OpenCode provider support\n43: - HTTP request timeout (15s per-request) for `url_fetch` tool\n44: - HTML tag stripping for `url_fetch` responses\n45: \n46: ## [1.1.1] - 2026-03-06\n47: \n48: ### Fixed\n49: - Remove hardcoded `/v1` from OpenAI provider URL path\n50: \n51: ## [1.1.0] - 2026-03-06\n52: \n53: ### Added\n54: - MCP tool support\n55: - `web_search` built-in tool using Tavily Search API\n56: - `url_fetch` built-in tool\n57: - JSON `tool_call_details` in run output\n58: - Refusal detection in JSON output\n59: - Executable examples\n60: \n61: ### Changed\n62: - Docker docs for running a single agent with selective mounts\n63: \n64: ## [1.0.0] - 2026-03-02\n65: \n66: ### Added\n67: - Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n68: - TOML-based agent configuration with SKILL.md context support\n69: - Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n70: - Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n71: - Sub-agent orchestration with `call_agent` tool and depth-limited execution\n72: - Agent memory system with XDG-compliant data storage and garbage collection\n73: - Path security: `~` and `$VAR` expansion for user-supplied paths\n74: - Stdin piping support for composing with Unix tools\n75: - Dry-run mode and per-tool verbose logging\n76: - Docker containerization support\n77: - CI workflows: lint, test, build, and GoReleaser\n78: \n79: ### Fixed\n80: - Arg validation UX and skill path resolution\n81: - staticcheck/errcheck lint issues\n82: - Duplicate error silencing, glob validation, and nil ExitError guard\n83: \n84: [1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n85: [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n86: [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n87: [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n88: [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n89: [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n90: [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n\n(End of file - total 90 lines)\n</content>",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "preview": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774030864735,
+              "end": 1774030864740
+            }
+          },
+          "id": "prt_d0c7ab5f4001B5bJ2mYFPBeOYM",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7aa916001uGaZbOz2wSyKfZ"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/README.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/README.md</path>\n<type>file</type>\n<content>1: # Axe\n2: \n3: ![axe banner](banner.png)\n4: \n5: A CLI tool for managing and running LLM-powered agents.\n6: \n7: ## Why Axe?\n8: \n9: Most AI tooling assumes you want a chatbot. A long-running session with a massive context window doing everything at once. But that's not how good software works. Good software is small, focused, and composable.\n10: \n11: Axe treats LLM agents the same way Unix treats programs. Each agent does one thing well. You define it in a TOML file, give it a focused skill, and run it from the command line. Pipe data in, get results out. Chain agents together. Trigger them from cron, git hooks, or CI. Whatever you already use. No daemon, no GUI, no framework to buy into. Just a binary and your configs.\n12: \n13: ## Overview\n14: \n15: Axe orchestrates LLM-powered agents defined via TOML configuration files. Each agent has its own system prompt, model selection, skill files, context files, working directory, persistent memory, and the ability to delegate to sub-agents.\n16: \n17: Axe is the executor, not the scheduler. It is designed to be composed with standard Unix tools — cron, git hooks, pipes, file watchers — rather than reinventing scheduling or workflow orchestration.\n18: \n19: ## Features\n20: \n21: - **Multi-provider support** — Anthropic, OpenAI, Ollama (local models), OpenCode, and AWS Bedrock\n22: - **TOML-based agent configuration** — declarative, version-controllable agent definitions\n23: - **Sub-agent delegation** — agents can call other agents via LLM tool use, with depth limiting and parallel execution\n24: - **Persistent memory** — timestamped markdown logs that carry context across runs\n25: - **Memory garbage collection** — LLM-assisted pattern analysis and trimming\n26: - **Skill system** — reusable instruction sets that can be shared across agents\n27: - **Stdin piping** — pipe any output directly into an agent (`git diff | axe run reviewer`)\n28: - **Local agent directories** — auto-discovers agents from `<cwd>/axe/agents/` before the global config, or use `--agents-dir` to point anywhere\n29: - **Dry-run mode** — inspect resolved context without calling the LLM\n30: - **JSON output** — structured output with metadata for scripting\n31: - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search\n32: - **Output allowlist** — restrict `url_fetch` and `web_search` to specific hostnames; private/reserved IPs are always blocked (SSRF protection)\n33: - **Token budgets** — cap cumulative token usage per agent run via `[budget]` config or `--max-tokens` flag\n34: - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport\n35: - **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)\n36: - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library\n37: \n38: ## Installation\n39: \n40: Requires Go 1.25+.\n41: \n42: ```bash\n43: go install github.com/jrswab/axe@latest\n44: ```\n45: \n46: Or build from source:\n47: \n48: ```bash\n49: git clone https://github.com/jrswab/axe.git\n50: cd axe\n51: go build .\n52: ```\n53: \n54: ## Quick Start\n55: \n56: Initialize the configuration directory:\n57: \n58: ```bash\n59: axe config init\n60: ```\n61: \n62: This creates the directory structure at `$XDG_CONFIG_HOME/axe/` with a sample skill and a default `config.toml` for provider credentials.\n63: \n64: Scaffold a new agent:\n65: \n66: ```bash\n67: axe agents init my-agent\n68: ```\n69: \n70: Edit its configuration:\n71: \n72: ```bash\n73: axe agents edit my-agent\n74: ```\n75: \n76: Run the agent:\n77: \n78: ```bash\n79: axe run my-agent\n80: ```\n81: \n82: Pipe input from other tools:\n83: \n84: ```bash\n85: git diff --cached | axe run pr-reviewer\n86: cat error.log | axe run log-analyzer\n87: ```\n88: \n89: ## Examples\n90: \n91: The [`examples/`](examples/) directory contains ready-to-run agents you can copy into your config and use immediately. Includes a code reviewer, commit message generator, and text summarizer — each with a focused SKILL.md.\n92: \n93: ```bash\n94: # Copy an example agent into your config\n95: cp examples/code-reviewer/code-reviewer.toml \"$(axe config path)/agents/\"\n96: cp -r examples/code-reviewer/skills/ \"$(axe config path)/skills/\"\n97: \n98: # Set your API key and run\n99: export ANTHROPIC_API_KEY=\"your-key-here\"\n100: git diff | axe run code-reviewer\n101: ```\n102: \n103: See [`examples/README.md`](examples/README.md) for full setup instructions.\n104: \n105: ## Docker\n106: \n107: Axe provides a Docker image for running agents in an isolated, hardened container.\n108: \n109: ### Build the Image\n110: \n111: ```bash\n112: docker build -t axe .\n113: ```\n114: \n115: Multi-architecture builds (linux/amd64, linux/arm64) are supported via buildx:\n116: \n117: ```bash\n118: docker buildx build --platform linux/amd64,linux/arm64 -t axe:latest .\n119: ```\n120: \n121: ### Run an Agent\n122: \n123: Mount your config directory and pass API keys as environment variables:\n124: \n125: ```bash\n126: docker run --rm \\\n127:   -v ./my-config:/home/axe/.config/axe \\\n128:   -e ANTHROPIC_API_KEY \\\n129:   axe run my-agent\n130: ```\n131: \n132: Pipe stdin with the `-i` flag:\n133: \n134: ```bash\n135: git diff | docker run --rm -i \\\n136:   -v ./my-config:/home/axe/.config/axe \\\n137:   -e ANTHROPIC_API_KEY \\\n138:   axe run pr-reviewer\n139: ```\n140: \n141: Without a config volume mounted, axe exits with code 2 (config error) because no agent TOML files exist.\n142: \n143: ### Running a Single Agent\n144: \n145: The examples above mount the entire config directory. If you only need to run one agent with one skill, mount just those files to their expected XDG paths inside the container. No `config.toml` is needed when API keys are passed via environment variables.\n146: \n147: ```bash\n148: docker run --rm -i \\\n149:   -e ANTHROPIC_API_KEY \\\n150:   -v ./agents/reviewer.toml:/home/axe/.config/axe/agents/reviewer.toml:ro \\\n151:   -v ./skills/code-review/:/home/axe/.config/axe/skills/code-review/:ro \\\n152:   axe run reviewer\n153: ```\n154: \n155: The agent's `skill` field resolves automatically against the XDG config path inside the container, so no `--skill` flag is needed.\n156: \n157: To use a **different skill** than the one declared in the agent's TOML, use the `--skill` flag to override it. In this case you only mount the replacement skill — the original skill declared in the TOML is ignored entirely:\n158: \n159: ```bash\n160: docker run --rm -i \\\n161:   -e ANTHROPIC_API_KEY \\\n162:   -v ./agents/reviewer.toml:/home/axe/.config/axe/agents/reviewer.toml:ro \\\n163:   -v ./alt-review.md:/home/axe/alt-review.md:ro \\\n164:   axe run reviewer --skill /home/axe/alt-review.md\n165: ```\n166: \n167: If the agent declares `sub_agents`, all referenced agent TOMLs and their skills must also be mounted.\n168: \n169: ### Persistent Data\n170: \n171: Agent memory persists across runs when you mount a data volume:\n172: \n173: ```bash\n174: docker run --rm \\\n175:   -v ./my-config:/home/axe/.config/axe \\\n176:   -v axe-data:/home/axe/.local/share/axe \\\n177:   -e ANTHROPIC_API_KEY \\\n178:   axe run my-agent\n179: ```\n180: \n181: ### Docker Compose\n182: \n183: A `docker-compose.yml` is included for running axe alongside a local Ollama instance.\n184: \n185: **Cloud provider only (no Ollama):**\n186: \n187: ```bash\n188: docker compose run --rm axe run my-agent\n189: ```\n190: \n191: **With Ollama sidecar:**\n192: \n193: ```bash\n194: docker compose --profile ollama up -d ollama\n195: docker compose --profile cli run --rm axe run my-agent\n196: ```\n197: \n198: **Pull an Ollama model:**\n199: \n200: ```bash\n201: docker compose --profile ollama exec ollama ollama pull llama3\n202: ```\n203: \n204: > **Note:** The compose `axe` service declares `depends_on: ollama`. Docker Compose will attempt to start the Ollama service whenever axe is started via compose, even for cloud-only runs. For cloud-only usage without Ollama, use `docker run` directly instead of `docker compose run`.\n205: \n206: ### Ollama on the Host\n207: \n208: If Ollama runs directly on the host (not via compose), point to it with:\n209: \n210: - **Linux:** `--add-host=host.docker.internal:host-gateway -e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`\n211: - **macOS / Windows (Docker Desktop):** `-e AXE_OLLAMA_BASE_URL=http://host.docker.internal:11434`\n212: \n213: ### Security\n214: \n215: The container runs with the following hardening by default (via compose):\n216: \n217: - **Non-root user** — UID 10001\n218: - **Read-only root filesystem** — writable locations are the config mount, data mount, and `/tmp/axe` tmpfs\n219: - **All capabilities dropped** — `cap_drop: ALL`\n220: - **No privilege escalation** — `no-new-privileges:true`\n221: \n222: These settings do not restrict outbound network access. To isolate an agent that only talks to a local Ollama instance, add `--network=none` and connect it to the shared Docker network manually.\n223: \n224: ### Volume Mounts\n225: \n226: | Container Path | Purpose | Default Access |\n227: |---|---|---|\n228: | `/home/axe/.config/axe/` | Agent TOML files, skills, `config.toml` | Read-write |\n229: | `/home/axe/.local/share/axe/` | Persistent memory files | Read-write |\n230: \n231: Config is read-write because `axe config init` and `axe agents init` write into it. Mount as `:ro` if you only run agents.\n232: \n233: ### Environment Variables\n234: \n235: | Variable | Required | Purpose |\n236: |---|---|---|\n237: | `ANTHROPIC_API_KEY` | If using Anthropic | API authentication |\n238: | `OPENAI_API_KEY` | If using OpenAI | API authentication |\n239: | `AXE_OLLAMA_BASE_URL` | If using Ollama | Ollama endpoint (default in compose: `http://ollama:11434`) |\n240: | `AXE_ANTHROPIC_BASE_URL` | No | Override Anthropic API endpoint |\n241: | `AXE_OPENAI_BASE_URL` | No | Override OpenAI API endpoint |\n242: | `AXE_OPENCODE_BASE_URL` | No | Override OpenCode API endpoint |\n243: | `TAVILY_API_KEY` | If using web_search | Tavily web search API key |\n244: | `AXE_WEB_SEARCH_BASE_URL` | No | Override web search endpoint |\n245: \n246: ## CLI Reference\n247: \n248: ### Commands\n249: \n250: | Command | Description |\n251: |---|---|\n252: | `axe run <agent>` | Run an agent |\n253: | `axe agents list` | List all configured agents |\n254: | `axe agents show <agent>` | Display an agent's full configuration |\n255: | `axe agents init <agent>` | Scaffold a new agent TOML file |\n256: | `axe agents edit <agent>` | Open an agent TOML in `$EDITOR` |\n257: | `axe config path` | Print the configuration directory path |\n258: | `axe config init` | Initialize the config directory with defaults |\n259: | `axe gc <agent>` | Run memory garbage collection for an agent |\n260: | `axe gc --all` | Run GC on all memory-enabled agents |\n261: | `axe version` | Print the current version |\n262: \n263: ### Run Flags\n264: \n265: | Flag | Default | Description |\n266: |---|---|---|\n267: | `--model <provider/model>` | from TOML | Override the model (e.g. `anthropic/claude-sonnet-4-20250514`) |\n268: | `--skill <path>` | from TOML | Override the skill file path |\n269: | `--workdir <path>` | from TOML or cwd | Override the working directory |\n270: | `--timeout <seconds>` | 120 | Request timeout |\n271: | `--max-tokens <int>` | 0 (unlimited) | Cap cumulative token usage for the run (exit code 4 if exceeded) |\n272: | `--dry-run` | false | Show resolved context without calling the LLM |\n273: | `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |\n274: | `--json` | false | Wrap output in a JSON envelope with metadata |\n275: | `--agents-dir <path>` | (auto-discover) | Override agent search directory |\n276: \n277: ### Exit Codes\n278: \n279: | Code | Meaning |\n280: |---|---|\n281: | 0 | Success |\n282: | 1 | Runtime error |\n283: | 2 | Configuration error |\n284: | 3 | Provider/network error |\n285: | 4 | Token budget exceeded |\n286: \n287: ## Agent Configuration\n288: \n289: Agents are defined as TOML files in `$XDG_CONFIG_HOME/axe/agents/`.\n290: \n291: ```toml\n292: name = \"pr-reviewer\"\n293: description = \"Reviews pull requests for issues and improvements\"\n294: model = \"anthropic/claude-sonnet-4-20250514\"\n295: system_prompt = \"You are a senior code reviewer. Be concise and actionable.\"\n296: skill = \"skills/code-review/SKILL.md\"\n297: files = [\"src/**/*.go\", \"CONTRIBUTING.md\"]\n298: workdir = \"/home/user/projects/myapp\"\n299: tools = [\"read_file\", \"list_directory\", \"run_command\"]\n300: sub_agents = [\"test-runner\", \"lint-checker\"]\n301: allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n302: \n303: [sub_agents_config]\n304: max_depth = 3       # maximum nesting depth (hard max: 5)\n305: parallel = true     # run sub-agents concurrently\n306: timeout = 120       # per sub-agent timeout in seconds\n307: \n308: [memory]\n309: enabled = true\n310: last_n = 10         # load last N entries into context\n311: max_entries = 100   # warn when exceeded\n312: \n313: [[mcp_servers]]\n314: name = \"my-tools\"\n315: url = \"https://my-mcp-server.example.com/sse\"\n316: transport = \"sse\"\n317: headers = { Authorization = \"Bearer ${MY_TOKEN}\" }\n318: \n319: [params]\n320: temperature = 0.3\n321: max_tokens = 4096\n322: \n323: [budget]\n324: max_tokens = 50000    # 0 = unlimited (default)\n325: \n326: [retry]\n327: max_retries = 3           # retry up to 3 times on transient errors\n328: backoff = \"exponential\"   # \"exponential\", \"linear\", or \"fixed\"\n329: initial_delay_ms = 500    # base delay before first retry\n330: max_delay_ms = 30000      # maximum delay cap\n331: \n332: [[mcp_servers]]\n333: name = \"filesystem\"\n334: transport = \"stdio\"\n335: command = \"/usr/local/bin/mcp-server-filesystem\"\n336: args = [\"--root\", \"/home/user/projects\"]\n337: ```\n338: \n339: All fields except `name` and `model` are optional.\n340: \n341: ### Retry\n342: \n343: Agents can retry on transient LLM provider errors — rate limits (429), server\n344: errors (5xx), and timeouts. Retry is opt-in and disabled by default.\n345: \n346: | Field | Default | Description |\n347: |---|---|---|\n348: | `max_retries` | 0 | Number of retry attempts after the initial request. 0 disables retry. |\n349: | `backoff` | `\"exponential\"` | Strategy: `\"exponential\"` (with jitter), `\"linear\"`, or `\"fixed\"` |\n350: | `initial_delay_ms` | 500 | Base delay in milliseconds before the first retry |\n351: | `max_delay_ms` | 30000 | Maximum delay cap in milliseconds |\n352: \n353: Only transient errors are retried. Authentication errors (401/403) and bad\n354: requests (400) are never retried. When `--verbose` is enabled, each retry\n355: attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`\n356: field for observability.\n357: \n358: ### Output Allowlist\n359: \n360: Agents that use `url_fetch` or `web_search` can be restricted to specific hostnames with the `allowed_hosts` field:\n361: \n362: ```toml\n363: allowed_hosts = [\"api.example.com\", \"docs.example.com\"]\n364: ```\n365: \n366: | Behavior | Detail |\n367: |---|---|\n368: | Empty or absent | All public hostnames allowed |\n369: | Non-empty list | Only exact hostname matches permitted (case-insensitive, no wildcard subdomains) |\n370: | Private IPs | Always blocked regardless of allowlist — loopback, link-local, RFC 1918, CGNAT, IPv6 private |\n371: | Redirects | Each redirect destination is re-validated against the allowlist and private IP check |\n372: | Sub-agents | Inherit the parent's `allowed_hosts` unless the sub-agent TOML explicitly sets its own |\n373: \n374: ### Token Budget\n375: \n376: Cap cumulative token usage (input + output, across all turns and sub-agent calls) for a single run:\n377: \n378: ```toml\n379: [budget]\n380: max_tokens = 50000   # 0 = unlimited (default)\n381: ```\n382: \n383: Or override via flag:\n384: \n385: ```bash\n386: axe run my-agent --max-tokens 10000\n387: ```\n388: \n389: The flag takes precedence over TOML when set to a value greater than zero.\n390: \n391: When the budget is exceeded, the current response is returned but no further tool calls execute. The process exits with **code 4**. Memory is not appended on a budget-exceeded run.\n392: \n393: With `--verbose`, each turn logs cumulative usage to stderr. With `--json`, the output envelope includes `budget_max_tokens`, `budget_used_tokens`, and `budget_exceeded` fields (omitted when unlimited).\n394: \n395: ## Tools\n396: \n397: Agents can use built-in tools to interact with the filesystem and run commands. When tools are enabled, the agent enters a conversation loop — the LLM can make tool calls, receive results, and continue reasoning for up to 50 turns.\n398: \n399: ### Built-in Tools\n400: \n401: | Tool | Description |\n402: |---|---|\n403: | `list_directory` | List contents of a directory relative to the working directory |\n404: | `read_file` | Read file contents with line-numbered output and optional pagination (offset/limit) |\n405: | `write_file` | Create or overwrite a file, creating parent directories as needed |\n406: | `edit_file` | Find and replace exact text in a file, with optional replace-all mode |\n407: | `run_command` | Execute a shell command via `sh -c` and return combined output |\n408: | `url_fetch` | Fetch URL content with HTML stripping and truncation |\n409: | `web_search` | Search the web and return results |\n410: | `call_agent` | Delegate a task to a sub-agent (controlled via `sub_agents`, not `tools`) |\n411: \n412: Enable tools by adding them to the agent's `tools` field:\n413: \n414: ```toml\n415: tools = [\"read_file\", \"list_directory\", \"run_command\"]\n416: ```\n417: \n418: The `call_agent` tool is not listed in `tools` — it is automatically available when `sub_agents` is configured and the depth limit has not been reached.\n419: \n420: ### Path Security\n421: \n422: All file tools (`list_directory`, `read_file`, `write_file`, `edit_file`) are sandboxed to the agent's working directory. Absolute paths, `..` traversal, and symlink escapes are rejected.\n423: \n424: ### Parallel Execution\n425: \n426: When an LLM returns multiple tool calls in a single turn, they run concurrently by default. This applies to both built-in tools and sub-agent calls. Disable with `parallel = false` in `[sub_agents_config]`.\n427: \n428: ### MCP Tools\n429: \n430: Agents can use tools from external [MCP](https://modelcontextprotocol.io/)\n431: servers. Declare servers in the agent TOML with `[[mcp_servers]]`:\n432: \n433: ```toml\n434: [[mcp_servers]]\n435: name = \"my-tools\"\n436: url = \"https://my-mcp-server.example.com/sse\"\n437: transport = \"sse\"\n438: headers = { Authorization = \"Bearer ${MY_TOKEN}\" }\n439: ```\n440: \n441: At startup, axe connects to each declared server, discovers available tools via\n442: `tools/list`, and makes them available to the LLM alongside built-in tools.\n443: \n444: | Field | Required | Description |\n445: |---|---|---|\n446: | `name` | Yes | Human-readable identifier for the server |\n447: | `url` | Yes | MCP server endpoint URL |\n448: | `transport` | Yes | `\"sse\"` or `\"streamable-http\"` |\n449: | `headers` | No | HTTP headers; values support `${ENV_VAR}` interpolation |\n450: \n451: MCP tools are controlled entirely by `[[mcp_servers]]` — they are not listed in\n452: the `tools` field. If an MCP tool has the same name as an enabled built-in tool,\n453: the built-in takes precedence.\n454: \n455: ## Skills\n456: \n457: Skills are reusable instruction sets that provide an agent with domain-specific knowledge and workflows. They are defined as `SKILL.md` files following the community SKILL.md format.\n458: \n459: ### Skill Resolution\n460: \n461: The `skill` field in an agent TOML is resolved in order:\n462: \n463: 1. **Absolute path** — used as-is (e.g. `/home/user/skills/SKILL.md`)\n464: 2. **Relative to config dir** — e.g. `skills/code-review/SKILL.md` resolves to `$XDG_CONFIG_HOME/axe/skills/code-review/SKILL.md`\n465: 3. **Bare name** — e.g. `code-review` resolves to `$XDG_CONFIG_HOME/axe/skills/code-review/SKILL.md`\n466: \n467: ### Script Paths\n468: \n469: Skills often reference helper scripts. Since `run_command` executes in the agent's `workdir` (not the skill directory), **script paths in SKILL.md must be absolute**. Relative paths will fail because the scripts don't exist in the agent's working directory.\n470: \n471: ```\n472: # Correct — absolute path\n473: /home/user/.config/axe/skills/my-skill/scripts/fetch.sh <args>\n474: \n475: # Wrong — relative path won't resolve from the agent's workdir\n476: scripts/fetch.sh <args>\n477: ```\n478: \n479: ### Directory Structure\n480: \n481: ```\n482: $XDG_CONFIG_HOME/axe/\n483: ├── config.toml\n484: ├── agents/\n485: │   └── my-agent.toml\n486: └── skills/\n487:     └── my-skill/\n488:         ├── SKILL.md\n489:         └── scripts/\n490:             └── fetch.sh\n491: ```\n492: \n493: ## Local Agent Directories\n494: \n495: By default, agents are loaded from `$XDG_CONFIG_HOME/axe/agents/`. Axe also supports project-local agent directories for per-repo agent definitions.\n496: \n497: ### Auto-Discovery\n498: \n499: If `<cwd>/axe/agents/` exists, axe searches it before the global config directory. A local agent with the same name as a global agent shadows the global one.\n500: \n501: ```\n502: my-project/\n503: └── axe/\n504:     └── agents/\n505:         └── my-agent.toml   ← found automatically\n506: ```\n507: \n508: ### Explicit Override\n509: \n510: Use `--agents-dir` to point to any directory:\n511: \n512: ```bash\n513: axe run my-agent --agents-dir ./custom/agents\n514: ```\n515: \n516: This flag is available on all commands: `run`, `agents list`, `agents show`, `agents init`, `agents edit`, and `gc`.\n517: \n518: ### Resolution Order\n519: \n520: 1. `--agents-dir` (if provided)\n521: 2. `<cwd>/axe/agents/` (auto-discovered)\n522: 3. `$XDG_CONFIG_HOME/axe/agents/` (global fallback)\n523: \n524: The first directory containing a matching `<name>.toml` wins.\n525: \n526: ### Smart Scaffolding\n527: \n528: `axe agents init <name>` writes to `<cwd>/axe/agents/` if that directory already exists, otherwise falls back to the global config directory.\n529: \n530: ## Providers\n531: \n532: | Provider | API Key Env Var | Default Base URL |\n533: |---|---|---|\n534: | Anthropic | `ANTHROPIC_API_KEY` | `https://api.anthropic.com` |\n535: | OpenAI | `OPENAI_API_KEY` | `https://api.openai.com` |\n536: | Ollama | (none required) | `http://localhost:11434` |\n537: | OpenCode | `OPENCODE_API_KEY` | Configurable |\n538: | AWS Bedrock | (uses AWS credentials) | Region-based |\n539: \n540: **AWS Bedrock Configuration:**\n541: - Region: Set via `AWS_REGION` environment variable or `[providers.bedrock] region = \"us-east-1\"` in config.toml\n542: - Credentials: Uses environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or `~/.aws/credentials` file (supports `AWS_PROFILE` and `AWS_SHARED_CREDENTIALS_FILE`)\n543: - Model IDs: Use full Bedrock model IDs (e.g., `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0`)\n544: \n545: Base URLs can be overridden with `AXE_<PROVIDER>_BASE_URL` environment variables or in `config.toml`.\n546: \n547: ## License\n548: \n549: Apache-2.0. See [LICENSE](LICENSE).\n\n(End of file - total 549 lines)\n</content>",
+            "title": "README.md",
+            "metadata": {
+              "preview": "# Axe\n\n![axe banner](banner.png)\n\nA CLI tool for managing and running LLM-powered agents.\n\n## Why Axe?\n\nMost AI tooling assumes you want a chatbot. A long-running session with a massive context window doing everything at once. But that's not how good software works. Good software is small, focused, and composable.\n\nAxe treats LLM agents the same way Unix treats programs. Each agent does one thing well. You define it in a TOML file, give it a focused skill, and run it from the command line. Pipe data in, get results out. Chain agents together. Trigger them from cron, git hooks, or CI. Whatever you already use. No daemon, no GUI, no framework to buy into. Just a binary and your configs.\n\n## Overview\n\nAxe orchestrates LLM-powered agents defined via TOML configuration files. Each agent has its own system prompt, model selection, skill files, context files, working directory, persistent memory, and the ability to delegate to sub-agents.\n\nAxe is the executor, not the scheduler. It is designed to be composed with standard Unix tools — cron, git hooks, pipes, file watchers — rather than reinventing scheduling or workflow orchestration.\n\n## Features\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774030864735,
+              "end": 1774030864741
+            }
+          },
+          "id": "prt_d0c7ac15f0016ZvZ80rbsac098",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7aa916001uGaZbOz2wSyKfZ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "cost": 0.036517,
+          "tokens": {
+            "total": 17560,
+            "input": 1,
+            "output": 165,
+            "reasoning": 0,
+            "cache": {
+              "read": 13274,
+              "write": 4120
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7aa916001uGaZbOz2wSyKfZ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030864831,
+          "completed": 1774030869834
+        },
+        "parentID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.06974575,
+        "tokens": {
+          "total": 26658,
+          "input": 1,
+          "output": 168,
+          "reasoning": 0,
+          "cache": {
+            "read": 17394,
+            "write": 9095
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c7ac1bf00170Qa9LtW4TcYmd",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "id": "prt_d0c7acbf2001HUBkYI8YoDwK20",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ac1bf00170Qa9LtW4TcYmd"
+        },
+        {
+          "type": "text",
+          "text": "Now let me verify there are no remaining \"1.4.0\" references in the version files and run a quick sanity check:",
+          "time": {
+            "start": 1774030868539,
+            "end": 1774030868539
+          },
+          "id": "prt_d0c7acbf3001dlXoMFMmqP97dJ",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ac1bf00170Qa9LtW4TcYmd"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Q5Sq2HHW1XTE1Uc7n6STwt",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "1\\.4\\.0",
+              "include": "*.go"
+            },
+            "output": "No files found",
+            "title": "1\\.4\\.0",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030868786,
+              "end": 1774030868817
+            }
+          },
+          "id": "prt_d0c7ad03d001dyC4RRcTz96uTs",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ac1bf00170Qa9LtW4TcYmd"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD -- README.md | head -5",
+              "description": "Verify README diff is staged"
+            },
+            "output": "diff --git a/README.md b/README.md\nindex 7268b6d..b5f6ac4 100644\n--- a/README.md\n+++ b/README.md\n@@ -25,9 +25,12 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand\n",
+            "title": "Verify README diff is staged",
+            "metadata": {
+              "output": "diff --git a/README.md b/README.md\nindex 7268b6d..b5f6ac4 100644\n--- a/README.md\n+++ b/README.md\n@@ -25,9 +25,12 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand\n",
+              "exit": 0,
+              "description": "Verify README diff is staged",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030869634,
+              "end": 1774030869686
+            }
+          },
+          "id": "prt_d0c7ad135001C1XlVI4Xkg3cn6",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ac1bf00170Qa9LtW4TcYmd"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "cost": 0.06974575,
+          "tokens": {
+            "total": 26658,
+            "input": 1,
+            "output": 168,
+            "reasoning": 0,
+            "cache": {
+              "read": 17394,
+              "write": 9095
+            }
+          },
+          "id": "prt_d0c7ad4b7001ZE3tmgf1dGK4ZJ",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ac1bf00170Qa9LtW4TcYmd"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030869835,
+          "completed": 1774030892908
+        },
+        "parentID": "msg_d0c7a8543001ZNhWNL6ZMmLvoz",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03866825,
+        "tokens": {
+          "total": 27740,
+          "input": 1,
+          "output": 939,
+          "reasoning": 0,
+          "cache": {
+            "read": 26489,
+            "write": 311
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c7ad54b001Fe11i7RveXeRAe",
+        "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "id": "prt_d0c7ae070001sNBr3rft7SRJRx",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ad54b001Fe11i7RveXeRAe"
+        },
+        {
+          "type": "text",
+          "text": "All checks complete. Here's the full review:\n\n---\n\n## Review Results: v1.5.0 Release Changes\n\n### 1. Version Bumps — PASS\n\n| File | Old | New | Status |\n|---|---|---|---|\n| `cmd/root.go:12` | `1.4.0` | `1.5.0` | Correct |\n| `internal/mcpclient/mcpclient.go:43` | `1.4.0` | `1.5.0` | Correct |\n| `cmd/version_test.go:19,24-25` | `1.4.0` | `1.5.0` | Correct (both `TestVersionCommand_Output` and `TestVersionConstant`) |\n\nNo remaining `1.4.0` references found in any `.go` file.\n\n### 2. CHANGELOG.md — PASS\n\n- **Section header**: `## [1.5.0] - 2026-03-20` — correct format and date.\n- **Keep a Changelog structure**: `### Added` (3 items) and `### Changed` (2 items) — valid categories, properly formatted.\n- **Reference link**: `[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0` at line 84 — correct base tag (`v1.4.0`) and target (`v1.5.0`).\n- **Ordering**: New section appears at the top (before `[1.4.0]`), link appears first in the link list. Correct.\n\n### 3. README.md — PASS (all checks)\n\n**Features list:**\n- \"Local agent directories\" — present at line 28\n- \"Output allowlist\" — present at line 32\n- \"Token budgets\" — present at line 33\n- Inserted in a logical position (between existing features, before MCP)\n\n**Run Flags table:**\n- `--max-tokens <int>` row at line 271 — correct default (`0 (unlimited)`) and description\n- `--agents-dir <path>` row at line 275 — correct default (`(auto-discover)`) and description\n\n**Exit Codes table:**\n- Present at lines 277–285 with codes 0–4, all correctly described\n- Table has proper header separator (`|---|---|`)\n\n**Agent Configuration example TOML:**\n- `allowed_hosts` at line 301 — present with example values\n- `[budget]` section at lines 323–324 — present with `max_tokens = 50000`\n\n**Output Allowlist section:**\n- Present at lines 358–372\n- Behavior table has 5 rows (empty/absent, non-empty, private IPs, redirects, sub-agents) — all with header separator\n\n**Token Budget section:**\n- Present at lines 374–393\n- Includes TOML example, flag example (`--max-tokens 10000`), precedence rule, exit code 4 behavior, and `--verbose`/`--json` field documentation\n\n**Local Agent Directories section:**\n- Present at lines 493–528\n- Auto-Discovery subsection with directory tree example (lines 497–506)\n- Explicit Override subsection with `--agents-dir` example (lines 508–516)\n- Resolution Order subsection with numbered 1-2-3 list (lines 518–524)\n- Smart Scaffolding subsection (lines 526–528)\n\n**Content integrity:**\n- No existing content removed — the diff is strictly additive (+110 lines, -3 lines for version strings only)\n- All markdown tables have proper pipe formatting and header separators (`|---|`)\n- No unclosed code blocks — all fenced blocks open and close correctly\n- The Providers section, License section, and all pre-existing content remain intact\n\n### Summary\n\n**No issues found.** All five files are consistent, properly formatted, and ready to commit as the v1.5.0 release prep.",
+          "time": {
+            "start": 1774030892673,
+            "end": 1774030892673
+          },
+          "id": "prt_d0c7ae070002p03CT0P4yC9qko",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ad54b001Fe11i7RveXeRAe"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "3a7bd9557c09375aa1ec7ff555b300b23049a327",
+          "cost": 0.03866825,
+          "tokens": {
+            "total": 27740,
+            "input": 1,
+            "output": 939,
+            "reasoning": 0,
+            "cache": {
+              "read": 26489,
+              "write": 311
+            }
+          },
+          "id": "prt_d0c7b2eb7001SmQYeK8TgGgDLY",
+          "sessionID": "ses_2f3857abfffeF2hmH8pUe3OKSM",
+          "messageID": "msg_d0c7ad54b001Fe11i7RveXeRAe"
+        }
+      ]
+    }
+  ]
+}
