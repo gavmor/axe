@@ -1,0 +1,35 @@
+Review the current uncommitted changes in /Users/jaronswab/go/src/github.com/jrswab/axe.
+
+The changes should be:
+
+1. **`internal/tool/tool.go`**: 
+   - New exported function `EffectiveAllowedHosts(subAgent, parent []string) []string` extracted from inline logic
+   - The inline logic in `ExecuteCallAgent` replaced with a call to `EffectiveAllowedHosts`
+
+2. **`internal/tool/tool_test.go`**: 
+   - `TestEffectiveAllowedHosts` rewritten to call `EffectiveAllowedHosts()` instead of duplicating logic
+   - `wantLen`/`wantNil` fields replaced with `wantHosts []string` and `reflect.DeepEqual`
+   - Added 5th test case for multi-host scenario
+   - `"reflect"` added to imports
+
+3. **`internal/tool/url_fetch.go`**: 
+   - Three mutable package-level vars (`urlFetchTimeout`, `urlFetchResolver`, `urlFetchCheckHost`) removed
+   - New `urlFetcher` struct with `resolver`, `checkHost`, `timeout` fields
+   - `newURLFetcher()` constructor with production defaults
+   - `urlFetchExecute` converted to `(f *urlFetcher) execute` method
+   - `urlFetchEntry()` now constructs a `urlFetcher` and returns its method as the executor
+
+4. **`internal/tool/url_fetch_test.go`**: 
+   - `skipHostCheck()` helper removed
+   - `newTestURLFetcher()` helper added (creates urlFetcher with no-op host check)
+   - All tests updated to construct per-test `urlFetcher` instances instead of mutating package globals
+   - Tests that need real host checking use `newURLFetcher()`
+   - Tests that need custom behavior construct `&urlFetcher{...}` directly
+
+Please run `git diff` to see the actual changes and verify:
+1. No production behavior changed (same defaults, same logic)
+2. No test coverage was lost
+3. No package-level mutable state remains in url_fetch.go
+4. The `EffectiveAllowedHosts` function correctly replaces the inline logic
+5. No unused imports or dead code
+6. No security regressions (host checking still happens at all the same points)
