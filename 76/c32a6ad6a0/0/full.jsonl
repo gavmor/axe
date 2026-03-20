@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774029669745,
-      "updated": 1774029671730
+      "updated": 1774029683469
     }
   },
   "messages": [
@@ -158,7 +158,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774029671697
+          "created": 1774029671697,
+          "completed": 1774029680235
         },
         "parentID": "msg_d0c688578001QEp7Bqs2jVCYOF",
         "modelID": "claude-sonnet-4-6",
@@ -169,16 +170,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.00769815,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 13492,
+          "input": 1,
+          "output": 216,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 13138,
+            "write": 137
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d0c688d11001z7YAFoebOrrQFK",
         "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO"
       },
@@ -206,18 +209,204 @@
           "callID": "toolu_017U91pRsgBZ8gtUs8n8kyra",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add internal/tool/url_fetch_test.go && git commit -m \"refactor: consolidate allowlist/IP tests into table-driven test\n\nCombine 6 separate TestURLFetch_Allowlist*/BlocksPrivateIP/\nBlocksLoopbackIP/RedirectToDisallowed tests into a single\ntable-driven TestURLFetch_AllowlistAndIPChecks with per-case\nsetup functions. Same coverage, less repetition.\"",
               "description": "Stage and commit the test refactor"
             },
+            "output": "[ISS-24/allow-list-connections 02d0bea] refactor: consolidate allowlist/IP tests into table-driven test\n 1 file changed, 161 insertions(+), 145 deletions(-)\n",
+            "title": "Stage and commit the test refactor",
+            "metadata": {
+              "output": "[ISS-24/allow-list-connections 02d0bea] refactor: consolidate allowlist/IP tests into table-driven test\n 1 file changed, 161 insertions(+), 145 deletions(-)\n",
+              "exit": 0,
+              "description": "Stage and commit the test refactor",
+              "truncated": false
+            },
             "time": {
-              "start": 1774029674842
+              "start": 1774029674842,
+              "end": 1774029680126
             }
           },
           "id": "prt_d0c689499001pJK7Oea64Jzwvq",
           "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
           "messageID": "msg_d0c688d11001z7YAFoebOrrQFK"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d368a0c8711c9851f34460bb933b230304e164ca",
+          "cost": 0.00769815,
+          "tokens": {
+            "total": 13492,
+            "input": 1,
+            "output": 216,
+            "reasoning": 0,
+            "cache": {
+              "read": 13138,
+              "write": 137
+            }
+          },
+          "id": "prt_d0c68adfe001foBrIe5bFHycK3",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "msg_d0c688d11001z7YAFoebOrrQFK"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774029680236,
+          "completed": 1774029683439
+        },
+        "parentID": "msg_d0c688578001QEp7Bqs2jVCYOF",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00614175,
+        "tokens": {
+          "total": 13632,
+          "input": 1,
+          "output": 73,
+          "reasoning": 0,
+          "cache": {
+            "read": 13275,
+            "write": 283
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c68ae6c001KQ00uDqLEzL4Un",
+        "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d368a0c8711c9851f34460bb933b230304e164ca",
+          "id": "prt_d0c68b3fa001QqEtDPlpmfpmET",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "msg_d0c68ae6c001KQ00uDqLEzL4Un"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Sy21kgrHRkfYgHfHsAzy4L",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push",
+              "description": "Push to current branch remote"
+            },
+            "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   a336cbf..02d0bea  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+            "title": "Push to current branch remote",
+            "metadata": {
+              "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   a336cbf..02d0bea  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+              "exit": 0,
+              "description": "Push to current branch remote",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774029681659,
+              "end": 1774029683271
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "msg_d0c68ae6c001KQ00uDqLEzL4Un"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d368a0c8711c9851f34460bb933b230304e164ca",
+          "cost": 0.00614175,
+          "tokens": {
+            "total": 13632,
+            "input": 1,
+            "output": 73,
+            "reasoning": 0,
+            "cache": {
+              "read": 13275,
+              "write": 283
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "msg_d0c68ae6c001KQ00uDqLEzL4Un"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774029683440,
+          "completed": 1774029685762
+        },
+        "parentID": "msg_d0c688578001QEp7Bqs2jVCYOF",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0056754,
+        "tokens": {
+          "total": 13774,
+          "input": 1,
+          "output": 71,
+          "reasoning": 0,
+          "cache": {
+            "read": 13558,
+            "write": 144
+          }
+        },
+        "finish": "stop",
+        "id": "REDACTED",
+        "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "d368a0c8711c9851f34460bb933b230304e164ca",
+          "id": "REDACTED",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Done.\n\n- **Commit hash:** `02d0bea`\n- **Branch:** `ISS-24/allow-list-connections`\n- **Push result:** `a336cbf..02d0bea` pushed successfully to `origin/ISS-24/allow-list-connections`",
+          "time": {
+            "start": 1774029685544,
+            "end": 1774029685544
+          },
+          "id": "prt_d0c68bfc3001paSryzwLZqgysn",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "d368a0c8711c9851f34460bb933b230304e164ca",
+          "cost": 0.0056754,
+          "tokens": {
+            "total": 13774,
+            "input": 1,
+            "output": 71,
+            "reasoning": 0,
+            "cache": {
+              "read": 13558,
+              "write": 144
+            }
+          },
+          "id": "prt_d0c68c343001J7QcAXNSRUav0A",
+          "sessionID": "ses_2f3977a8effeN04sq9t8OKtWzO",
+          "messageID": "REDACTED"
         }
       ]
     }
