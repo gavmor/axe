@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run `make check-diff` and return the full output. If there's no `check-diff` target, run `cat Makefile` to see available targets, then run the closest equivalent.
+
