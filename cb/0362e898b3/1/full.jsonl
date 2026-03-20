@@ -1,0 +1,1240 @@
+{
+  "info": {
+    "id": "ses_2f37342b4ffeipC3vymotfYF6A",
+    "slug": "swift-cabin",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f38cdd00ffexBON02raOmPosW",
+    "title": "Fix nested code blocks (@general subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 2,
+      "deletions": 2,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774032043339,
+      "updated": 1774032061650
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774032043347
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "docs/skills/release/SKILL.md",
+              "before": "---\nname: release\ndescription: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n- README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n- DO NOT push to master until the user confirms.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Bump version strings**\n   - Update all three version locations listed in the Reference section.\n   - Run `go test ./cmd/ -run TestVersion -count=1` to verify the bump is consistent.\n\n5. **Update README.md**\n   - Explore new feature implementations (via subagents if available) to understand config fields, flags, defaults, and behavior before writing documentation.\n   - For each user-facing change, update the relevant README sections: Features list, Run Flags table, Agent Configuration example TOML, and add new sections as needed.\n   - Add or update the Exit Codes table if new exit codes were introduced.\n   - Do NOT guess at config fields or flag names — read the actual implementation first.\n\n6. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n\n7. **Commit and push prep changes**\n   - Stage all modified files and commit with message: `Update changelog and version for vX.Y.Z`\n   - Push to master only after the user confirms.\n\n8. **Verify**\n   - Run `go build .` to confirm the binary compiles.\n   - Run `go test ./cmd/ -run TestVersion -count=1` at minimum.\n   - Confirm tests pass before proceeding to tag creation.\n\n9. **Ask user to confirm tag creation**\n   - Show the tag name, annotation message, and commit hash.\n   - Wait for explicit confirmation before creating the tag.\n\n10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.\n    - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n### Project Files\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries and Docker image; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n\n### Version Strings (all three must match)\n- `cmd/root.go` — `const Version` (source of truth)\n- `internal/mcpclient/mcpclient.go` — hardcoded `Version:` in `mcp.NewClient` call\n- `cmd/version_test.go` — test assertions for the version string\n\n### GHCR Image\n- Package page: https://github.com/jrswab/axe/pkgs/container/axe\n- Pull command: `docker pull ghcr.io/jrswab/axe:<version>`\n- Tags generated per release: `X.Y.Z`, `X.Y`, `X`, `latest` (on default branch)\n",
+              "after": "---\nname: release\ndescription: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n- README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n- DO NOT push to master until the user confirms.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Bump version strings**\n   - Update all three version locations listed in the Reference section.\n   - Run `go test ./cmd/ -run TestVersion -count=1` to verify the bump is consistent.\n\n5. **Update README.md**\n   - Explore new feature implementations (via subagents if available) to understand config fields, flags, defaults, and behavior before writing documentation.\n   - For each user-facing change, update the relevant README sections: Features list, Run Flags table, Agent Configuration example TOML, and add new sections as needed.\n   - Add or update the Exit Codes table if new exit codes were introduced.\n   - Do NOT guess at config fields or flag names — read the actual implementation first.\n\n6. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n\n7. **Commit and push prep changes**\n   - Stage all modified files and commit with message: `Update changelog and version for vX.Y.Z`\n   - Push to master only after the user confirms.\n\n8. **Verify**\n   - Run `go build .` to confirm the binary compiles.\n   - Run `go test ./cmd/ -run TestVersion -count=1` at minimum.\n   - Confirm tests pass before proceeding to tag creation.\n\n9. **Ask user to confirm tag creation**\n   - Show the tag name, annotation message, and commit hash.\n   - Wait for explicit confirmation before creating the tag.\n\n10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.\n    - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n### Project Files\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries and Docker image; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n\n### Version Strings (all three must match)\n- `cmd/root.go` — `const Version` (source of truth)\n- `internal/mcpclient/mcpclient.go` — hardcoded `Version:` in `mcp.NewClient` call\n- `cmd/version_test.go` — test assertions for the version string\n\n### GHCR Image\n- Package page: https://github.com/jrswab/axe/pkgs/container/axe\n- Pull command: `docker pull ghcr.io/jrswab/axe:<version>`\n- Tags generated per release: `X.Y.Z`, `X.Y`, `X`, `latest` (on default branch)\n",
+              "additions": 2,
+              "deletions": 2,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "In the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe, fix the nested fenced code block issue in `.opencode/skills/release/SKILL.md`.\n\nThe problem is in step 12 where there's a template showing what the release notes should look like. The outer code fence and inner code fence both use triple backticks, which breaks CommonMark parsing.\n\nFind the section that looks like this (around lines 77-85):\n```\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```\n```\n\nReplace the OUTER fences (the first and last triple backticks of that block) with four backticks (``````) so the nesting is valid CommonMark:\n\n```\n      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````\n```\n\nAfter fixing:\n1. Apply the exact same fix to `docs/skills/release/SKILL.md`\n2. Run `diff .opencode/skills/release/SKILL.md docs/skills/release/SKILL.md` to confirm they still match\n3. Read back lines 74-90 of the file to verify the fix\n\nReturn the diff output and the relevant lines.",
+          "id": "prt_d0c8cbd53001ZWe5ecoe6rRKQB",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd51001T8pY5s0MTyAg9q"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032043356,
+          "completed": 1774032048148
+        },
+        "parentID": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01012365,
+        "tokens": {
+          "total": 13621,
+          "input": 3,
+          "output": 240,
+          "reasoning": 0,
+          "cache": {
+            "read": 12653,
+            "write": 725
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8cbd5c001QL4aDxW3nRMFxx",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "prt_d0c8cc80d001ucrHZwGMkwiz1C",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd5c001QL4aDxW3nRMFxx"
+        },
+        {
+          "type": "text",
+          "text": "I'll read both files first to understand the current state, then make the fixes.",
+          "time": {
+            "start": 1774032046703,
+            "end": 1774032046703
+          },
+          "id": "prt_d0c8cc80d002xtEIMzgPJ7aMxL",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd5c001QL4aDxW3nRMFxx"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md",
+              "offset": 70,
+              "limit": 25
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md</path>\n<type>file</type>\n<content>70: 10. **Create the annotated tag** on the prep commit.\n71: \n72: 11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n73: \n74: 12. **Set release notes via `gh`**\n75:     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n76:     - Append a Docker section to the extracted notes:\n77:       ```\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n85:       ```\n86:     - Write the combined content (changelog section + Docker section) to a temporary file.\n87:     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n88:     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n89:     - Clean up the temporary file.\n90:     - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n91: \n92: ## Reference\n93: \n94: ### Project Files\n\n(Showing lines 70-94 of 107. Use offset=95 to continue.)\n</content>",
+            "title": ".opencode/skills/release/SKILL.md",
+            "metadata": {
+              "preview": "10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774032047543,
+              "end": 1774032047549
+            }
+          },
+          "id": "prt_d0c8cca7a001k3AOUmH9Wa4a7n",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd5c001QL4aDxW3nRMFxx"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md",
+              "offset": 70,
+              "limit": 25
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md</path>\n<type>file</type>\n<content>70: 10. **Create the annotated tag** on the prep commit.\n71: \n72: 11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n73: \n74: 12. **Set release notes via `gh`**\n75:     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n76:     - Append a Docker section to the extracted notes:\n77:       ```\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n85:       ```\n86:     - Write the combined content (changelog section + Docker section) to a temporary file.\n87:     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n88:     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n89:     - Clean up the temporary file.\n90:     - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n91: \n92: ## Reference\n93: \n94: ### Project Files\n\n(Showing lines 70-94 of 107. Use offset=95 to continue.)\n</content>",
+            "title": "docs/skills/release/SKILL.md",
+            "metadata": {
+              "preview": "10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774032047908,
+              "end": 1774032047915
+            }
+          },
+          "id": "prt_d0c8ccdc7001dcg3ETfOx5avGj",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd5c001QL4aDxW3nRMFxx"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "cost": 0.01012365,
+          "tokens": {
+            "total": 13621,
+            "input": 3,
+            "output": 240,
+            "reasoning": 0,
+            "cache": {
+              "read": 12653,
+              "write": 725
+            }
+          },
+          "id": "prt_d0c8ccf72001J3gtdnow2iZlby",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cbd5c001QL4aDxW3nRMFxx"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032048149,
+          "completed": 1774032054185
+        },
+        "parentID": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0170589,
+        "tokens": {
+          "total": 15186,
+          "input": 1,
+          "output": 557,
+          "reasoning": 0,
+          "cache": {
+            "read": 13378,
+            "write": 1250
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8cd015001vghrBOlZrW5bXt",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "REDACTED",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        },
+        {
+          "type": "text",
+          "text": "Both files match and show the issue. Now I'll apply the fix to both simultaneously:",
+          "time": {
+            "start": 1774032050562,
+            "end": 1774032050562
+          },
+          "id": "prt_d0c8cd647002ijJ460ovHAnNcY",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_016BoZ4S7iYSUwuULUdQq32e",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md",
+              "oldString": "      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```",
+              "newString": "      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````"
+            },
+            "output": "Edit applied successfully.",
+            "title": ".opencode/skills/release/SKILL.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/main.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/budget/budget.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 66,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 66,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 111,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 362,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 362,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 474,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 474,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/agents.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 720,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 720,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/router.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 284,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 284,
+                        "character": 24
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 688,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 688,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 717,
+                        "character": 46
+                      },
+                      "end": {
+                        "line": 717,
+                        "character": 57
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 769,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 769,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 796,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 796,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 839,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 839,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 890,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 890,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 943,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 943,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 956,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 956,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 963,
+                        "character": 37
+                      },
+                      "end": {
+                        "line": 963,
+                        "character": 48
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 970,
+                        "character": 44
+                      },
+                      "end": {
+                        "line": 970,
+                        "character": 55
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1658,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1658,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1672,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 1672,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1681,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 1681,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1808,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1808,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1813,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1813,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1814,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1814,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1855,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1855,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1860,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1860,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1861,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1861,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1934,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1934,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1982,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1982,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/resolve/resolve.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 165,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 165,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 288,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 288,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/config.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/release.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.goreleaser.yml": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md\n@@ -73,17 +73,17 @@\n \n 12. **Set release notes via `gh`**\n     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n     - Append a Docker section to the extracted notes:\n-      ```\n+      ````\n       ## Docker\n \n       ```bash\n       docker pull ghcr.io/jrswab/axe:X.Y.Z\n       ```\n \n       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n-      ```\n+      ````\n     - Write the combined content (changelog section + Docker section) to a temporary file.\n     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n     - Clean up the temporary file.\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md",
+                "before": "---\nname: release\ndescription: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n- README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n- DO NOT push to master until the user confirms.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Bump version strings**\n   - Update all three version locations listed in the Reference section.\n   - Run `go test ./cmd/ -run TestVersion -count=1` to verify the bump is consistent.\n\n5. **Update README.md**\n   - Explore new feature implementations (via subagents if available) to understand config fields, flags, defaults, and behavior before writing documentation.\n   - For each user-facing change, update the relevant README sections: Features list, Run Flags table, Agent Configuration example TOML, and add new sections as needed.\n   - Add or update the Exit Codes table if new exit codes were introduced.\n   - Do NOT guess at config fields or flag names — read the actual implementation first.\n\n6. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n\n7. **Commit and push prep changes**\n   - Stage all modified files and commit with message: `Update changelog and version for vX.Y.Z`\n   - Push to master only after the user confirms.\n\n8. **Verify**\n   - Run `go build .` to confirm the binary compiles.\n   - Run `go test ./cmd/ -run TestVersion -count=1` at minimum.\n   - Confirm tests pass before proceeding to tag creation.\n\n9. **Ask user to confirm tag creation**\n   - Show the tag name, annotation message, and commit hash.\n   - Wait for explicit confirmation before creating the tag.\n\n10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.\n    - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n### Project Files\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries and Docker image; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n\n### Version Strings (all three must match)\n- `cmd/root.go` — `const Version` (source of truth)\n- `internal/mcpclient/mcpclient.go` — hardcoded `Version:` in `mcp.NewClient` call\n- `cmd/version_test.go` — test assertions for the version string\n\n### GHCR Image\n- Package page: https://github.com/jrswab/axe/pkgs/container/axe\n- Pull command: `docker pull ghcr.io/jrswab/axe:<version>`\n- Tags generated per release: `X.Y.Z`, `X.Y`, `X`, `latest` (on default branch)\n",
+                "after": "---\nname: release\ndescription: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n- README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n- DO NOT push to master until the user confirms.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Bump version strings**\n   - Update all three version locations listed in the Reference section.\n   - Run `go test ./cmd/ -run TestVersion -count=1` to verify the bump is consistent.\n\n5. **Update README.md**\n   - Explore new feature implementations (via subagents if available) to understand config fields, flags, defaults, and behavior before writing documentation.\n   - For each user-facing change, update the relevant README sections: Features list, Run Flags table, Agent Configuration example TOML, and add new sections as needed.\n   - Add or update the Exit Codes table if new exit codes were introduced.\n   - Do NOT guess at config fields or flag names — read the actual implementation first.\n\n6. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n\n7. **Commit and push prep changes**\n   - Stage all modified files and commit with message: `Update changelog and version for vX.Y.Z`\n   - Push to master only after the user confirms.\n\n8. **Verify**\n   - Run `go build .` to confirm the binary compiles.\n   - Run `go test ./cmd/ -run TestVersion -count=1` at minimum.\n   - Confirm tests pass before proceeding to tag creation.\n\n9. **Ask user to confirm tag creation**\n   - Show the tag name, annotation message, and commit hash.\n   - Wait for explicit confirmation before creating the tag.\n\n10. **Create the annotated tag** on the prep commit.\n\n11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.\n    - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n### Project Files\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries and Docker image; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n\n### Version Strings (all three must match)\n- `cmd/root.go` — `const Version` (source of truth)\n- `internal/mcpclient/mcpclient.go` — hardcoded `Version:` in `mcp.NewClient` call\n- `cmd/version_test.go` — test assertions for the version string\n\n### GHCR Image\n- Package page: https://github.com/jrswab/axe/pkgs/container/axe\n- Pull command: `docker pull ghcr.io/jrswab/axe:<version>`\n- Tags generated per release: `X.Y.Z`, `X.Y`, `X`, `latest` (on default branch)\n",
+                "additions": 2,
+                "deletions": 2
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1774032052308,
+              "end": 1774032052360
+            }
+          },
+          "id": "prt_d0c8cd984001vrb1HGwAPG2h20",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01PWZvQa4DAtuAPm6oVdvFL5",
+          "tool": "edit",
+          "state": {
+            "status": "error",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md",
+              "oldString": "      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ```",
+              "newString": "      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````"
+            },
+            "error": "Error: File /Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md has been modified since it was last read.\nLast modification: 2026-03-20T18:40:52.314Z\nLast read: 2026-03-20T18:40:47.914Z\n\nPlease read the file again before modifying it.",
+            "time": {
+              "start": 1774032053976,
+              "end": 1774032053979
+            }
+          },
+          "id": "prt_d0c8ce0560014lUDxifiH13zaZ",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "cost": 0.0170589,
+          "tokens": {
+            "total": 15186,
+            "input": 1,
+            "output": 557,
+            "reasoning": 0,
+            "cache": {
+              "read": 13378,
+              "write": 1250
+            }
+          },
+          "id": "prt_d0c8ce6e9001EGdOgSjdk0ZipR",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        },
+        {
+          "type": "patch",
+          "hash": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md"
+          ],
+          "id": "prt_d0c8ce7a7001yJgmqgCM7uHsdy",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cd015001vghrBOlZrW5bXt"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032054186,
+          "completed": 1774032056716
+        },
+        "parentID": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00885765,
+        "tokens": {
+          "total": 15463,
+          "input": 1,
+          "output": 119,
+          "reasoning": 0,
+          "cache": {
+            "read": 14628,
+            "write": 715
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8ce7aa001cRF3N6aiLDOw89",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "id": "prt_d0c8cf034001N1rOxcrfMa4Qhn",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8ce7aa001cRF3N6aiLDOw89"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md",
+              "offset": 74,
+              "limit": 15
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/docs/skills/release/SKILL.md</path>\n<type>file</type>\n<content>74: 12. **Set release notes via `gh`**\n75:     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n76:     - Append a Docker section to the extracted notes:\n77:       ````\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n85:       ````\n86:     - Write the combined content (changelog section + Docker section) to a temporary file.\n87:     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n88:     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n\n(Showing lines 74-88 of 107. Use offset=89 to continue.)\n</content>",
+            "title": "docs/skills/release/SKILL.md",
+            "metadata": {
+              "preview": "12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774032056535,
+              "end": 1774032056541
+            }
+          },
+          "id": "prt_d0c8cf035001pup8LaS8V9lot7",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8ce7aa001cRF3N6aiLDOw89"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "cost": 0.00885765,
+          "tokens": {
+            "total": 15463,
+            "input": 1,
+            "output": 119,
+            "reasoning": 0,
+            "cache": {
+              "read": 14628,
+              "write": 715
+            }
+          },
+          "id": "prt_d0c8cf0f2001VT0nymj0Gfx8Zi",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8ce7aa001cRF3N6aiLDOw89"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032056717,
+          "completed": 1774032061590
+        },
+        "parentID": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01266015,
+        "tokens": {
+          "total": 16078,
+          "input": 1,
+          "output": 252,
+          "reasoning": 0,
+          "cache": {
+            "read": 14628,
+            "write": 1197
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8cf18d001BKCOGPMMGjqgEH",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "id": "prt_d0c8cf9230012Riklx19joxry4",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cf18d001BKCOGPMMGjqgEH"
+        },
+        {
+          "type": "text",
+          "text": "The `docs/` copy was already updated (likely by the tool's concurrent edit or a pre-existing sync). Both files are now correct. Let me run the diff and read back the `.opencode` file to confirm:",
+          "time": {
+            "start": 1774032059819,
+            "end": 1774032059819
+          },
+          "id": "prt_d0c8cf92400148LgQB3dVyPhk5",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cf18d001BKCOGPMMGjqgEH"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01EFj1juaFvuRFTpgTvef3i5",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "diff .opencode/skills/release/SKILL.md docs/skills/release/SKILL.md",
+              "description": "Diff both SKILL.md files to confirm they match"
+            },
+            "output": "",
+            "title": "Diff both SKILL.md files to confirm they match",
+            "metadata": {
+              "output": "",
+              "exit": 0,
+              "description": "Diff both SKILL.md files to confirm they match",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774032060871,
+              "end": 1774032060910
+            }
+          },
+          "id": "prt_d0c8cfdad001YQhc0K0f0Bb4so",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cf18d001BKCOGPMMGjqgEH"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_019DSPXJpVpvvxR3Qna9pW9J",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md",
+              "offset": 74,
+              "limit": 17
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md</path>\n<type>file</type>\n<content>74: 12. **Set release notes via `gh`**\n75:     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n76:     - Append a Docker section to the extracted notes:\n77:       ````\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n85:       ````\n86:     - Write the combined content (changelog section + Docker section) to a temporary file.\n87:     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n88:     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n89:     - Clean up the temporary file.\n90:     - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n(Showing lines 74-90 of 107. Use offset=91 to continue.)\n</content>",
+            "title": ".opencode/skills/release/SKILL.md",
+            "metadata": {
+              "preview": "12. **Set release notes via `gh`**\n    - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n    - Append a Docker section to the extracted notes:\n      ````\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n      ````\n    - Write the combined content (changelog section + Docker section) to a temporary file.\n    - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n    - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n    - Clean up the temporary file.\n    - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774032061387,
+              "end": 1774032061394
+            }
+          },
+          "id": "prt_d0c8d01d0001mMVh8bC82nYXfl",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cf18d001BKCOGPMMGjqgEH"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "cost": 0.01266015,
+          "tokens": {
+            "total": 16078,
+            "input": 1,
+            "output": 252,
+            "reasoning": 0,
+            "cache": {
+              "read": 14628,
+              "write": 1197
+            }
+          },
+          "id": "prt_d0c8d03e6001hv6hwFRJEMGQLL",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8cf18d001BKCOGPMMGjqgEH"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032061591,
+          "completed": 1774032069295
+        },
+        "parentID": "msg_d0c8cbd51001T8pY5s0MTyAg9q",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.010023,
+        "tokens": {
+          "total": 16707,
+          "input": 1,
+          "output": 175,
+          "reasoning": 0,
+          "cache": {
+            "read": 15825,
+            "write": 706
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c8d0497001m4mPFrrxtcwG47",
+        "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "id": "prt_d0c8d179a001Kpc1whnOYZ5F4W",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8d0497001m4mPFrrxtcwG47"
+        },
+        {
+          "type": "text",
+          "text": "**Diff output:** empty (no differences — files are identical).\n\n**Lines 74–90 of `.opencode/skills/release/SKILL.md`:**\n\n```\n77:       ````\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](...) for all available tags.\n85:       ````\n```\n\nThe outer fences on lines 77 and 85 are now four backticks (``````) while the inner bash fence remains triple backticks. Both files are identical and the CommonMark nesting is valid.",
+          "time": {
+            "start": 1774032069054,
+            "end": 1774032069054
+          },
+          "id": "prt_d0c8d179a002ppm8k4Yvn7Yi6f",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8d0497001m4mPFrrxtcwG47"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "a8b24f18d219f2429a95765d03628c9972fd9bca",
+          "cost": 0.010023,
+          "tokens": {
+            "total": 16707,
+            "input": 1,
+            "output": 175,
+            "reasoning": 0,
+            "cache": {
+              "read": 15825,
+              "write": 706
+            }
+          },
+          "id": "prt_d0c8d21fa001HO6j7hEPcpByef",
+          "sessionID": "ses_2f37342b4ffeipC3vymotfYF6A",
+          "messageID": "msg_d0c8d0497001m4mPFrrxtcwG47"
+        }
+      ]
+    }
+  ]
+}
