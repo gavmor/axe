@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "76c32a6ad6a0",
+  "session_id": "ses_2f3977a8effeN04sq9t8OKtWzO",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-20T18:01:16.651568Z",
+  "branch": "ISS-24/allow-list-connections",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "internal/tool/url_fetch_test.go"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "76224a293788",
+  "token_usage": {
+    "input_tokens": 3,
+    "cache_creation_tokens": 485,
+    "cache_read_tokens": 12653,
+    "output_tokens": 75,
+    "api_call_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-20T18:01:16.638205Z",
+    "agent_lines": 158,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 158,
+    "agent_percentage": 100
+  }
+}
