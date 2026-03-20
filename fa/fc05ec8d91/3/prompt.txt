@@ -1,0 +1,72 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Add a test for spec E9 (redirect from allowed host to disallowed host) in `internal/tool/url_fetch_test.go`.
+
+## Context
+- The test file already has a `skipHostCheck(t)` helper that overrides `urlFetchCheckHost` to bypass private IP checks for httptest.NewServer (which uses 127.0.0.1).
+- The test file has a `fakeURLFetchResolver` type.
+- The `urlFetchCheckHost` var can be overridden per-test.
+
+## Test to add
+
+Append this test to `internal/tool/url_fetch_test.go`:
+
+```go
+func TestURLFetch_RedirectToDisallowedHostBlocked(t *testing.T) {
+	// Target server (the redirect destination)
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("should not reach here"))
+	}))
+	defer target.Close()
+
+	targetURL, _ := url.Parse(target.URL)
+
+	// Source server redirects to target
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL+"/secret", http.StatusMovedPermanently)
+	}))
+	defer source.Close()
+
+	sourceURL, _ := url.Parse(source.URL)
+	sourceHost := sourceURL.Hostname()
+	targetHost := targetURL.Hostname()
+
+	// Override urlFetchCheckHost to simulate allowlist behavior:
+	// - source host is allowed (returns loopback IP so test server is reachable)
+	// - target host is blocked (not in allowlist)
+	orig := urlFetchCheckHost
+	urlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {
+		// The allowlist only contains the source host
+		if len(allowlist) > 0 && !hostcheck.IsAllowed(hostname, allowlist) {
+			return nil, fmt.Errorf("host %q is not in allowed_hosts", hostname)
+		}
+		return net.ParseIP("127.0.0.1"), nil
+	}
+	defer func() { urlFetchCheckHost = orig }()
+
+	entry := urlFetchEntry()
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-redirect",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": source.URL + "/start"},
+	}, ExecContext{AllowedHosts: []string{sourceHost}})
+
+	// The redirect to targetHost should be blocked
+	if !result.IsError {
+		t.Errorf("expected error for redirect to disallowed host %s, got success: %s", targetHost, result.Content)
+	}
+	if !strings.Contains(result.Content, "not in allowed_hosts") {
+		t.Errorf("expected 'not in allowed_hosts' in error, got: %s", result.Content)
+	}
+}
+```
+
+Make sure the necessary imports are present: `"context"`, `"fmt"`, `"net"`, `"net/http"`, `"net/http/httptest"`, `"net/url"`, `"strings"`, `"github.com/jrswab/axe/internal/hostcheck"`, `"github.com/jrswab/axe/internal/provider"`.
+
+## Verification
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run TestURLFetch_RedirectToDisallowedHostBlocked -v ./internal/tool/`
+2. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/` to verify no regressions.
+
+Return the test output.
