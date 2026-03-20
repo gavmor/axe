@@ -1,0 +1,70 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Revert the export of `URLFetchTimeout` back to `urlFetchTimeout` (unexported). The integration test should not need to override internal package state. Instead, redesign the test to avoid the timeout issue entirely.
+
+## Changes needed
+
+### 1. Revert `internal/tool/url_fetch.go`
+Change `URLFetchTimeout` back to `urlFetchTimeout` on line 23 and all references in the file (lines 23, 25, 147, 156).
+
+### 2. Revert `internal/tool/url_fetch_test.go`
+Change `URLFetchTimeout` back to `urlFetchTimeout` in the test file (lines 368-370, 402-404).
+
+### 3. Fix `cmd/run_integration_test.go` `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts`
+
+Remove the `tool.URLFetchTimeout` override. Instead, redesign the test:
+
+The test's purpose is to verify that with an empty `allowed_hosts`, the url_fetch tool does NOT produce an "allowlist" error. We don't need to actually make a network connection. Use a URL with a hostname that will fail DNS resolution quickly (not a timeout). The key insight: `example.invalid` is a reserved TLD (RFC 2606) that DNS resolvers return NXDOMAIN for immediately.
+
+Replace the test with:
+```go
+func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {
+	resetRunCmd(t)
+
+	mock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{
+		testutil.AnthropicToolUseResponse("Let me fetch that.", []testutil.MockToolCall{
+			{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "https://test.invalid/data"}},
+		}),
+		testutil.AnthropicResponse("Got a DNS error, as expected."),
+	})
+
+	configDir, _ := testutil.SetupXDGDirs(t)
+	writeAgentConfig(t, configDir, "fetch-open", `name = "fetch-open"
+model = "anthropic/claude-sonnet-4-20250514"
+tools = ["url_fetch"]
+`)
+
+	t.Setenv("ANTHROPIC_API_KEY", "test-key")
+	t.Setenv("AXE_ANTHROPIC_BASE_URL", mock.URL())
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(new(bytes.Buffer))
+	rootCmd.SetArgs([]string{"run", "fetch-open"})
+
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if mock.RequestCount() != 2 {
+		t.Fatalf("expected 2 requests, got %d", mock.RequestCount())
+	}
+
+	body := mock.Requests[1].Body
+	if strings.Contains(body, "not in allowed_hosts") {
+		t.Errorf("empty allowlist should not produce 'not in allowed_hosts' error, got:\n%s", body)
+	}
+}
+```
+
+Remove any `import` of `"github.com/jrswab/axe/internal/tool"` if it was added only for the timeout override.
+
+## Verification
+1. Run `go build ./...`
+2. Run `go test -run "TestIntegration_AllowedHosts" -v ./cmd/`
+3. Run `go test ./internal/tool/`
+4. Run `go test ./cmd/`
+
+Return all output.
