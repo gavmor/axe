@@ -1,0 +1,30 @@
+In the repo at /Users/jaronswab/go/src/github.com/jrswab/axe, commit and push the current changes.
+
+First, run `git status` to see what's changed.
+Then run `git diff --stat` to confirm the files.
+
+Then commit with a clear, concise message. The changes are:
+
+1. `internal/tool/tool.go` — Extracted `EffectiveAllowedHosts()` helper from inline logic in `ExecuteCallAgent`
+2. `internal/tool/tool_test.go` — Rewrote `TestEffectiveAllowedHosts` to call production function with `reflect.DeepEqual` assertions
+3. `internal/tool/url_fetch.go` — Replaced mutable package-level vars with `urlFetcher` struct for dependency injection
+4. `internal/tool/url_fetch_test.go` — Eliminated global state mutation; tests use per-instance `urlFetcher`
+5. `docs/plans/040_output_allowlist_spec.md` — Appended R14/R15 documenting refinements
+
+Use this commit message:
+```
+refactor: inject url_fetch deps, extract EffectiveAllowedHosts helper
+
+- Replace mutable package-level vars (urlFetchTimeout, urlFetchResolver,
+  urlFetchCheckHost) with urlFetcher struct for per-instance dependency
+  injection. Tests construct isolated instances instead of mutating globals.
+- Extract EffectiveAllowedHosts() from inline logic in ExecuteCallAgent
+  so the sub-agent inheritance rule is tested against production code.
+- Strengthen TestEffectiveAllowedHosts with reflect.DeepEqual for
+  nil-aware full slice comparison (replaces length-only checks).
+- Update spec with R14 and R15 documenting these refinements.
+```
+
+After committing, push to the current branch's remote.
+
+Report back the git log for the new commit and the push result.
