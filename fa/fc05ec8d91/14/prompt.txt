@@ -1,0 +1,105 @@
+Write a specification document at `/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md`.
+
+This spec is for GitHub issue #24: "feat: output allowlist for outgoing connections" in the axe project.
+
+---
+
+## Full context you must encode in the spec
+
+### What axe is
+A lightweight CLI for running single-purpose LLM agents. Agents are defined in TOML files. The `url_fetch` built-in tool lets the LLM make outgoing HTTP GET requests to arbitrary URLs. This is the primary attack surface for prompt injection → SSRF.
+
+### Decisions already made (do not re-evaluate)
+1. **Default behavior**: No `allowed_hosts` configured = allow all (backwards-compatible).
+2. **Scope**: Only `url_fetch` is gated. `web_search` (hits a fixed Tavily API, not LLM-controlled), MCP HTTP connections (user-configured in TOML), and LLM provider connections (user-configured) are NOT gated.
+3. **Private IP blocking**: Always block RFC 1918, loopback, and link-local IP ranges from `url_fetch` regardless of allowlist. This is a separate, unconditional safety measure.
+4. **CIDR notation**: Deferred to a future milestone. v1 is hostname/domain matching only.
+5. **Sub-agent propagation**: Each agent uses its own `allowed_hosts` from its own TOML. If a sub-agent does NOT define `allowed_hosts`, the parent's list is inherited as a fallback. If a sub-agent DOES define its own `allowed_hosts`, that list is used (the user explicitly configured that agent's permissions). This applies recursively through the sub-agent tree.
+
+### Decisions ruled out
+- **Union (permissive merge)**: Rejected — would let a sub-agent widen the parent's restrictions.
+- **Parent always overrides**: Rejected — would silently ignore sub-agent TOML config.
+- **Gating web_search**: Rejected — base URL is user/env controlled, not LLM-controlled.
+- **Gating MCP/providers**: Rejected — user-configured at TOML load time, not LLM-controlled.
+
+### Codebase structure relevant to this spec
+
+**Agent config** (`internal/agent/agent.go`):
+- `AgentConfig` struct at line 68 — decoded directly from TOML. Add `AllowedHosts []string` with TOML tag `allowed_hosts`.
+- `Validate()` at line 89 — sequential field checks. No validation needed for `AllowedHosts` (empty = allow-all, any strings are valid).
+
+**Tool execution context** (`internal/tool/registry.go`):
+- `ExecContext` struct at line 13 — `Workdir string`, `Stderr io.Writer`, `Verbose bool`. This is the cross-cutting data passed to every tool executor. Add `AllowedHosts []string` here.
+
+**url_fetch** (`internal/tool/url_fetch.go`):
+- Line 132: `http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)`
+- Line 137: `http.DefaultClient.Do(req)` — uses the global shared client.
+- Lines 121–127: existing scheme-only check (only `http`/`https` allowed). No host filtering.
+- The allowlist check and private IP check must happen BEFORE the HTTP request is made.
+- Private IP check must happen AFTER DNS resolution (to catch DNS rebinding). This means resolving the hostname ourselves, checking resolved IPs, then making the request.
+
+**Top-level run** (`cmd/run.go`):
+- `ExecContext` is built around line 289. Thread `cfg.AllowedHosts` into it.
+
+**Sub-agent delegation** (`internal/tool/tool.go`):
+- `ExecuteOptions` struct at line 28 — the options bag passed parent → sub-agent. Add `AllowedHosts []string` here.
+- `ExecuteCallAgent` at line 75 — after loading the sub-agent's TOML (`cfg` at line 137), compute the effective allowlist:
+  - If `cfg.AllowedHosts` is non-empty (sub-agent defined its own): use `cfg.AllowedHosts`.
+  - If `cfg.AllowedHosts` is empty AND `opts.AllowedHosts` is non-empty (parent has one): use `opts.AllowedHosts`.
+  - If both are empty: allow-all (no restriction).
+- Pass the effective allowlist into the sub-agent's `ExecContext.AllowedHosts`.
+- Pass the effective allowlist into the sub-agent's own `ExecuteOptions.AllowedHosts` (for recursive propagation to sub-sub-agents).
+- `runConversationLoop` at line 347 — also builds an `ExecContext` for sub-agent tool dispatch. Must also receive and use the effective allowlist.
+
+**Private IP ranges to block unconditionally**:
+- `127.0.0.0/8` (IPv4 loopback)
+- `::1/128` (IPv6 loopback)
+- `10.0.0.0/8` (RFC 1918)
+- `172.16.0.0/12` (RFC 1918)
+- `192.168.0.0/16` (RFC 1918)
+- `169.254.0.0/16` (IPv4 link-local / AWS IMDS)
+- `fe80::/10` (IPv6 link-local)
+- `0.0.0.0/8` (this network)
+- `100.64.0.0/10` (CGNAT / shared address space)
+
+**New package**: `internal/hostcheck/` — owns all host validation logic. Keeps `url_fetch.go` clean and makes logic independently testable.
+
+### Tasks (for parallel work callouts in the spec)
+1. Create `internal/hostcheck/` package with tests (TDD)
+2. Add `AllowedHosts` to `AgentConfig` + test
+3. Add `AllowedHosts` to `ExecContext`
+4. Gate `url_fetch` with hostcheck + DNS-pinned request + tests
+5. Thread `cfg.AllowedHosts` into `ExecContext` in `cmd/run.go`
+6. Add `AllowedHosts` to `ExecuteOptions`, propagation logic in `tool.go`
+7. Integration test
+
+Tasks 1, 2, and 3 can be done in parallel. Task 4 depends on 1 and 3. Task 5 depends on 2 and 3. Task 6 depends on 2 and 3. Task 7 depends on all others.
+
+---
+
+## Document structure to follow
+
+### Section 1: Context & Constraints
+- Codebase structure and patterns relevant to this milestone
+- Decisions already made and why
+- Approaches already ruled out (do not re-evaluate these)
+- Constraints and assumptions that apply
+
+### Section 2: Requirements
+- What needs to happen: behaviors, interfaces, data flow, edge cases
+- No implementation details — what and why, not how or where
+- Must cover all edge cases
+
+---
+
+## File header
+At the very top of the document, before Section 1, add:
+```
+# Milestone Document
+docs/plans/000_milestones.md
+```
+
+## Filename
+`/Users/jaronswab/go/src/github.com/jrswab/axe/docs/plans/040_output_allowlist_spec.md`
+
+Write the complete spec document now. Be explicit, unambiguous, and thorough. Do not add implementation details (no "how" or "where" — only "what" and "why").
