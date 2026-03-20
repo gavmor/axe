@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774022759850,
-      "updated": 1774022766930
+      "updated": 1774022777555
     }
   },
   "messages": [
@@ -2290,7 +2290,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774022766867
+          "created": 1774022766867,
+          "completed": 1774022777491
         },
         "parentID": "msg_d0bff15b2001nynRM0kBlbhJa2",
         "modelID": "claude-sonnet-4-6",
@@ -2301,16 +2302,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.00887295,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 17948,
+          "input": 1,
+          "output": 197,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 17579,
+            "write": 171
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d0bff3113001mpOgqRWaj6u7Ke",
         "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
       },
@@ -2327,18 +2330,117 @@
           "callID": "toolu_01LKktsVRs4xPR4fuBf8QPaW",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add -A && git commit -m \"test: add integration tests for output allowlist (ISS-24)\n\n- 4 integration tests in cmd/run_integration_test.go:\n  - Allowlist blocks non-matching host\n  - Private IP blocking (unconditional, no allowlist)\n  - Empty allowlist permits public hosts (backwards compat)\n  - Loopback blocked even with allowlist configured\n- Fix pre-existing lint issue in opencode_test.go (SA5011)\n- All implementation tasks complete\"",
               "description": "Stage all changes and commit with specified message"
             },
+            "output": "[ISS-24/allow-list-connections b60eff0] test: add integration tests for output allowlist (ISS-24)\n 4 files changed, 170 insertions(+), 1 deletion(-)\n",
+            "title": "Stage all changes and commit with specified message",
+            "metadata": {
+              "output": "[ISS-24/allow-list-connections b60eff0] test: add integration tests for output allowlist (ISS-24)\n 4 files changed, 170 insertions(+), 1 deletion(-)\n",
+              "exit": 0,
+              "description": "Stage all changes and commit with specified message",
+              "truncated": false
+            },
             "time": {
-              "start": 1774022772158
+              "start": 1774022772158,
+              "end": 1774022777403
             }
           },
           "id": "prt_d0bff3780002adcn2iWp1OP98c",
           "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
           "messageID": "msg_d0bff3113001mpOgqRWaj6u7Ke"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "846c951845ba30ce20ca2733ff531262d001ef7a",
+          "cost": 0.00887295,
+          "tokens": {
+            "total": 17948,
+            "input": 1,
+            "output": 197,
+            "reasoning": 0,
+            "cache": {
+              "read": 17579,
+              "write": 171
+            }
+          },
+          "id": "prt_d0bff5a3c001lC6TU3b12ZHnUB",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff3113001mpOgqRWaj6u7Ke"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022777492,
+          "completed": 1774022780165
+        },
+        "parentID": "msg_d0bff15b2001nynRM0kBlbhJa2",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0078405,
+        "tokens": {
+          "total": 18115,
+          "input": 1,
+          "output": 102,
+          "reasoning": 0,
+          "cache": {
+            "read": 17750,
+            "write": 262
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0bff5a94001ArG90eIxvA8c6q",
+        "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "846c951845ba30ce20ca2733ff531262d001ef7a",
+          "id": "prt_d0bff5fdf001D6UWFfq5NbTpi6",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff5a94001ArG90eIxvA8c6q"
+        },
+        {
+          "type": "text",
+          "text": "Commit succeeded:\n\n```\n[ISS-24/allow-list-connections b60eff0] test: add integration tests for output allowlist (ISS-24)\n 4 files changed, 170 insertions(+), 1 deletion(-)\n```\n\nTask 7 checkbox is now marked complete in `docs/plans/040_output_allowlist_implement.md`, and all 4 changed files are committed.",
+          "time": {
+            "start": 1774022780051,
+            "end": 1774022780051
+          },
+          "id": "prt_d0bff5fdf002MKdol91nyHrbuK",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff5a94001ArG90eIxvA8c6q"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "846c951845ba30ce20ca2733ff531262d001ef7a",
+          "cost": 0.0078405,
+          "tokens": {
+            "total": 18115,
+            "input": 1,
+            "output": 102,
+            "reasoning": 0,
+            "cache": {
+              "read": 17750,
+              "write": 262
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f400ea55ffeYfSOJnoMmOS9wG",
+          "messageID": "msg_d0bff5a94001ArG90eIxvA8c6q"
         }
       ]
     }
