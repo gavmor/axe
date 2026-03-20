@@ -1,0 +1,25 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+The `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts` test takes 15 seconds because it makes a real TCP connection attempt to `192.0.2.1` which times out. Fix this by using a URL that will fail faster.
+
+## Better approach
+Instead of testing that a public URL gets a connection error (which requires waiting for a timeout), test that the tool result does NOT contain "not in allowed_hosts". Use a URL like `https://httpbin.org/get` — the DNS resolution will succeed quickly, and the connection attempt will either succeed or fail fast. The key assertion is that the error is NOT an allowlist error.
+
+Actually, even better: use a URL with a hostname that resolves quickly but the connection fails fast. The simplest approach: use `http://192.0.2.1:1/data` (port 1 — connection refused is instant, unlike port 443 which times out).
+
+In `cmd/run_integration_test.go`, find `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts` and change:
+
+```go
+// Before
+{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "https://192.0.2.1/data"}},
+```
+```go
+// After  
+{ID: "tc_uf3", Name: "url_fetch", Input: map[string]string{"url": "http://192.0.2.1:1/data"}},
+```
+
+## Verification
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run "TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts" -v -timeout 30s ./cmd/` and confirm it passes in under 5 seconds.
+
+Return the test output including timing.
