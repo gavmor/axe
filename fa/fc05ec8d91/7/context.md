@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In /Users/jaronswab/go/src/github.com/jrswab/axe, run `git diff --shortstat` and also `git diff --stat` to see the changes. Also run `git status` to see untracked files. Return all output.
+
