@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774025317005,
-      "updated": 1774025335401
+      "updated": 1774025347808
     }
   },
   "messages": [
@@ -524,7 +524,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774025335371
+          "created": 1774025335371,
+          "completed": 1774025343304
         },
         "parentID": "msg_d0c261a95001PmVkYwgAPLstGh",
         "modelID": "claude-sonnet-4-6",
@@ -535,16 +536,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0090849,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 14358,
+          "input": 1,
+          "output": 253,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 13798,
+            "write": 306
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d0c26624b0011jqG1TeaH5Upbp",
         "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5"
       },
@@ -561,19 +564,206 @@
           "callID": "toolu_01Qc35LFbFMpaujtQF9MjM8L",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add -A && git commit -m \"fix: harden allowlist implementation (ISS-24)\n\n- Add nil resolver guard and wrap DNS errors with hostname context\n- Distinguish nil vs empty AllowedHosts for sub-agent inheritance\n  (nil = inherit parent, empty = explicit opt-out)\n- Move timeout context before host check to bound DNS I/O\n- DialContext re-resolves per redirect to prevent stale IP pinning\n- Restore allowlist check in CheckRedirect for keep-alive safety\n- Add allowed_hosts to scaffold template\n- Update spec E5 for nil-vs-empty semantics\"",
               "description": "Stage all changes and create commit",
               "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
             },
+            "output": "[ISS-24/allow-list-connections 4d6344b] fix: harden allowlist implementation (ISS-24)\n 7 files changed, 94 insertions(+), 16 deletions(-)\n",
+            "title": "Stage all changes and create commit",
+            "metadata": {
+              "output": "[ISS-24/allow-list-connections 4d6344b] fix: harden allowlist implementation (ISS-24)\n 7 files changed, 94 insertions(+), 16 deletions(-)\n",
+              "exit": 0,
+              "description": "Stage all changes and create commit",
+              "truncated": false
+            },
             "time": {
-              "start": 1774025338448
+              "start": 1774025338448,
+              "end": 1774025343201
             }
           },
           "id": "prt_d0c266966001PKvCOmXJX85KSa",
           "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
           "messageID": "msg_d0c26624b0011jqG1TeaH5Upbp"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "77a256b383532809afc282b5259305b9951f6f7d",
+          "cost": 0.0090849,
+          "tokens": {
+            "total": 14358,
+            "input": 1,
+            "output": 253,
+            "reasoning": 0,
+            "cache": {
+              "read": 13798,
+              "write": 306
+            }
+          },
+          "id": "prt_d0c2680e1001KjENqgETY23BzR",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c26624b0011jqG1TeaH5Upbp"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025343305,
+          "completed": 1774025347776
+        },
+        "parentID": "msg_d0c261a95001PmVkYwgAPLstGh",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0071067,
+        "tokens": {
+          "total": 14535,
+          "input": 1,
+          "output": 112,
+          "reasoning": 0,
+          "cache": {
+            "read": 14104,
+            "write": 318
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c26814900113AfolbYERrs84",
+        "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "77a256b383532809afc282b5259305b9951f6f7d",
+          "id": "REDACTED",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c26814900113AfolbYERrs84"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01E99SUbY5t4euXuk9KA4jCw",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push",
+              "description": "Push branch to remote",
+              "workdir": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+            },
+            "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   b60eff0..4d6344b  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+            "title": "Push branch to remote",
+            "metadata": {
+              "output": "[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   b60eff0..4d6344b  ISS-24/allow-list-connections -> ISS-24/allow-list-connections\n",
+              "exit": 0,
+              "description": "Push branch to remote",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774025345971,
+              "end": 1774025347657
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c26814900113AfolbYERrs84"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "77a256b383532809afc282b5259305b9951f6f7d",
+          "cost": 0.0071067,
+          "tokens": {
+            "total": 14535,
+            "input": 1,
+            "output": 112,
+            "reasoning": 0,
+            "cache": {
+              "read": 14104,
+              "write": 318
+            }
+          },
+          "id": "prt_d0c26924b001z1jLBgn5b6kudW",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c26814900113AfolbYERrs84"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774025347778,
+          "completed": 1774025352051
+        },
+        "parentID": "msg_d0c261a95001PmVkYwgAPLstGh",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0077946,
+        "tokens": {
+          "total": 14792,
+          "input": 1,
+          "output": 185,
+          "reasoning": 0,
+          "cache": {
+            "read": 14422,
+            "write": 184
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c2692c200119Y1h4kpJgfpUl",
+        "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "77a256b383532809afc282b5259305b9951f6f7d",
+          "id": "prt_d0c26994d001Ep0BrSF80y1s3r",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c2692c200119Y1h4kpJgfpUl"
+        },
+        {
+          "type": "text",
+          "text": "All steps completed successfully:\n\n1. `go build ./...` — clean, no errors\n2. `go test ./internal/hostcheck/` — ok (cached)\n3. `go test ./internal/agent/` — ok (0.536s)\n4. `go test ./internal/tool/` — ok (cached)\n5. `go test ./cmd/` — ok (cached)\n6. `golangci-lint run ./...` — 0 issues\n7. `git diff --shortstat` — 7 files changed, 94 insertions(+), 16 deletions(-)\n8. Commit: `4d6344b` on `ISS-24/allow-list-connections`\n9. Push: successful, branch updated to `4d6344b`",
+          "time": {
+            "start": 1774025351794,
+            "end": 1774025351794
+          },
+          "id": "prt_d0c26994e0018PkZ9JCkQ6ciVw",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c2692c200119Y1h4kpJgfpUl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "77a256b383532809afc282b5259305b9951f6f7d",
+          "cost": 0.0077946,
+          "tokens": {
+            "total": 14792,
+            "input": 1,
+            "output": 185,
+            "reasoning": 0,
+            "cache": {
+              "read": 14422,
+              "write": 184
+            }
+          },
+          "id": "prt_d0c26a2c5001AFGxutKdFS1MP4",
+          "sessionID": "ses_2f3d9e572ffeN9U66hW09Qtgg5",
+          "messageID": "msg_d0c2692c200119Y1h4kpJgfpUl"
         }
       ]
     }
