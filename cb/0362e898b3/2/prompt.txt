@@ -1,0 +1,14 @@
+Review the updated release SKILL.md at /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md.
+
+Check for:
+1. YAML frontmatter is valid (name and description fields present, properly delimited by `---`)
+2. All 12 steps are present and numbered correctly (1 through 12)
+3. The Rules section includes all rules: annotated tags, semver, Keep a Changelog, version string updates, README updates, user confirmation gates (push to master, push tag, ask for version/message/changelog)
+4. The Reference section has three subsections: Project Files, Version Strings, GHCR Image
+5. The Docker section template in step 12 is properly formatted with the GHCR pull command and package page link
+6. No broken markdown (unclosed code blocks, missing headers, etc.)
+7. Compare with the original at `git show HEAD:.opencode/skills/release/SKILL.md` to confirm what was added vs what existed before
+
+Also verify that `docs/skills/release/SKILL.md` is identical by running `diff`.
+
+Return any issues found, or confirm everything is correct.

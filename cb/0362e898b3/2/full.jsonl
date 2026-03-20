@@ -1,0 +1,515 @@
+{
+  "info": {
+    "id": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+    "slug": "tidy-otter",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f38cdd00ffexBON02raOmPosW",
+    "title": "Review updated release skill (@review subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774031988098,
+      "updated": 1774032004346
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774031988105
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "review",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c8be588001AatRfrAh9PbDEP",
+        "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Review the updated release SKILL.md at /Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md.\n\nCheck for:\n1. YAML frontmatter is valid (name and description fields present, properly delimited by `---`)\n2. All 12 steps are present and numbered correctly (1 through 12)\n3. The Rules section includes all rules: annotated tags, semver, Keep a Changelog, version string updates, README updates, user confirmation gates (push to master, push tag, ask for version/message/changelog)\n4. The Reference section has three subsections: Project Files, Version Strings, GHCR Image\n5. The Docker section template in step 12 is properly formatted with the GHCR pull command and package page link\n6. No broken markdown (unclosed code blocks, missing headers, etc.)\n7. Compare with the original at `git show HEAD:.opencode/skills/release/SKILL.md` to confirm what was added vs what existed before\n\nAlso verify that `docs/skills/release/SKILL.md` is identical by running `diff`.\n\nReturn any issues found, or confirm everything is correct.",
+          "id": "prt_d0c8be589001eYk524MXcdpMIj",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be588001AatRfrAh9PbDEP"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774031988112,
+          "completed": 1774031993637
+        },
+        "parentID": "msg_d0c8be588001AatRfrAh9PbDEP",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.084565,
+        "tokens": {
+          "total": 12745,
+          "input": 3,
+          "output": 262,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 12480
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8be590001YWoe9kRzKK5HEM",
+        "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "REDACTED",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI'll read the current file and the git version in parallel, plus run the diff check.",
+          "time": {
+            "start": 1774031991022,
+            "end": 1774031991022
+          },
+          "id": "prt_d0c8bedaf002G3sJP8ObchJQg4",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.opencode/skills/release/SKILL.md</path>\n<type>file</type>\n<content>1: ---\n2: name: release\n3: description: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n4: ---\n5: \n6: Your job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n7: \n8: ## Rules\n9: \n10: - Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n11: - Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n12: - The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n13: - Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n14: - All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n15: - README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n16: - DO NOT push to master until the user confirms.\n17: - DO NOT push the tag until the user confirms.\n18: - DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n19: \n20: ## Steps\n21: \n22: 1. **Gather context**\n23:    - Check the current branch and ensure it is clean (`git status`).\n24:    - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n25:    - Collect the commit log since the last tag (or all commits if this is the first release).\n26: \n27: 2. **Ask the user**\n28:    - What version number to use.\n29:    - What the annotated tag message should say.\n30:    - Whether the auto-generated changelog looks correct or needs edits.\n31: \n32: 3. **Categorize commits** into Keep a Changelog sections:\n33:    - `Added` — new features and capabilities.\n34:    - `Changed` — changes to existing functionality.\n35:    - `Deprecated` — features marked for removal.\n36:    - `Removed` — features that were removed.\n37:    - `Fixed` — bug fixes.\n38:    - `Security` — vulnerability fixes.\n39:    - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n40: \n41: 4. **Bump version strings**\n42:    - Update all three version locations listed in the Reference section.\n43:    - Run `go test ./cmd/ -run TestVersion -count=1` to verify the bump is consistent.\n44: \n45: 5. **Update README.md**\n46:    - Explore new feature implementations (via subagents if available) to understand config fields, flags, defaults, and behavior before writing documentation.\n47:    - For each user-facing change, update the relevant README sections: Features list, Run Flags table, Agent Configuration example TOML, and add new sections as needed.\n48:    - Add or update the Exit Codes table if new exit codes were introduced.\n49:    - Do NOT guess at config fields or flag names — read the actual implementation first.\n50: \n51: 6. **Update CHANGELOG.md**\n52:    - Prepend the new release section under the `# Changelog` header.\n53:    - Add a reference link at the bottom of the file using the Keep a Changelog format:\n54:      - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n55:      - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n56: \n57: 7. **Commit and push prep changes**\n58:    - Stage all modified files and commit with message: `Update changelog and version for vX.Y.Z`\n59:    - Push to master only after the user confirms.\n60: \n61: 8. **Verify**\n62:    - Run `go build .` to confirm the binary compiles.\n63:    - Run `go test ./cmd/ -run TestVersion -count=1` at minimum.\n64:    - Confirm tests pass before proceeding to tag creation.\n65: \n66: 9. **Ask user to confirm tag creation**\n67:    - Show the tag name, annotation message, and commit hash.\n68:    - Wait for explicit confirmation before creating the tag.\n69: \n70: 10. **Create the annotated tag** on the prep commit.\n71: \n72: 11. **Push the tag** to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n73: \n74: 12. **Set release notes via `gh`**\n75:     - Extract the new version's section from `CHANGELOG.md` — everything between the `## [X.Y.Z]` heading and the next `##` heading, excluding the heading itself and trailing blank lines.\n76:     - Append a Docker section to the extracted notes:\n77:       ```\n78:       ## Docker\n79: \n80:       ```bash\n81:       docker pull ghcr.io/jrswab/axe:X.Y.Z\n82:       ```\n83: \n84:       See the [GHCR package page](https://github.com/jrswab/axe/pkgs/container/axe) for all available tags.\n85:       ```\n86:     - Write the combined content (changelog section + Docker section) to a temporary file.\n87:     - Poll `gh release view vX.Y.Z` every 10 seconds (up to 120 seconds) until the GoReleaser workflow creates the release.\n88:     - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n89:     - Clean up the temporary file.\n90:     - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n91: \n92: ## Reference\n93: \n94: ### Project Files\n95: - GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n96: - Release workflow: `.github/workflows/release.yml` (builds binaries and Docker image; do NOT rely on it for release notes)\n97: - Changelog: `CHANGELOG.md`\n98: \n99: ### Version Strings (all three must match)\n100: - `cmd/root.go` — `const Version` (source of truth)\n101: - `internal/mcpclient/mcpclient.go` — hardcoded `Version:` in `mcp.NewClient` call\n102: - `cmd/version_test.go` — test assertions for the version string\n103: \n104: ### GHCR Image\n105: - Package page: https://github.com/jrswab/axe/pkgs/container/axe\n106: - Pull command: `docker pull ghcr.io/jrswab/axe:<version>`\n107: - Tags generated per release: `X.Y.Z`, `X.Y`, `X`, `latest` (on default branch)\n\n(End of file - total 107 lines)\n</content>",
+            "title": ".opencode/skills/release/SKILL.md",
+            "metadata": {
+              "preview": "---\nname: release\ndescription: Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through a full release for this project. A release includes preparing the code (version bumps, README documentation, changelog), creating an annotated git tag with a `v` prefix (e.g. `v1.5.0`), pushing it to trigger the GoReleaser GitHub Actions workflow, setting release notes, and linking the GHCR Docker image.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- All version strings MUST be updated before committing. There are three locations (listed in Reference). Run version tests after bumping to catch drift.\n- README.md MUST document any user-facing changes — new config fields, CLI flags, behavior changes, exit codes.\n- DO NOT push to master until the user confirms.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774031992007,
+              "end": 1774031992014
+            }
+          },
+          "id": "prt_d0c8bf0f0001J2AcBNDqRHclW9",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Kvcq3XVHnDWpCqqwgov933",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git show HEAD:.opencode/skills/release/SKILL.md",
+              "description": "Show previous version of SKILL.md from git"
+            },
+            "output": "fatal: path '.opencode/skills/release/SKILL.md' exists on disk, but not in 'HEAD'\n",
+            "title": "Show previous version of SKILL.md from git",
+            "metadata": {
+              "output": "fatal: path '.opencode/skills/release/SKILL.md' exists on disk, but not in 'HEAD'\n",
+              "exit": 128,
+              "description": "Show previous version of SKILL.md from git",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774031992943,
+              "end": 1774031993006
+            }
+          },
+          "id": "prt_d0c8bf4ca001GjWxL4Mzudf8lv",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01FfzfNhzyVbowyxhHzfSYJn",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "diff .opencode/skills/release/SKILL.md docs/skills/release/SKILL.md",
+              "description": "Diff the two SKILL.md copies"
+            },
+            "output": "",
+            "title": "Diff the two SKILL.md copies",
+            "metadata": {
+              "output": "",
+              "exit": 0,
+              "description": "Diff the two SKILL.md copies",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774031993483,
+              "end": 1774031993519
+            }
+          },
+          "id": "prt_d0c8bf875001cho0JawbpjkBJ4",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "cost": 0.084565,
+          "tokens": {
+            "total": 12745,
+            "input": 3,
+            "output": 262,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 12480
+            }
+          },
+          "id": "prt_d0c8bfab0001js0SEuNi52NyW2",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8be590001YWoe9kRzKK5HEM"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774031993638,
+          "completed": 1774032000053
+        },
+        "parentID": "msg_d0c8be588001AatRfrAh9PbDEP",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02708875,
+        "tokens": {
+          "total": 15048,
+          "input": 1,
+          "output": 256,
+          "reasoning": 0,
+          "cache": {
+            "read": 12480,
+            "write": 2311
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8bfb26001LHTYAP5YOQmjmA",
+        "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "prt_d0c8c05ba001aczJS7IwpnHpmh",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8bfb26001LHTYAP5YOQmjmA"
+        },
+        {
+          "type": "text",
+          "text": "Key finding: the file doesn't exist in `HEAD` — it's entirely new. And the `diff` between the two copies produced no output, meaning they're identical. Let me verify the diff exit code to be sure, and also check whether `docs/skills/release/SKILL.md` exists at all.",
+          "time": {
+            "start": 1774031998193,
+            "end": 1774031998193
+          },
+          "id": "prt_d0c8c05ba002pYWdU0U6e5QI3R",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8bfb26001LHTYAP5YOQmjmA"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "diff .opencode/skills/release/SKILL.md docs/skills/release/SKILL.md; echo \"exit: $?\"",
+              "description": "Verify diff exit code between copies"
+            },
+            "output": "exit: 0\n",
+            "title": "Verify diff exit code between copies",
+            "metadata": {
+              "output": "exit: 0\n",
+              "exit": 0,
+              "description": "Verify diff exit code between copies",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774031998986,
+              "end": 1774031999025
+            }
+          },
+          "id": "prt_d0c8c0cf30015qyAKMBALskUfu",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8bfb26001LHTYAP5YOQmjmA"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git status --short .opencode/skills/release/SKILL.md docs/skills/release/SKILL.md",
+              "description": "Check git status of both SKILL.md files"
+            },
+            "output": " M docs/skills/release/SKILL.md\n",
+            "title": "Check git status of both SKILL.md files",
+            "metadata": {
+              "output": " M docs/skills/release/SKILL.md\n",
+              "exit": 0,
+              "description": "Check git status of both SKILL.md files",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774031999870,
+              "end": 1774031999919
+            }
+          },
+          "id": "prt_d0c8c1011001TlK2o4y1QCzRns",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8bfb26001LHTYAP5YOQmjmA"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "cost": 0.02708875,
+          "tokens": {
+            "total": 15048,
+            "input": 1,
+            "output": 256,
+            "reasoning": 0,
+            "cache": {
+              "read": 12480,
+              "write": 2311
+            }
+          },
+          "id": "prt_d0c8c13b0001QgoxQkdWsc5GRi",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8bfb26001LHTYAP5YOQmjmA"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032000054,
+          "completed": 1774032004316
+        },
+        "parentID": "msg_d0c8be588001AatRfrAh9PbDEP",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0128755,
+        "tokens": {
+          "total": 15260,
+          "input": 1,
+          "output": 136,
+          "reasoning": 0,
+          "cache": {
+            "read": 14791,
+            "write": 332
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c8c14360012H5hBI2ALEswnk",
+        "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "prt_d0c8c1d25001SD0Km4cyBTp8aq",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c14360012H5hBI2ALEswnk"
+        },
+        {
+          "type": "text",
+          "text": "Good — both copies are identical (exit 0), and `docs/skills/release/SKILL.md` shows as modified (meaning it existed before but was updated). Let me see what the previous version looked like.",
+          "time": {
+            "start": 1774032003575,
+            "end": 1774032003575
+          },
+          "id": "prt_d0c8c1d250020DJRK95wl0UI3y",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c14360012H5hBI2ALEswnk"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01MKo5smmrEFJ4rgeY1dgi2C",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git show HEAD:docs/skills/release/SKILL.md",
+              "description": "Show previous docs version of SKILL.md"
+            },
+            "output": "---\nname: release\ndescription: Create a tagged release with a Keep a Changelog entry and trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through creating a release for this project. Releases use annotated git tags with a `v` prefix (e.g. `v1.1.0`) and are built by the GoReleaser GitHub Actions workflow. Release notes are set explicitly via `gh release edit` — do NOT rely on the workflow to populate them.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n   - Commit the changelog update before tagging.\n\n5. **Create the annotated tag** on the changelog commit.\n\n6. **Push** the commit and tag to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n7. **Set release notes via `gh`**\n   - After the tag is pushed, extract the version's section from `CHANGELOG.md` (excluding the heading and reference link footer) and write it to a temporary file.\n   - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n   - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n",
+            "title": "Show previous docs version of SKILL.md",
+            "metadata": {
+              "output": "---\nname: release\ndescription: Create a tagged release with a Keep a Changelog entry and trigger the GoReleaser workflow.\n---\n\nYour job is to guide the user through creating a release for this project. Releases use annotated git tags with a `v` prefix (e.g. `v1.1.0`) and are built by the GoReleaser GitHub Actions workflow. Release notes are set explicitly via `gh release edit` — do NOT rely on the workflow to populate them.\n\n## Rules\n\n- Always create an **annotated** tag (`git tag -a`), never a lightweight tag.\n- Tag format is `vMAJOR.MINOR.PATCH` following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n- The changelog MUST follow [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format.\n- Valid changelog categories: Added, Changed, Deprecated, Removed, Fixed, Security.\n- DO NOT push the tag until the user confirms.\n- DO NOT skip asking the user for the version number, tag annotation message, and changelog review.\n\n## Steps\n\n1. **Gather context**\n   - Check the current branch and ensure it is clean (`git status`).\n   - List existing tags (`git tag --sort=-v:refname`) to determine the next version.\n   - Collect the commit log since the last tag (or all commits if this is the first release).\n\n2. **Ask the user**\n   - What version number to use.\n   - What the annotated tag message should say.\n   - Whether the auto-generated changelog looks correct or needs edits.\n\n3. **Categorize commits** into Keep a Changelog sections:\n   - `Added` — new features and capabilities.\n   - `Changed` — changes to existing functionality.\n   - `Deprecated` — features marked for removal.\n   - `Removed` — features that were removed.\n   - `Fixed` — bug fixes.\n   - `Security` — vulnerability fixes.\n   - Exclude commits prefixed with `docs:`, `test:`, `ci:`, or merge commits.\n\n4. **Update CHANGELOG.md**\n   - Prepend the new release section under the `# Changelog` header.\n   - Add a reference link at the bottom of the file using the Keep a Changelog format:\n     - First release: `[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0`\n     - Subsequent releases: `[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0`\n   - Commit the changelog update before tagging.\n\n5. **Create the annotated tag** on the changelog commit.\n\n6. **Push** the commit and tag to origin only after the user confirms. The `v*` tag push triggers the GoReleaser workflow which builds binaries and creates the GitHub release.\n\n7. **Set release notes via `gh`**\n   - After the tag is pushed, extract the version's section from `CHANGELOG.md` (excluding the heading and reference link footer) and write it to a temporary file.\n   - Run `gh release edit vX.Y.Z --notes-file <tmp-file>` to set the release description.\n   - This is the authoritative source for release notes — do NOT rely on the workflow's awk extraction.\n\n## Reference\n\n- GoReleaser config: `.goreleaser.yml` (auto-changelog is disabled)\n- Release workflow: `.github/workflows/release.yml` (builds binaries; do NOT rely on it for release notes)\n- Changelog: `CHANGELOG.md`\n",
+              "exit": 0,
+              "description": "Show previous docs version of SKILL.md",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774032004123,
+              "end": 1774032004180
+            }
+          },
+          "id": "prt_d0c8c21f9001ylnBRhSAKVOv29",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c14360012H5hBI2ALEswnk"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "cost": 0.0128755,
+          "tokens": {
+            "total": 15260,
+            "input": 1,
+            "output": 136,
+            "reasoning": 0,
+            "cache": {
+              "read": 14791,
+              "write": 332
+            }
+          },
+          "id": "prt_d0c8c2455001oUp3W4eKjOEbHI",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c14360012H5hBI2ALEswnk"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774032004317,
+          "completed": 1774032031441
+        },
+        "parentID": "msg_d0c8be588001AatRfrAh9PbDEP",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0475665,
+        "tokens": {
+          "total": 17486,
+          "input": 1,
+          "output": 1346,
+          "reasoning": 0,
+          "cache": {
+            "read": 15123,
+            "write": 1016
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c8c24dd0013Ax19itXFdzXz5",
+        "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "id": "prt_d0c8c2e8e0015FZCkc8ccEftt4",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c24dd0013Ax19itXFdzXz5"
+        },
+        {
+          "type": "text",
+          "text": "Now I have everything needed for a thorough comparison. Here is the full review:\n\n---\n\n## Review Results\n\n### 1. YAML Frontmatter -- PASS (with note)\n\nFrontmatter is properly delimited by `---` on lines 1 and 4. Both `name` and `description` fields are present. \n\n**Note:** The `description` was changed from the original:\n- **Old:** `Create a tagged release with a Keep a Changelog entry and trigger the GoReleaser workflow.`\n- **New:** `Prepare code for release (version bumps, changelog, README updates) and create an annotated tag to trigger the GoReleaser workflow.`\n\nThe new description is more accurate given the expanded scope.\n\n### 2. Steps Numbered 1–12 -- PASS\n\nAll 12 steps are present and correctly numbered. The original had 7 steps. Here's the mapping:\n\n| New | Content | Origin |\n|-----|---------|--------|\n| 1 | Gather context | Old step 1 (unchanged) |\n| 2 | Ask the user | Old step 2 (unchanged) |\n| 3 | Categorize commits | Old step 3 (unchanged) |\n| 4 | Bump version strings | **NEW** |\n| 5 | Update README.md | **NEW** |\n| 6 | Update CHANGELOG.md | Old step 4 (split out commit part) |\n| 7 | Commit and push prep changes | **NEW** (extracted from old step 4/6) |\n| 8 | Verify | **NEW** |\n| 9 | Ask user to confirm tag creation | **NEW** |\n| 10 | Create the annotated tag | Old step 5 (separated from push) |\n| 11 | Push the tag | Old step 6 (tag-only, separated) |\n| 12 | Set release notes via `gh` | Old step 7 (expanded with Docker section + polling) |\n\n### 3. Rules Section -- PASS\n\nAll required rules are present:\n\n- **Annotated tags:** Line 10 (`git tag -a`, never lightweight)\n- **Semver:** Line 11 (`vMAJOR.MINOR.PATCH` with link to semver spec)\n- **Keep a Changelog:** Lines 12–13 (format + valid categories)\n- **Version string updates:** Line 14 (three locations, run version tests)\n- **README updates:** Line 15 (user-facing changes)\n- **User confirmation gates:**\n  - Line 16: push to master confirmation\n  - Line 17: push tag confirmation\n  - Line 18: ask for version number, tag message, changelog review\n\n**Added vs original:** Three new rules (lines 14–16) covering version strings, README updates, and push-to-master confirmation. The original only had tag push and version/message/changelog gates.\n\n### 4. Reference Section -- PASS\n\nThree subsections present:\n\n1. **Project Files** (lines 94–97) — GoReleaser config, release workflow, changelog\n2. **Version Strings** (lines 99–102) — `cmd/root.go`, `internal/mcpclient/mcpclient.go`, `cmd/version_test.go` (all three must match)\n3. **GHCR Image** (lines 104–107) — package page URL, pull command, tag pattern\n\nThe original had a flat Reference section with just two bullet points. All three subsections are new structured additions.\n\n### 5. Docker Section Template in Step 12 -- ISSUE FOUND\n\nLines 77–85 have a **nested fenced code block** problem:\n\n```\n      ```\n      ## Docker\n\n      ```bash\n      docker pull ghcr.io/jrswab/axe:X.Y.Z\n      ```\n\n      See the [GHCR package page](...) for all available tags.\n      ```\n```\n\nThe outer fence (line 77 and 85) uses triple backticks, and the inner fence (lines 80 and 82) also uses triple backticks. Standard CommonMark handles this by closing the outer block at line 82's closing fence, which means the template won't render as intended in a standard Markdown renderer.\n\n**Mitigation:** In practice this is a *template shown to an LLM agent*, not rendered HTML. The LLM will understand the intent from context. However, for correctness, the outer fence should use ```````` (4+ backticks) or tildes (`~~~~`) to properly nest. This is a minor issue — it won't break the agent workflow but is technically malformed markdown.\n\n### 6. General Markdown Integrity -- PASS\n\n- All headers properly formatted (`##`, `###`)\n- No unclosed code blocks (aside from the nesting issue above)\n- Numbered list is consistent (no gaps, no duplicates)\n- Links are well-formed (semver, keepachangelog, GHCR)\n- Indentation is consistent throughout\n\n### 7. Diff Between Copies -- PASS\n\n`.opencode/skills/release/SKILL.md` and `docs/skills/release/SKILL.md` are **identical** (diff exit code 0).\n\n---\n\n## Summary\n\n**One issue found:**\n\n- **Step 12, lines 77–85:** Nested fenced code blocks both use triple backticks. The outer fence should use 4+ backticks (`` ```` ``) to properly contain the inner ` ```bash ` block per CommonMark spec. This is cosmetic for agent consumption but is technically broken markdown.\n\nEverything else checks out: frontmatter is valid, all 12 steps present and numbered, all rules accounted for, Reference has three correct subsections, and both file copies are identical.",
+          "time": {
+            "start": 1774032031260,
+            "end": 1774032031260
+          },
+          "id": "prt_d0c8c2e8f0012zj1Y25oq6zYyn",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c24dd0013Ax19itXFdzXz5"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "7d05af10ef75789ab5c8580a0833949f4710f3e0",
+          "cost": 0.0475665,
+          "tokens": {
+            "total": 17486,
+            "input": 1,
+            "output": 1346,
+            "reasoning": 0,
+            "cache": {
+              "read": 15123,
+              "write": 1016
+            }
+          },
+          "id": "prt_d0c8c8e29001FEAlL1OIhBbh91",
+          "sessionID": "ses_2f3741a7dffefGTdrwzsfSPmIS",
+          "messageID": "msg_d0c8c24dd0013Ax19itXFdzXz5"
+        }
+      ]
+    }
+  ]
+}
