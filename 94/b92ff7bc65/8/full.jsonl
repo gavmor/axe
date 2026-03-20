@@ -1,0 +1,1813 @@
+{
+  "info": {
+    "id": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+    "slug": "silent-star",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f471edf1ffeA68AeM4zwG3qaD",
+    "title": "Auto-review integration tests (@review subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774022248203,
+      "updated": 1774022331343
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774022248211
+        },
+        "summary": {
+          "diffs": []
+        },
+        "agent": "review",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-opus-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0bf74712001va2pduD3N4Omh1",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "You are reviewing code changes in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.\n\n## Steps\n\n1. Run `git diff HEAD` to get the diff of changes since the last commit.\n2. Do a full code review on the diff:\n    - Evaluate whether each change makes sense in the broader system.\n    - Confirm the code does what it's intended to do.\n    - Ensure tests are meaningful, cover edge cases, and fail when the code breaks.\n    - Check for bugs, security issues, code drift, performance bottlenecks, poor maintainability.\n    - Avoid nitpicks that block progress unless they are critical.\n3. Return your review as a markdown list. Each item must include:\n    - A prompt for an LLM coding agent to fix the code. This prompt MUST be specific and only address the fix needed.\n    - Mention the file name prepended with `@` in the prompt.\n4. If there are no issues, return \"No issues found.\"",
+          "id": "prt_d0bf74713001Xd7FnfJ8xk2MBz",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf74712001va2pduD3N4Omh1"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022248215,
+          "completed": 1774022251702
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.08002125,
+        "tokens": {
+          "total": 12540,
+          "input": 3,
+          "output": 88,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 12449
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf74717001QMb3yr3vuyyRKx",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7522c001IhEVfkPorocktg",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf74717001QMb3yr3vuyyRKx"
+        },
+        {
+          "type": "text",
+          "text": "\n\nI'll start by getting the diff to review.",
+          "time": {
+            "start": 1774022251054,
+            "end": 1774022251054
+          },
+          "id": "prt_d0bf7522d001JjCU7GeeAhMUMi",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf74717001QMb3yr3vuyyRKx"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD",
+              "description": "Get diff of changes since last commit"
+            },
+            "output": "diff --git a/cmd/run_integration_test.go b/cmd/run_integration_test.go\nindex 114f8bb..7f57441 100644\n--- a/cmd/run_integration_test.go\n+++ b/cmd/run_integration_test.go\n@@ -2004,3 +2004,172 @@ max_delay_ms = 1\n \t\tt.Errorf(\"expected 2 requests to mock server, got %d\", mock.RequestCount())\n \t}\n }\n+\n+// --- Allowlist Integration Tests ---\n+\n+func TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\t// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts\n+\t// Turn 2: LLM receives the error and responds with text\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that URL.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf1\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://blocked.example.com/data\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"The URL was blocked by the allowlist.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\twriteAgentConfig(t, configDir, \"fetch-blocked\", `name = \"fetch-blocked\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+allowed_hosts = [\"api.example.com\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-blocked\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\t// Verify the mock received 2 requests (tool call + final response)\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The second request should contain the tool error result\n+\tbody := mock.Requests[1].Body\n+\tif !strings.Contains(body, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"expected tool result to contain 'not in allowed_hosts', got request body:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_BlocksPrivateIP(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me check the metadata.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf2\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://169.254.169.254/latest/meta-data/\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"The request was blocked.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\t// No allowed_hosts — private IP blocking is unconditional\n+\twriteAgentConfig(t, configDir, \"fetch-private\", `name = \"fetch-private\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-private\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The second request should contain the private IP error\n+\tbody := mock.Requests[1].Body\n+\tif !strings.Contains(body, \"private\") {\n+\t\tt.Errorf(\"expected tool result to mention 'private', got request body:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf3\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://nonexistent.example.com/data\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"Got a DNS error, as expected.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\t// No allowed_hosts — should not block based on hostname\n+\twriteAgentConfig(t, configDir, \"fetch-open\", `name = \"fetch-open\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-open\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The error should be a DNS/connection error, NOT an allowlist error\n+\tbody := mock.Requests[1].Body\n+\tif strings.Contains(body, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"empty allowlist should not produce 'not in allowed_hosts' error, got:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Fetching localhost.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf4\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://127.0.0.1:8080/secret\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"Blocked.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\twriteAgentConfig(t, configDir, \"fetch-loopback\", `name = \"fetch-loopback\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+allowed_hosts = [\"api.example.com\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-loopback\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\tbody := mock.Requests[1].Body\n+\t// Should be blocked — either by allowlist (raw IP doesn't match hostname) or by private IP check\n+\tif !strings.Contains(body, \"not in allowed_hosts\") && !strings.Contains(body, \"private\") {\n+\t\tt.Errorf(\"expected allowlist or private IP error, got:\\n%s\", body)\n+\t}\n+}\n",
+            "title": "Get diff of changes since last commit",
+            "metadata": {
+              "output": "diff --git a/cmd/run_integration_test.go b/cmd/run_integration_test.go\nindex 114f8bb..7f57441 100644\n--- a/cmd/run_integration_test.go\n+++ b/cmd/run_integration_test.go\n@@ -2004,3 +2004,172 @@ max_delay_ms = 1\n \t\tt.Errorf(\"expected 2 requests to mock server, got %d\", mock.RequestCount())\n \t}\n }\n+\n+// --- Allowlist Integration Tests ---\n+\n+func TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\t// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts\n+\t// Turn 2: LLM receives the error and responds with text\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that URL.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf1\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://blocked.example.com/data\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"The URL was blocked by the allowlist.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\twriteAgentConfig(t, configDir, \"fetch-blocked\", `name = \"fetch-blocked\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+allowed_hosts = [\"api.example.com\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-blocked\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\t// Verify the mock received 2 requests (tool call + final response)\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The second request should contain the tool error result\n+\tbody := mock.Requests[1].Body\n+\tif !strings.Contains(body, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"expected tool result to contain 'not in allowed_hosts', got request body:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_BlocksPrivateIP(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me check the metadata.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf2\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://169.254.169.254/latest/meta-data/\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"The request was blocked.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\t// No allowed_hosts — private IP blocking is unconditional\n+\twriteAgentConfig(t, configDir, \"fetch-private\", `name = \"fetch-private\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-private\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The second request should contain the private IP error\n+\tbody := mock.Requests[1].Body\n+\tif !strings.Contains(body, \"private\") {\n+\t\tt.Errorf(\"expected tool result to mention 'private', got request body:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf3\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://nonexistent.example.com/data\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"Got a DNS error, as expected.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\t// No allowed_hosts — should not block based on hostname\n+\twriteAgentConfig(t, configDir, \"fetch-open\", `name = \"fetch-open\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-open\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\t// The error should be a DNS/connection error, NOT an allowlist error\n+\tbody := mock.Requests[1].Body\n+\tif strings.Contains(body, \"not in allowed_hosts\") {\n+\t\tt.Errorf(\"empty allowlist should not produce 'not in allowed_hosts' error, got:\\n%s\", body)\n+\t}\n+}\n+\n+func TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist(t *testing.T) {\n+\tresetRunCmd(t)\n+\n+\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n+\t\ttestutil.AnthropicToolUseResponse(\"Fetching localhost.\", []testutil.MockToolCall{\n+\t\t\t{ID: \"tc_uf4\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://127.0.0.1:8080/secret\"}},\n+\t\t}),\n+\t\ttestutil.AnthropicResponse(\"Blocked.\"),\n+\t})\n+\n+\tconfigDir, _ := testutil.SetupXDGDirs(t)\n+\twriteAgentConfig(t, configDir, \"fetch-loopback\", `name = \"fetch-loopback\"\n+model = \"anthropic/claude-sonnet-4-20250514\"\n+tools = [\"url_fetch\"]\n+allowed_hosts = [\"api.example.com\"]\n+`)\n+\n+\tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n+\tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n+\n+\tbuf := new(bytes.Buffer)\n+\trootCmd.SetOut(buf)\n+\trootCmd.SetErr(new(bytes.Buffer))\n+\trootCmd.SetArgs([]string{\"run\", \"fetch-loopback\"})\n+\n+\terr := rootCmd.Execute()\n+\tif err != nil {\n+\t\tt.Fatalf(\"unexpected error: %v\", err)\n+\t}\n+\n+\tif mock.RequestCount() != 2 {\n+\t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n+\t}\n+\n+\tbody := mock.Requests[1].Body\n+\t// Should be blocked — either by allowlist (raw IP doesn't match hostname) or by private IP check\n+\tif !strings.Contains(body, \"not in allowed_hosts\") && !strings.Contains(body, \"private\") {\n+\t\tt.Errorf(\"expected allowlist or private IP error, got:\\n%s\", body)\n+\t}\n+}\n",
+              "exit": 0,
+              "description": "Get diff of changes since last commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022251568,
+              "end": 1774022251598
+            }
+          },
+          "id": "prt_d0bf7522e0015jfhvD6b30BLml",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf74717001QMb3yr3vuyyRKx"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.08002125,
+          "tokens": {
+            "total": 12540,
+            "input": 3,
+            "output": 88,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 12449
+            }
+          },
+          "id": "prt_d0bf7545b001CrYkQ9QulfWY6W",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf74717001QMb3yr3vuyyRKx"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022251703,
+          "completed": 1774022255278
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.06267425,
+        "tokens": {
+          "total": 15062,
+          "input": 1,
+          "output": 101,
+          "reasoning": 0,
+          "cache": {
+            "read": 5801,
+            "write": 9159
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf75f1a001YdlJ8srF0Q8B1h",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "The diff is large. Let me get the rest and also look at the related source files to understand the full picture.",
+          "time": {
+            "start": 1774022254769,
+            "end": 1774022254769
+          },
+          "id": "prt_d0bf75f1b001nchlPG0wbosQ2R",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git diff HEAD --stat",
+              "description": "Get list of changed files"
+            },
+            "output": " cmd/run_integration_test.go | 169 ++++++++++++++++++++++++++++++++++++++++++++\n 1 file changed, 169 insertions(+)\n",
+            "title": "Get list of changed files",
+            "metadata": {
+              "output": " cmd/run_integration_test.go | 169 ++++++++++++++++++++++++++++++++++++++++++++\n 1 file changed, 169 insertions(+)\n",
+              "exit": 0,
+              "description": "Get list of changed files",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022255082,
+              "end": 1774022255142
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.06267425,
+          "tokens": {
+            "total": 15062,
+            "input": 1,
+            "output": 101,
+            "reasoning": 0,
+            "cache": {
+              "read": 5801,
+              "write": 9159
+            }
+          },
+          "id": "prt_d0bf762270010Kz3wZAH1NUP5C",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022255278,
+          "completed": 1774022260147
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01401625,
+        "tokens": {
+          "total": 15340,
+          "input": 1,
+          "output": 222,
+          "reasoning": 0,
+          "cache": {
+            "read": 14960,
+            "write": 157
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf762ae001vpdW0UFI915hu5",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        },
+        {
+          "type": "text",
+          "text": "Only one file changed. Let me now look at the broader context — the actual implementation of `allowed_hosts` and related source files — to verify the tests are testing the right behavior.",
+          "time": {
+            "start": 1774022258553,
+            "end": 1774022258553
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "allowed_hosts",
+              "include": "*.go"
+            },
+            "output": "Found 25 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 2013: \t// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts\n  Line 2026: allowed_hosts = [\"api.example.com\"]\n  Line 2049: \tif !strings.Contains(body, \"not in allowed_hosts\") {\n  Line 2050: \t\tt.Errorf(\"expected tool result to contain 'not in allowed_hosts', got request body:\\n%s\", body)\n  Line 2065: \t// No allowed_hosts — private IP blocking is unconditional\n  Line 2106: \t// No allowed_hosts — should not block based on hostname\n  Line 2131: \tif strings.Contains(body, \"not in allowed_hosts\") {\n  Line 2132: \t\tt.Errorf(\"empty allowlist should not produce 'not in allowed_hosts' error, got:\\n%s\", body)\n  Line 2150: allowed_hosts = [\"api.example.com\"]\n  Line 2172: \tif !strings.Contains(body, \"not in allowed_hosts\") && !strings.Contains(body, \"private\") {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 737: \t\t\treturn nil, &net.AddrError{Err: \"not in allowed_hosts\", Addr: h}\n  Line 766: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n  Line 767: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n  Line 860: \t\t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n  Line 877: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n  Line 878: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go:\n  Line 158: \t\t\twantErr:   \"not in allowed_hosts\",\n  Line 218: \t\t\twantErr:   \"not in allowed_hosts\",\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go:\n  Line 72: \t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 1796: \t\t\tname:      \"with allowed_hosts\",\n  Line 1797: \t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = [\\\"api.example.com\\\", \\\"docs.example.com\\\"]\",\n  Line 1801: \t\t\tname:    \"without allowed_hosts field\",\n  Line 1806: \t\t\tname:      \"empty allowed_hosts\",\n  Line 1807: \t\t\tinput:     \"name = \\\"test\\\"\\nmodel = \\\"openai/gpt-4o\\\"\\nallowed_hosts = []\",\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 77: \tAllowedHosts  []string          `toml:\"allowed_hosts\"`",
+            "title": "allowed_hosts",
+            "metadata": {
+              "matches": 25,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022259524,
+              "end": 1774022259550
+            }
+          },
+          "id": "prt_d0bf76f7a001usqwOEfdVLEZDs",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_016vPDwnxDPcou3SiWUS3sAg",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "AllowedHosts",
+              "include": "*.go"
+            },
+            "output": "Found 31 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 2010: func TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {\n  Line 2054: func TestIntegration_AllowedHosts_BlocksPrivateIP(t *testing.T) {\n  Line 2095: func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {\n  Line 2136: func TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist(t *testing.T) {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 748: \t}, ExecContext{AllowedHosts: []string{hostname}})\n  Line 761: \t}, ExecContext{AllowedHosts: []string{\"allowed.example.com\"}})\n  Line 871: \t}, ExecContext{AllowedHosts: []string{sourceHost}})\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go:\n  Line 140: \tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n  Line 165: \t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 41: \tAllowedHosts  []string\n  Line 150: \teffectiveAllowedHosts := cfg.AllowedHosts\n  Line 151: \tif len(effectiveAllowedHosts) == 0 {\n  Line 152: \t\teffectiveAllowedHosts = opts.AllowedHosts\n  Line 313: \trunOpts.AllowedHosts = effectiveAllowedHosts\n  Line 419: \t\t\t\t\tAllowedHosts:  opts.AllowedHosts,\n  Line 447: \texecCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go:\n  Line 1788: func TestAllowedHosts_TOMLParsing(t *testing.T) {\n  Line 1818: \t\t\t\tif cfg.AllowedHosts != nil {\n  Line 1819: \t\t\t\t\tt.Errorf(\"expected nil AllowedHosts, got %v\", cfg.AllowedHosts)\n  Line 1823: \t\t\tif len(cfg.AllowedHosts) != len(tt.wantHosts) {\n  Line 1824: \t\t\t\tt.Fatalf(\"AllowedHosts length = %d, want %d\", len(cfg.AllowedHosts), len(tt.wantHosts))\n  Line 1826: \t\t\tfor i, got := range cfg.AllowedHosts {\n  Line 1828: \t\t\t\t\tt.Errorf(\"AllowedHosts[%d] = %q, want %q\", i, got, tt.wantHosts[i])\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 17: \tAllowedHosts []string\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go:\n  Line 703: \t\tAllowedHosts:  cfg.AllowedHosts,\n  Line 710: \t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n  Line 714: \t\t\t\tresults[i] = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n  Line 728: \t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n  Line 732: \t\t\t\t\tres = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts)\n  Line 760: \tresult, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{Workdir: workdir, Stderr: stderr, Verbose: verbose, AllowedHosts: allowedHosts})\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go:\n  Line 77: \tAllowedHosts  []string          `toml:\"allowed_hosts\"`",
+            "title": "AllowedHosts",
+            "metadata": {
+              "matches": 31,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022259872,
+              "end": 1774022259901
+            }
+          },
+          "id": "prt_d0bf773530012u4guj4hnxiele",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "not in allowed_hosts",
+              "include": "*.go"
+            },
+            "output": "Found 14 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 2049: \tif !strings.Contains(body, \"not in allowed_hosts\") {\n  Line 2050: \t\tt.Errorf(\"expected tool result to contain 'not in allowed_hosts', got request body:\\n%s\", body)\n  Line 2131: \tif strings.Contains(body, \"not in allowed_hosts\") {\n  Line 2132: \t\tt.Errorf(\"empty allowlist should not produce 'not in allowed_hosts' error, got:\\n%s\", body)\n  Line 2172: \tif !strings.Contains(body, \"not in allowed_hosts\") && !strings.Contains(body, \"private\") {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 737: \t\t\treturn nil, &net.AddrError{Err: \"not in allowed_hosts\", Addr: h}\n  Line 766: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n  Line 767: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n  Line 860: \t\t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n  Line 877: \tif !strings.Contains(result.Content, \"not in allowed_hosts\") {\n  Line 878: \t\tt.Errorf(\"expected 'not in allowed_hosts' in error, got: %s\", result.Content)\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck_test.go:\n  Line 158: \t\t\twantErr:   \"not in allowed_hosts\",\n  Line 218: \t\t\twantErr:   \"not in allowed_hosts\",\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go:\n  Line 72: \t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)",
+            "title": "not in allowed_hosts",
+            "metadata": {
+              "matches": 14,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022260003,
+              "end": 1774022260035
+            }
+          },
+          "id": "prt_d0bf774a4001avbQLQm7uOKPeB",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.01401625,
+          "tokens": {
+            "total": 15340,
+            "input": 1,
+            "output": 222,
+            "reasoning": 0,
+            "cache": {
+              "read": 14960,
+              "write": 157
+            }
+          },
+          "id": "prt_d0bf77549001qzOEP9nOJggjbb",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf762ae001vpdW0UFI915hu5"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022260147,
+          "completed": 1774022265219
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0342885,
+        "tokens": {
+          "total": 18494,
+          "input": 1,
+          "output": 300,
+          "reasoning": 0,
+          "cache": {
+            "read": 15117,
+            "write": 3076
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf775b3001LWw4EooReBoA36",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf77e0f001cnxGDt7YocOwOy",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        },
+        {
+          "type": "text",
+          "text": "Now let me look at the key implementation files to understand the full system:",
+          "time": {
+            "start": 1774022264366,
+            "end": 1774022264366
+          },
+          "id": "prt_d0bf77e10001a1cbkwpipJbYSj",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go</path>\n<type>file</type>\n<content>1: package hostcheck\n2: \n3: import (\n4: \t\"context\"\n5: \t\"fmt\"\n6: \t\"net\"\n7: \t\"strings\"\n8: )\n9: \n10: // Resolver performs DNS lookups. *net.Resolver satisfies this interface.\n11: type Resolver interface {\n12: \tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n13: }\n14: \n15: var privateRanges []*net.IPNet\n16: \n17: func init() {\n18: \tcidrs := []string{\n19: \t\t\"0.0.0.0/8\",      // \"this\" network\n20: \t\t\"10.0.0.0/8\",     // RFC 1918\n21: \t\t\"100.64.0.0/10\",  // CGNAT\n22: \t\t\"127.0.0.0/8\",    // loopback\n23: \t\t\"169.254.0.0/16\", // link-local\n24: \t\t\"172.16.0.0/12\",  // RFC 1918\n25: \t\t\"192.168.0.0/16\", // RFC 1918\n26: \t\t\"::1/128\",        // IPv6 loopback\n27: \t\t\"fc00::/7\",       // IPv6 unique local\n28: \t\t\"fe80::/10\",      // IPv6 link-local\n29: \t}\n30: \tfor _, cidr := range cidrs {\n31: \t\t_, network, err := net.ParseCIDR(cidr)\n32: \t\tif err != nil {\n33: \t\t\tpanic(fmt.Sprintf(\"hostcheck: invalid CIDR %q: %v\", cidr, err))\n34: \t\t}\n35: \t\tprivateRanges = append(privateRanges, network)\n36: \t}\n37: }\n38: \n39: // IsAllowed reports whether hostname is permitted by allowlist.\n40: // An empty allowlist permits every hostname.\n41: func IsAllowed(hostname string, allowlist []string) bool {\n42: \tif len(allowlist) == 0 {\n43: \t\treturn true\n44: \t}\n45: \tfor _, entry := range allowlist {\n46: \t\tif strings.EqualFold(hostname, entry) {\n47: \t\t\treturn true\n48: \t\t}\n49: \t}\n50: \treturn false\n51: }\n52: \n53: // IsPrivateIP reports whether ip falls within any private/reserved range.\n54: func IsPrivateIP(ip net.IP) bool {\n55: \t// Normalise to 4-byte form for IPv4 so net.IPNet.Contains works correctly.\n56: \tif v4 := ip.To4(); v4 != nil {\n57: \t\tip = v4\n58: \t}\n59: \tfor _, network := range privateRanges {\n60: \t\tif network.Contains(ip) {\n61: \t\t\treturn true\n62: \t\t}\n63: \t}\n64: \treturn false\n65: }\n66: \n67: // CheckHost validates hostname against allowlist and ensures it resolves only\n68: // to public IP addresses. It returns the first resolved IP on success.\n69: func CheckHost(ctx context.Context, hostname string, allowlist []string, resolver Resolver) (net.IP, error) {\n70: \t// Step 1: allowlist check.\n71: \tif !IsAllowed(hostname, allowlist) {\n72: \t\treturn nil, fmt.Errorf(\"host %q is not in allowed_hosts\", hostname)\n73: \t}\n74: \n75: \t// Step 2: raw IP literal — skip DNS entirely.\n76: \tif ip := net.ParseIP(hostname); ip != nil {\n77: \t\tif IsPrivateIP(ip) {\n78: \t\t\treturn nil, fmt.Errorf(\"address %s is a private/reserved IP\", hostname)\n79: \t\t}\n80: \t\treturn ip, nil\n81: \t}\n82: \n83: \t// Step 3: DNS resolution.\n84: \taddrs, err := resolver.LookupIPAddr(ctx, hostname)\n85: \tif err != nil {\n86: \t\treturn nil, err\n87: \t}\n88: \n89: \t// Step 4: reject if any resolved address is private.\n90: \tfor _, addr := range addrs {\n91: \t\tif IsPrivateIP(addr.IP) {\n92: \t\t\treturn nil, fmt.Errorf(\"host %q resolves to private address %s\", hostname, addr.IP)\n93: \t\t}\n94: \t}\n95: \n96: \t// Step 5: return first address.\n97: \tif len(addrs) == 0 {\n98: \t\treturn nil, fmt.Errorf(\"host %q resolved to no addresses\", hostname)\n99: \t}\n100: \treturn addrs[0].IP, nil\n101: }\n\n(End of file - total 101 lines)\n</content>",
+            "title": "internal/hostcheck/hostcheck.go",
+            "metadata": {
+              "preview": "package hostcheck\n\nimport (\n\t\"context\"\n\t\"fmt\"\n\t\"net\"\n\t\"strings\"\n)\n\n// Resolver performs DNS lookups. *net.Resolver satisfies this interface.\ntype Resolver interface {\n\tLookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error)\n}\n\nvar privateRanges []*net.IPNet\n\nfunc init() {\n\tcidrs := []string{\n\t\t\"0.0.0.0/8\",      // \"this\" network\n\t\t\"10.0.0.0/8\",     // RFC 1918",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022264367,
+              "end": 1774022264371
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go",
+              "offset": 120,
+              "limit": 80
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go</path>\n<type>file</type>\n<content>120: \t}()\n121: \n122: \tif urlStr == \"\" {\n123: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n124: \t}\n125: \n126: \tparsedURL, err := url.Parse(urlStr)\n127: \tif err != nil {\n128: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n129: \t}\n130: \n131: \tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n132: \t\treturn provider.ToolResult{\n133: \t\t\tCallID:  call.ID,\n134: \t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n135: \t\t\tIsError: true,\n136: \t\t}\n137: \t}\n138: \n139: \t// Host allowlist and private IP check.\n140: \tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n141: \tif hostErr != nil {\n142: \t\treturn provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}\n143: \t}\n144: \n145: \treqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)\n146: \tdefer cancel()\n147: \n148: \treq, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)\n149: \tif err != nil {\n150: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n151: \t}\n152: \n153: \tclient := &http.Client{\n154: \t\tTimeout: urlFetchTimeout,\n155: \t\tTransport: &http.Transport{\n156: \t\t\tDialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {\n157: \t\t\t\t_, port, _ := net.SplitHostPort(addr)\n158: \t\t\t\tif safeIP != nil && port != \"\" {\n159: \t\t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(safeIP.String(), port))\n160: \t\t\t\t}\n161: \t\t\t\treturn (&net.Dialer{}).DialContext(dialCtx, network, addr)\n162: \t\t\t},\n163: \t\t},\n164: \t\tCheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {\n165: \t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n166: \t\t\tif err != nil {\n167: \t\t\t\treturn err\n168: \t\t\t}\n169: \t\t\tif len(via) >= 10 {\n170: \t\t\t\treturn fmt.Errorf(\"too many redirects\")\n171: \t\t\t}\n172: \t\t\treturn nil\n173: \t\t},\n174: \t}\n175: \n176: \tresp, err := client.Do(req)\n177: \tif err != nil {\n178: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n179: \t}\n180: \tdefer func() {\n181: \t\t_ = resp.Body.Close()\n182: \t}()\n183: \tstatusCode = resp.StatusCode\n184: \n185: \tbody, err := io.ReadAll(io.LimitReader(resp.Body, maxReadBytes+1))\n186: \tif err != nil {\n187: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n188: \t}\n189: \n190: \tbodyStr := string(body)\n191: \n192: \t// Strip HTML if Content-Type is text/html\n193: \tmediaType, _, _ := mime.ParseMediaType(resp.Header.Get(\"Content-Type\"))\n194: \tif mediaType == \"text/html\" {\n195: \t\tbodyStr = stripHTML(bodyStr)\n196: \t}\n197: \n198: \tif len(bodyStr) > maxReadBytes {\n199: \t\tbodyStr = bodyStr[:maxReadBytes] + \"\\n... [response truncated, exceeded 10000 characters]\"\n\n(Showing lines 120-199 of 211. Use offset=200 to continue.)\n</content>",
+            "title": "internal/tool/url_fetch.go",
+            "metadata": {
+              "preview": "\t}()\n\n\tif urlStr == \"\" {\n\t\treturn provider.ToolResult{CallID: call.ID, Content: \"url is required\", IsError: true}\n\t}\n\n\tparsedURL, err := url.Parse(urlStr)\n\tif err != nil {\n\t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n\t}\n\n\tif parsedURL.Scheme != \"http\" && parsedURL.Scheme != \"https\" {\n\t\treturn provider.ToolResult{\n\t\t\tCallID:  call.ID,\n\t\t\tContent: fmt.Sprintf(\"unsupported scheme %q: only http and https are allowed\", parsedURL.Scheme),\n\t\t\tIsError: true,\n\t\t}\n\t}\n\n\t// Host allowlist and private IP check.",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022264406,
+              "end": 1774022264408
+            }
+          },
+          "id": "prt_d0bf7862f001i6mL5Jt9DJ7Mrs",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Luj18mSL6w2ZuELp7vD69T",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go",
+              "offset": 35,
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go</path>\n<type>file</type>\n<content>35: \tMCPRouter     *mcpclient.Router\n36: \tVerbose       bool\n37: \tStderr        io.Writer\n38: \tBudgetTracker *budget.BudgetTracker\n39: \tAgentsDir     string // value of --agents-dir flag (may be empty)\n40: \tAgentsBase    string // parent agent's resolved workdir (for auto-discovery)\n41: \tAllowedHosts  []string\n42: }\n43: \n44: // CallAgentTool returns the call_agent tool definition for LLM tool calling.\n45: // The allowedAgents list is included in the description and parameter descriptions\n46: // so the LLM knows which agent names are valid.\n47: func CallAgentTool(allowedAgents []string) provider.Tool {\n48: \tagentList := strings.Join(allowedAgents, \", \")\n49: \n50: \treturn provider.Tool{\n51: \t\tName:        CallAgentToolName,\n52: \t\tDescription: \"Delegate a task to a sub-agent. The sub-agent runs independently with its own context and returns only its final result. Available agents: \" + agentList,\n53: \t\tParameters: map[string]provider.ToolParameter{\n54: \t\t\t\"agent\": {\n55: \t\t\t\tType:        \"string\",\n56: \t\t\t\tDescription: \"Name of the sub-agent to invoke (must be one of: \" + agentList + \")\",\n57: \t\t\t\tRequired:    true,\n58: \t\t\t},\n59: \t\t\t\"task\": {\n60: \t\t\t\tType:        \"string\",\n61: \t\t\t\tDescription: \"What you need the sub-agent to do\",\n62: \t\t\t\tRequired:    true,\n63: \t\t\t},\n64: \t\t\t\"context\": {\n\n(Showing lines 35-64 of 485. Use offset=65 to continue.)\n</content>",
+            "title": "internal/tool/tool.go",
+            "metadata": {
+              "preview": "\tMCPRouter     *mcpclient.Router\n\tVerbose       bool\n\tStderr        io.Writer\n\tBudgetTracker *budget.BudgetTracker\n\tAgentsDir     string // value of --agents-dir flag (may be empty)\n\tAgentsBase    string // parent agent's resolved workdir (for auto-discovery)\n\tAllowedHosts  []string\n}\n\n// CallAgentTool returns the call_agent tool definition for LLM tool calling.\n// The allowedAgents list is included in the description and parameter descriptions\n// so the LLM knows which agent names are valid.\nfunc CallAgentTool(allowedAgents []string) provider.Tool {\n\tagentList := strings.Join(allowedAgents, \", \")\n\n\treturn provider.Tool{\n\t\tName:        CallAgentToolName,\n\t\tDescription: \"Delegate a task to a sub-agent. The sub-agent runs independently with its own context and returns only its final result. Available agents: \" + agentList,\n\t\tParameters: map[string]provider.ToolParameter{\n\t\t\t\"agent\": {",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022265010,
+              "end": 1774022265015
+            }
+          },
+          "id": "prt_d0bf78657001HBitskjLf8y1Fz",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.0342885,
+          "tokens": {
+            "total": 18494,
+            "input": 1,
+            "output": 300,
+            "reasoning": 0,
+            "cache": {
+              "read": 15117,
+              "write": 3076
+            }
+          },
+          "id": "prt_d0bf788db001KBwqfXp4oQEWfb",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf775b3001LWw4EooReBoA36"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022265219,
+          "completed": 1774022270030
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.034889,
+        "tokens": {
+          "total": 21792,
+          "input": 1,
+          "output": 176,
+          "reasoning": 0,
+          "cache": {
+            "read": 18193,
+            "write": 3422
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf79295001QVy5ElHD5l7DDG",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "Now let me check how `dispatchToolCall` passes `allowedHosts` and look at the `web_search` tool for completeness:",
+          "time": {
+            "start": 1774022268750,
+            "end": 1774022268750
+          },
+          "id": "prt_d0bf79296001T4hiaX2GgyhfZc",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "func dispatchToolCall",
+              "include": "*.go"
+            },
+            "output": "Found 2 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go:\n  Line 438: func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go:\n  Line 746: func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string) provider.ToolResult {",
+            "title": "func dispatchToolCall",
+            "metadata": {
+              "matches": 2,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022269209,
+              "end": 1774022269248
+            }
+          },
+          "id": "prt_d0bf79750001V0W4vd7NqKR55E",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "web_search.*AllowedHosts|AllowedHosts.*web_search",
+              "include": "*.go"
+            },
+            "output": "No files found",
+            "title": "web_search.*AllowedHosts|AllowedHosts.*web_search",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022269817,
+              "end": 1774022269847
+            }
+          },
+          "id": "prt_d0bf799200019Euutt1wPlfh4u",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.034889,
+          "tokens": {
+            "total": 21792,
+            "input": 1,
+            "output": 176,
+            "reasoning": 0,
+            "cache": {
+              "read": 18193,
+              "write": 3422
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022270031,
+          "completed": 1774022273529
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0163375,
+        "tokens": {
+          "total": 22149,
+          "input": 1,
+          "output": 117,
+          "reasoning": 0,
+          "cache": {
+            "read": 21615,
+            "write": 416
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf79c4f001JZGB6KOATqR004",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7a84d001oWlxNNvohFANoQ",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf79c4f001JZGB6KOATqR004"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "web_search|webSearch",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool",
+              "include": "*.go"
+            },
+            "output": "Found 34 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go:\n  Line 100: \tr.Register(toolname.WebSearch, webSearchEntry())\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go:\n  Line 22: \twebSearchQueryLogMax   = 80\n  Line 44: func webSearchEntry() ToolEntry {\n  Line 46: \t\tDefinition: webSearchDefinition,\n  Line 47: \t\tExecute:    webSearchExecute,\n  Line 51: func webSearchDefinition() provider.Tool {\n  Line 65: func webSearchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n  Line 70: \t\tif len(loggedQuery) > webSearchQueryLogMax {\n  Line 71: \t\t\tloggedQuery = loggedQuery[:webSearchQueryLogMax] + \"...\"\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search_test.go:\n  Line 22: \tentry := webSearchEntry()\n  Line 36: \tentry := webSearchEntry()\n  Line 50: \tentry := webSearchEntry()\n  Line 70: \tentry := webSearchEntry()\n  Line 103: \tentry := webSearchEntry()\n  Line 121: \tentry := webSearchEntry()\n  Line 141: \tentry := webSearchEntry()\n  Line 162: \tentry := webSearchEntry()\n  Line 186: \tentry := webSearchEntry()\n  Line 207: \tentry := webSearchEntry()\n  Line 230: \tentry := webSearchEntry()\n  Line 261: \tentry := webSearchEntry()\n  Line 282: \tentry := webSearchEntry()\n  Line 306: \tentry := webSearchEntry()\n  Line 341: \tentry := webSearchEntry()\n  Line 369: \tentry := webSearchEntry()\n  Line 387: \tentry := webSearchEntry()\n  Line 414: \tentry := webSearchEntry()\n  Line 440: \tentry := webSearchEntry()\n  Line 462: \tentry := webSearchEntry()\n  Line 478: \tentry := webSearchEntry()\n  Line 481: \tif def.Name != \"web_search\" {\n  Line 482: \t\tt.Errorf(\"Name = %q, want %q\", def.Name, \"web_search\")\n  Line 500: \tentry := webSearchEntry()\n  Line 521: \tentry := webSearchEntry()",
+            "title": "web_search|webSearch",
+            "metadata": {
+              "matches": 34,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022273348,
+              "end": 1774022273373
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf79c4f001JZGB6KOATqR004"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.0163375,
+          "tokens": {
+            "total": 22149,
+            "input": 1,
+            "output": 117,
+            "reasoning": 0,
+            "cache": {
+              "read": 21615,
+              "write": 416
+            }
+          },
+          "id": "prt_d0bf7a95e001Dh0GaUA74NEAXZ",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf79c4f001JZGB6KOATqR004"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022273531,
+          "completed": 1774022277420
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.018508,
+        "tokens": {
+          "total": 22930,
+          "input": 1,
+          "output": 100,
+          "reasoning": 0,
+          "cache": {
+            "read": 22031,
+            "write": 798
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf7a9fb00143nswUaIZEidb9",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7b4aa0019mdmVt0qKVhrCo",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7a9fb00143nswUaIZEidb9"
+        },
+        {
+          "type": "text",
+          "text": "Let me check if `web_search` applies the allowlist too:",
+          "time": {
+            "start": 1774022276662,
+            "end": 1774022276662
+          },
+          "id": "prt_d0bf7b4aa002DSimJbEa3gsGpN",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7a9fb00143nswUaIZEidb9"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/web_search.go</path>\n<type>file</type>\n<content>1: package tool\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"context\"\n6: \t\"encoding/json\"\n7: \t\"fmt\"\n8: \t\"io\"\n9: \t\"net/http\"\n10: \t\"os\"\n11: \t\"strings\"\n12: \n13: \t\"github.com/jrswab/axe/internal/provider\"\n14: \t\"github.com/jrswab/axe/internal/toolname\"\n15: )\n16: \n17: const (\n18: \ttavilyDefaultURL       = \"https://api.tavily.com\"\n19: \ttavilyMaxResults       = 10\n20: \ttavilyMaxResponseBytes = 102400\n21: \ttavilyErrorBodyMax     = 500\n22: \twebSearchQueryLogMax   = 80\n23: )\n24: \n25: type tavilySearchRequest struct {\n26: \tQuery         string `json:\"query\"`\n27: \tMaxResults    int    `json:\"max_results\"`\n28: \tSearchDepth   string `json:\"search_depth\"`\n29: \tAPIKey        string `json:\"api_key\"`\n30: \tIncludeImages bool   `json:\"include_images\"`\n31: \tIncludeVideos bool   `json:\"include_videos\"`\n32: }\n33: \n34: type tavilySearchResult struct {\n35: \tTitle   string `json:\"title\"`\n36: \tURL     string `json:\"url\"`\n37: \tContent string `json:\"content\"`\n38: }\n39: \n40: type tavilySearchResponse struct {\n41: \tResults []tavilySearchResult `json:\"results\"`\n42: }\n43: \n44: func webSearchEntry() ToolEntry {\n45: \treturn ToolEntry{\n46: \t\tDefinition: webSearchDefinition,\n47: \t\tExecute:    webSearchExecute,\n48: \t}\n49: }\n50: \n51: func webSearchDefinition() provider.Tool {\n52: \treturn provider.Tool{\n53: \t\tName:        toolname.WebSearch,\n54: \t\tDescription: \"Search the web using Tavily and return text results including titles, URLs, and snippets.\",\n55: \t\tParameters: map[string]provider.ToolParameter{\n56: \t\t\t\"query\": {\n57: \t\t\t\tType:        \"string\",\n58: \t\t\t\tDescription: \"The search query to perform.\",\n59: \t\t\t\tRequired:    true,\n60: \t\t\t},\n61: \t\t},\n62: \t}\n63: }\n64: \n65: func webSearchExecute(ctx context.Context, call provider.ToolCall, ec ExecContext) (result provider.ToolResult) {\n66: \tquery := call.Arguments[\"query\"]\n67: \n68: \tdefer func() {\n69: \t\tloggedQuery := query\n70: \t\tif len(loggedQuery) > webSearchQueryLogMax {\n71: \t\t\tloggedQuery = loggedQuery[:webSearchQueryLogMax] + \"...\"\n72: \t\t}\n73: \t\tsummary := fmt.Sprintf(\"query %q\", loggedQuery)\n74: \t\tif result.IsError {\n75: \t\t\tsummary = fmt.Sprintf(\"%s: %s\", summary, truncateResultSummary(result.Content, 120))\n76: \t\t}\n77: \t\ttoolVerboseLog(ec, toolname.WebSearch, result, summary)\n78: \t}()\n79: \n80: \tif query == \"\" {\n81: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"query is required\", IsError: true}\n82: \t}\n83: \n84: \tapiKey := os.Getenv(\"TAVILY_API_KEY\")\n85: \tif apiKey == \"\" {\n86: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"TAVILY_API_KEY environment variable is not set\", IsError: true}\n87: \t}\n88: \n89: \tbaseURL := os.Getenv(\"AXE_TAVILY_BASE_URL\")\n90: \tif baseURL == \"\" {\n91: \t\tbaseURL = tavilyDefaultURL\n92: \t}\n93: \n94: \tbody, err := json.Marshal(tavilySearchRequest{\n95: \t\tQuery:         query,\n96: \t\tMaxResults:    tavilyMaxResults,\n97: \t\tSearchDepth:   \"basic\",\n98: \t\tAPIKey:        apiKey,\n99: \t\tIncludeImages: false,\n100: \t\tIncludeVideos: false,\n101: \t})\n102: \tif err != nil {\n103: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n104: \t}\n105: \n106: \treq, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+\"/search\", bytes.NewReader(body))\n107: \tif err != nil {\n108: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n109: \t}\n110: \treq.Header.Set(\"Content-Type\", \"application/json\")\n111: \treq.Header.Set(\"Authorization\", \"Bearer \"+apiKey)\n112: \n113: \tresp, err := http.DefaultClient.Do(req)\n114: \tif err != nil {\n115: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n116: \t}\n117: \tdefer func() {\n118: \t\t_ = resp.Body.Close()\n119: \t}()\n120: \n121: \trespBody, err := io.ReadAll(io.LimitReader(resp.Body, tavilyMaxResponseBytes+1))\n122: \tif err != nil {\n123: \t\treturn provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}\n124: \t}\n125: \n126: \tif len(respBody) > tavilyMaxResponseBytes {\n127: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"Tavily response too large to process\", IsError: true}\n128: \t}\n129: \n130: \tif resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {\n131: \t\terrorBody := string(respBody)\n132: \t\tif len(errorBody) > tavilyErrorBodyMax {\n133: \t\t\terrorBody = errorBody[:tavilyErrorBodyMax]\n134: \t\t}\n135: \t\treturn provider.ToolResult{\n136: \t\t\tCallID:  call.ID,\n137: \t\t\tContent: fmt.Sprintf(\"Tavily API error (HTTP %d): %s\", resp.StatusCode, errorBody),\n138: \t\t\tIsError: true,\n139: \t\t}\n140: \t}\n141: \n142: \tvar parsed tavilySearchResponse\n143: \tif err := json.Unmarshal(respBody, &parsed); err != nil {\n144: \t\treturn provider.ToolResult{CallID: call.ID, Content: fmt.Sprintf(\"failed to parse Tavily response: %v\", err), IsError: true}\n145: \t}\n146: \n147: \tif len(parsed.Results) == 0 {\n148: \t\treturn provider.ToolResult{CallID: call.ID, Content: \"No results found.\", IsError: false}\n149: \t}\n150: \n151: \tvar b strings.Builder\n152: \tfor i, item := range parsed.Results {\n153: \t\tif i > 0 {\n154: \t\t\tb.WriteString(\"\\n\\n\")\n155: \t\t}\n156: \t\tfmt.Fprintf(&b, \"Title: %s\\nURL: %s\\nSnippet: %s\", item.Title, item.URL, item.Content)\n157: \t}\n158: \n159: \treturn provider.ToolResult{CallID: call.ID, Content: strings.TrimSpace(b.String()), IsError: false}\n160: }\n161: \n162: func truncateResultSummary(s string, maxLen int) string {\n163: \tif len(s) <= maxLen {\n164: \t\treturn s\n165: \t}\n166: \treturn s[:maxLen] + \"...\"\n167: }\n\n(End of file - total 167 lines)\n</content>",
+            "title": "internal/tool/web_search.go",
+            "metadata": {
+              "preview": "package tool\n\nimport (\n\t\"bytes\"\n\t\"context\"\n\t\"encoding/json\"\n\t\"fmt\"\n\t\"io\"\n\t\"net/http\"\n\t\"os\"\n\t\"strings\"\n\n\t\"github.com/jrswab/axe/internal/provider\"\n\t\"github.com/jrswab/axe/internal/toolname\"\n)\n\nconst (\n\ttavilyDefaultURL       = \"https://api.tavily.com\"\n\ttavilyMaxResults       = 10\n\ttavilyMaxResponseBytes = 102400",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022277065,
+              "end": 1774022277075
+            }
+          },
+          "id": "prt_d0bf7b63c0012wFtaatGP6edHh",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7a9fb00143nswUaIZEidb9"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.018508,
+          "tokens": {
+            "total": 22930,
+            "input": 1,
+            "output": 100,
+            "reasoning": 0,
+            "cache": {
+              "read": 22031,
+              "write": 798
+            }
+          },
+          "id": "prt_d0bf7b877001EYJuNwcFE9EiEe",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7a9fb00143nswUaIZEidb9"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022277422,
+          "completed": 1774022281423
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.03058825,
+        "tokens": {
+          "total": 25333,
+          "input": 1,
+          "output": 188,
+          "reasoning": 0,
+          "cache": {
+            "read": 22829,
+            "write": 2315
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf7b92e0010bAQHZSAwExvYD",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7c2c1001gJshfmJX40dnk8",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7b92e0010bAQHZSAwExvYD"
+        },
+        {
+          "type": "text",
+          "text": "Now let me look at the existing integration test patterns for context:",
+          "time": {
+            "start": 1774022280197,
+            "end": 1774022280197
+          },
+          "id": "prt_d0bf7c2c1002llZwfUFg94eNtI",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7b92e0010bAQHZSAwExvYD"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go",
+              "offset": 1,
+              "limit": 30
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go</path>\n<type>file</type>\n<content>1: package cmd\n2: \n3: import (\n4: \t\"bytes\"\n5: \t\"encoding/json\"\n6: \t\"errors\"\n7: \t\"os\"\n8: \t\"path/filepath\"\n9: \t\"strings\"\n10: \t\"testing\"\n11: \t\"time\"\n12: \n13: \t\"github.com/jrswab/axe/internal/testutil\"\n14: )\n15: \n16: // writeAgentConfig writes a TOML agent config file to configDir/agents/<name>.toml.\n17: func writeAgentConfig(t *testing.T, configDir, name, toml string) {\n18: \tt.Helper()\n19: \tagentsDir := filepath.Join(configDir, \"agents\")\n20: \tif err := os.WriteFile(filepath.Join(agentsDir, name+\".toml\"), []byte(toml), 0644); err != nil {\n21: \t\tt.Fatal(err)\n22: \t}\n23: }\n24: \n25: // --- Phase 11: Single-Shot Run Tests ---\n26: \n27: func TestIntegration_SingleShot_Anthropic(t *testing.T) {\n28: \tresetRunCmd(t)\n29: \n30: \tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n\n(Showing lines 1-30 of 2175. Use offset=31 to continue.)\n</content>",
+            "title": "cmd/run_integration_test.go",
+            "metadata": {
+              "preview": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"encoding/json\"\n\t\"errors\"\n\t\"os\"\n\t\"path/filepath\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n\n\t\"github.com/jrswab/axe/internal/testutil\"\n)\n\n// writeAgentConfig writes a TOML agent config file to configDir/agents/<name>.toml.\nfunc writeAgentConfig(t *testing.T, configDir, name, toml string) {\n\tt.Helper()\n\tagentsDir := filepath.Join(configDir, \"agents\")\n\tif err := os.WriteFile(filepath.Join(agentsDir, name+\".toml\"), []byte(toml), 0644); err != nil {",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022281125,
+              "end": 1774022281134
+            }
+          },
+          "id": "prt_d0bf7c406001U3Lluv1Xgegcug",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7b92e0010bAQHZSAwExvYD"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "func writeAgentConfig",
+              "include": "*.go"
+            },
+            "output": "Found 1 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 17: func writeAgentConfig(t *testing.T, configDir, name, toml string) {",
+            "title": "func writeAgentConfig",
+            "metadata": {
+              "matches": 1,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022281252,
+              "end": 1774022281285
+            }
+          },
+          "id": "prt_d0bf7c7a8001Fc5RipT5H49J3C",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7b92e0010bAQHZSAwExvYD"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.03058825,
+          "tokens": {
+            "total": 25333,
+            "input": 1,
+            "output": 188,
+            "reasoning": 0,
+            "cache": {
+              "read": 22829,
+              "write": 2315
+            }
+          },
+          "id": "prt_d0bf7c846001Vn4PKdjfdyD0vz",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7b92e0010bAQHZSAwExvYD"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022281425,
+          "completed": 1774022286563
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.019552,
+        "tokens": {
+          "total": 25979,
+          "input": 1,
+          "output": 94,
+          "reasoning": 0,
+          "cache": {
+            "read": 25144,
+            "write": 740
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf7c8d1001T7n25LPO1yzZof",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7d7020014kkZRTnfRMxrFi",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7c8d1001T7n25LPO1yzZof"
+        },
+        {
+          "type": "text",
+          "text": "Let me also check the `urlFetchCheckHost` function to understand the full chain:",
+          "time": {
+            "start": 1774022285820,
+            "end": 1774022285820
+          },
+          "id": "prt_d0bf7d703001TGVFsKE7tkbseL",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7c8d1001T7n25LPO1yzZof"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "func urlFetchCheckHost",
+              "include": "*.go"
+            },
+            "output": "No files found",
+            "title": "func urlFetchCheckHost",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022286160,
+              "end": 1774022286184
+            }
+          },
+          "id": "prt_d0bf7da160013ODuvTFRjlfHvh",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7c8d1001T7n25LPO1yzZof"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.019552,
+          "tokens": {
+            "total": 25979,
+            "input": 1,
+            "output": 94,
+            "reasoning": 0,
+            "cache": {
+              "read": 25144,
+              "write": 740
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7c8d1001T7n25LPO1yzZof"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022286565,
+          "completed": 1774022289937
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01545325,
+        "tokens": {
+          "total": 26067,
+          "input": 1,
+          "output": 73,
+          "reasoning": 0,
+          "cache": {
+            "read": 25884,
+            "write": 109
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7e814001a0Oi502oT4Sb4t",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01XJuMG9a6MTy4LMEcnkkoc8",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "urlFetchCheckHost",
+              "include": "*.go"
+            },
+            "output": "Found 14 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 33: \torig := urlFetchCheckHost\n  Line 34: \turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n  Line 37: \tt.Cleanup(func() { urlFetchCheckHost = orig })\n  Line 734: \torig := urlFetchCheckHost\n  Line 735: \turlFetchCheckHost = func(ctx context.Context, h string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n  Line 741: \tdefer func() { urlFetchCheckHost = orig }()\n  Line 854: \t// Override urlFetchCheckHost to simulate allowlist behavior:\n  Line 857: \torig := urlFetchCheckHost\n  Line 858: \turlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {\n  Line 864: \tdefer func() { urlFetchCheckHost = orig }()\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go:\n  Line 29: // urlFetchCheckHost is the host validation function.\n  Line 31: var urlFetchCheckHost = hostcheck.CheckHost\n  Line 140: \tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n  Line 165: \t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)",
+            "title": "urlFetchCheckHost",
+            "metadata": {
+              "matches": 14,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022289751,
+              "end": 1774022289786
+            }
+          },
+          "id": "prt_d0bf7e814002C3m4KM453jgCeH",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.01545325,
+          "tokens": {
+            "total": 26067,
+            "input": 1,
+            "output": 73,
+            "reasoning": 0,
+            "cache": {
+              "read": 25884,
+              "write": 109
+            }
+          },
+          "id": "prt_d0bf7e97b001lmUXnhdZtww5So",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022289938,
+          "completed": 1774022294488
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02055775,
+        "tokens": {
+          "total": 26708,
+          "input": 1,
+          "output": 165,
+          "reasoning": 0,
+          "cache": {
+            "read": 25993,
+            "write": 549
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf7ea12001HVn60x8p8sP23D",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf7f2880018Qu5QSvxPg7bWo",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7ea12001HVn60x8p8sP23D"
+        },
+        {
+          "type": "text",
+          "text": "Good. Now I have a complete picture of the implementation. Let me also check whether the `TestIntegration_AllowedHosts_BlocksPrivateIP` test properly asserts on the actual error message:",
+          "time": {
+            "start": 1774022293382,
+            "end": 1774022293382
+          },
+          "id": "prt_d0bf7f289001IjU2jZ3DKq75YI",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7ea12001HVn60x8p8sP23D"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01CDAG5h5UuSG22n1b8jHU9o",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go",
+              "offset": 76,
+              "limit": 5
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go</path>\n<type>file</type>\n<content>76: \tif ip := net.ParseIP(hostname); ip != nil {\n77: \t\tif IsPrivateIP(ip) {\n78: \t\t\treturn nil, fmt.Errorf(\"address %s is a private/reserved IP\", hostname)\n79: \t\t}\n80: \t\treturn ip, nil\n\n(Showing lines 76-80 of 101. Use offset=81 to continue.)\n</content>",
+            "title": "internal/hostcheck/hostcheck.go",
+            "metadata": {
+              "preview": "\tif ip := net.ParseIP(hostname); ip != nil {\n\t\tif IsPrivateIP(ip) {\n\t\t\treturn nil, fmt.Errorf(\"address %s is a private/reserved IP\", hostname)\n\t\t}\n\t\treturn ip, nil",
+              "truncated": true,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022294281,
+              "end": 1774022294288
+            }
+          },
+          "id": "prt_d0bf7f788001Wg2dOnnaEh6K5B",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7ea12001HVn60x8p8sP23D"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.02055775,
+          "tokens": {
+            "total": 26708,
+            "input": 1,
+            "output": 165,
+            "reasoning": 0,
+            "cache": {
+              "read": 25993,
+              "write": 549
+            }
+          },
+          "id": "prt_d0bf7fb26001NwUUWAZpzwuHGT",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7ea12001HVn60x8p8sP23D"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022294490,
+          "completed": 1774022309054
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.029876,
+        "tokens": {
+          "total": 27450,
+          "input": 1,
+          "output": 583,
+          "reasoning": 0,
+          "cache": {
+            "read": 26542,
+            "write": 324
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf7fbda001V6iDcD04nrZSYL",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf8052c001zqCleqwaORhlCY",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7fbda001V6iDcD04nrZSYL"
+        },
+        {
+          "type": "text",
+          "text": "The private IP error message is `\"address %s is a private/reserved IP\"` — but the test at line 2088 checks for the substring `\"private\"`. That will match because `\"private/reserved\"` contains `\"private\"`. Good.\n\nNow let me check the `169.254.169.254` case more carefully. The test uses `http://169.254.169.254/latest/meta-data/`. The hostname is `169.254.169.254`. The agent has no `allowed_hosts`, so `IsAllowed` returns true (empty allowlist permits all). Then `net.ParseIP(\"169.254.169.254\")` is not nil, `IsPrivateIP` checks against `169.254.0.0/16` which matches. So the error will be `\"address 169.254.169.254 is a private/reserved IP\"`. The test checks for `\"private\"` — correct.\n\nFor the loopback test (`127.0.0.1`), the agent has `allowed_hosts = [\"api.example.com\"]`. `IsAllowed(\"127.0.0.1\", [\"api.example.com\"])` returns false, so the error is `host \"127.0.0.1\" is not in allowed_hosts`. The test checks for either `\"not in allowed_hosts\"` or `\"private\"` — correct.\n\nLet me verify the `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts` test logic. It fetches `https://nonexistent.example.com/data` with no allowlist. `IsAllowed` returns true. `net.ParseIP(\"nonexistent.example.com\")` returns nil (it's not an IP literal). Then DNS resolution happens — `nonexistent.example.com` will fail DNS lookup with NXDOMAIN. So the tool result will be a DNS error, not an allowlist error. The test asserts `\"not in allowed_hosts\"` is NOT in the body. That's correct.\n\nHowever, there's a subtlety: this test makes a real DNS query to `nonexistent.example.com` during the integration test. Let me check if there's any test infrastructure that intercepts DNS:",
+          "time": {
+            "start": 1774022308589,
+            "end": 1774022308589
+          },
+          "id": "prt_d0bf8052c002TCbXbA0o11GTq8",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7fbda001V6iDcD04nrZSYL"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_017QidTwamgiG1ysvTScnoDn",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "urlFetchResolver",
+              "include": "*.go"
+            },
+            "output": "Found 7 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch_test.go:\n  Line 810: \torig := urlFetchResolver\n  Line 811: \turlFetchResolver = &fakeURLFetchResolver{\n  Line 814: \tdefer func() { urlFetchResolver = orig }()\n\n/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go:\n  Line 25: // urlFetchResolver is the DNS resolver used for host validation.\n  Line 27: var urlFetchResolver hostcheck.Resolver = net.DefaultResolver\n  Line 140: \tsafeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)\n  Line 165: \t\t\t_, err := urlFetchCheckHost(redirectReq.Context(), redirectReq.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)",
+            "title": "urlFetchResolver",
+            "metadata": {
+              "matches": 7,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022308794,
+              "end": 1774022308823
+            }
+          },
+          "id": "prt_d0bf832f1001Yan8xufP1Rq86M",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7fbda001V6iDcD04nrZSYL"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.029876,
+          "tokens": {
+            "total": 27450,
+            "input": 1,
+            "output": 583,
+            "reasoning": 0,
+            "cache": {
+              "read": 26542,
+              "write": 324
+            }
+          },
+          "id": "prt_d0bf83421001leufl9I5nB30my",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf7fbda001V6iDcD04nrZSYL"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022309056,
+          "completed": 1774022315655
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02505675,
+        "tokens": {
+          "total": 27973,
+          "input": 1,
+          "output": 251,
+          "reasoning": 0,
+          "cache": {
+            "read": 26866,
+            "write": 855
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf83d43001910Bx22aTVZsxa",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "text",
+          "text": "The integration test in `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts` does NOT override `urlFetchResolver` — it uses the real DNS resolver. This means it makes a real DNS query for `nonexistent.example.com`, which introduces a network dependency in the integration test. Though `example.com` domains under IANA control are unlikely to resolve, this is technically a flaky test dependency on external DNS.\n\nLet me check how the other existing integration tests handle this — do they also make real network calls?",
+          "time": {
+            "start": 1774022314314,
+            "end": 1774022314314
+          },
+          "id": "prt_d0bf83d44001a6zbO16fdedEBF",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_016jBdU1qLuowTW49eTu3QLX",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "url_fetch.*nonexistent|url_fetch.*example\\.com",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd",
+              "include": "*_test.go"
+            },
+            "output": "Found 2 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go:\n  Line 2017: \t\t\t{ID: \"tc_uf1\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://blocked.example.com/data\"}},\n  Line 2100: \t\t\t{ID: \"tc_uf3\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://nonexistent.example.com/data\"}},",
+            "title": "url_fetch.*nonexistent|url_fetch.*example\\.com",
+            "metadata": {
+              "matches": 2,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022315323,
+              "end": 1774022315345
+            }
+          },
+          "id": "prt_d0bf84950001j7R9nqJ9uBcSwK",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.02505675,
+          "tokens": {
+            "total": 27973,
+            "input": 1,
+            "output": 251,
+            "reasoning": 0,
+            "cache": {
+              "read": 26866,
+              "write": 855
+            }
+          },
+          "id": "prt_d0bf84dd9001jVJcYMcVtMtgMf",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022315657,
+          "completed": 1774022322090
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02274675,
+        "tokens": {
+          "total": 28378,
+          "input": 1,
+          "output": 255,
+          "reasoning": 0,
+          "cache": {
+            "read": 27721,
+            "write": 401
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf84e89001exKKma4ijvAlu2",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "REDACTED",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf84e89001exKKma4ijvAlu2"
+        },
+        {
+          "type": "text",
+          "text": "The first test (`BlocksNonMatchingHost`) fetches `blocked.example.com` but that has an allowlist set to `api.example.com`, so the hostname check fails *before* DNS resolution. No real network call. Good.\n\nThe third test (`EmptyAllowlistPermitsPublicHosts`) fetches `nonexistent.example.com` with no allowlist. It passes the hostname check, then does real DNS. This is a real network call. Let me check if there's a test build tag or pattern that existing tests use for network-dependent tests:",
+          "time": {
+            "start": 1774022321020,
+            "end": 1774022321020
+          },
+          "id": "prt_d0bf8574e002UzyYBYJt5QyI44",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf84e89001exKKma4ijvAlu2"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Ks8MRqjWogUUYdVUYsE496",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "t\\.Skip.*network|//go:build|//\\\\+build",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd",
+              "include": "*_test.go"
+            },
+            "output": "No files found",
+            "title": "t\\.Skip.*network|//go:build|//\\\\+build",
+            "metadata": {
+              "matches": 0,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022321896,
+              "end": 1774022321919
+            }
+          },
+          "id": "prt_d0bf8637f001S3ip3cA1JaRZJ8",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf84e89001exKKma4ijvAlu2"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.02274675,
+          "tokens": {
+            "total": 28378,
+            "input": 1,
+            "output": 255,
+            "reasoning": 0,
+            "cache": {
+              "read": 27721,
+              "write": 401
+            }
+          },
+          "id": "prt_d0bf8670e001Nsi6CZwQRIND6h",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf84e89001exKKma4ijvAlu2"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022322092,
+          "completed": 1774022325142
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0186285,
+        "tokens": {
+          "total": 28508,
+          "input": 1,
+          "output": 115,
+          "reasoning": 0,
+          "cache": {
+            "read": 28122,
+            "write": 270
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf867ac001CCxFZ6hFWeUUVS",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf870a9001cnjWYBu9jmiCie",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf867ac001CCxFZ6hFWeUUVS"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01GZ7gyYXpvLApoxXhuBUCGa",
+          "tool": "grep",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "t\\.Skip",
+              "path": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd",
+              "include": "*_test.go"
+            },
+            "output": "Found 2 matches\n/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/config_test.go:\n  Line 201: \t\tt.Skip(\"permission test not reliable on Windows\")\n  Line 251: \t\tt.Skip(\"permission test not reliable on Windows\")",
+            "title": "t\\.Skip",
+            "metadata": {
+              "matches": 2,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774022324965,
+              "end": 1774022324989
+            }
+          },
+          "id": "prt_d0bf870aa001roUZsdIeZNlwIT",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf867ac001CCxFZ6hFWeUUVS"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.0186285,
+          "tokens": {
+            "total": 28508,
+            "input": 1,
+            "output": 115,
+            "reasoning": 0,
+            "cache": {
+              "read": 28122,
+              "write": 270
+            }
+          },
+          "id": "prt_d0bf872fe001tG45YAgKOTOp59",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf867ac001CCxFZ6hFWeUUVS"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022325143,
+          "completed": 1774022331304
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.02194475,
+        "tokens": {
+          "total": 28855,
+          "input": 1,
+          "output": 259,
+          "reasoning": 0,
+          "cache": {
+            "read": 28392,
+            "write": 203
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0bf87397001LC21yoB7A6HEgb",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf87eda001p5whfBqbZVpDqF",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf87397001LC21yoB7A6HEgb"
+        },
+        {
+          "type": "text",
+          "text": "No established pattern for skipping network-dependent tests. Now let me also verify whether `TestIntegration_AllowedHosts_BlocksPrivateIP` makes a real network call. Hostname is `169.254.169.254` (an IP literal), no allowlist set. `IsAllowed` returns true (empty list). `net.ParseIP(\"169.254.169.254\")` is non-nil, so it goes to the `IsPrivateIP` check and fails immediately — no DNS, no network call. Good.\n\nNow let me re-read the full diff one more time to check for any remaining issues:",
+          "time": {
+            "start": 1774022330642,
+            "end": 1774022330642
+          },
+          "id": "prt_d0bf87eda002nyQJpmmdxh2TBE",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf87397001LC21yoB7A6HEgb"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Cd5ZGWSbEemfxu9e9eppFk",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go",
+              "offset": 2004,
+              "limit": 175
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go</path>\n<type>file</type>\n<content>2004: \t\tt.Errorf(\"expected 2 requests to mock server, got %d\", mock.RequestCount())\n2005: \t}\n2006: }\n2007: \n2008: // --- Allowlist Integration Tests ---\n2009: \n2010: func TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {\n2011: \tresetRunCmd(t)\n2012: \n2013: \t// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts\n2014: \t// Turn 2: LLM receives the error and responds with text\n2015: \tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n2016: \t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that URL.\", []testutil.MockToolCall{\n2017: \t\t\t{ID: \"tc_uf1\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://blocked.example.com/data\"}},\n2018: \t\t}),\n2019: \t\ttestutil.AnthropicResponse(\"The URL was blocked by the allowlist.\"),\n2020: \t})\n2021: \n2022: \tconfigDir, _ := testutil.SetupXDGDirs(t)\n2023: \twriteAgentConfig(t, configDir, \"fetch-blocked\", `name = \"fetch-blocked\"\n2024: model = \"anthropic/claude-sonnet-4-20250514\"\n2025: tools = [\"url_fetch\"]\n2026: allowed_hosts = [\"api.example.com\"]\n2027: `)\n2028: \n2029: \tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n2030: \tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n2031: \n2032: \tbuf := new(bytes.Buffer)\n2033: \trootCmd.SetOut(buf)\n2034: \trootCmd.SetErr(new(bytes.Buffer))\n2035: \trootCmd.SetArgs([]string{\"run\", \"fetch-blocked\"})\n2036: \n2037: \terr := rootCmd.Execute()\n2038: \tif err != nil {\n2039: \t\tt.Fatalf(\"unexpected error: %v\", err)\n2040: \t}\n2041: \n2042: \t// Verify the mock received 2 requests (tool call + final response)\n2043: \tif mock.RequestCount() != 2 {\n2044: \t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n2045: \t}\n2046: \n2047: \t// The second request should contain the tool error result\n2048: \tbody := mock.Requests[1].Body\n2049: \tif !strings.Contains(body, \"not in allowed_hosts\") {\n2050: \t\tt.Errorf(\"expected tool result to contain 'not in allowed_hosts', got request body:\\n%s\", body)\n2051: \t}\n2052: }\n2053: \n2054: func TestIntegration_AllowedHosts_BlocksPrivateIP(t *testing.T) {\n2055: \tresetRunCmd(t)\n2056: \n2057: \tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n2058: \t\ttestutil.AnthropicToolUseResponse(\"Let me check the metadata.\", []testutil.MockToolCall{\n2059: \t\t\t{ID: \"tc_uf2\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://169.254.169.254/latest/meta-data/\"}},\n2060: \t\t}),\n2061: \t\ttestutil.AnthropicResponse(\"The request was blocked.\"),\n2062: \t})\n2063: \n2064: \tconfigDir, _ := testutil.SetupXDGDirs(t)\n2065: \t// No allowed_hosts — private IP blocking is unconditional\n2066: \twriteAgentConfig(t, configDir, \"fetch-private\", `name = \"fetch-private\"\n2067: model = \"anthropic/claude-sonnet-4-20250514\"\n2068: tools = [\"url_fetch\"]\n2069: `)\n2070: \n2071: \tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n2072: \tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n2073: \n2074: \tbuf := new(bytes.Buffer)\n2075: \trootCmd.SetOut(buf)\n2076: \trootCmd.SetErr(new(bytes.Buffer))\n2077: \trootCmd.SetArgs([]string{\"run\", \"fetch-private\"})\n2078: \n2079: \terr := rootCmd.Execute()\n2080: \tif err != nil {\n2081: \t\tt.Fatalf(\"unexpected error: %v\", err)\n2082: \t}\n2083: \n2084: \tif mock.RequestCount() != 2 {\n2085: \t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n2086: \t}\n2087: \n2088: \t// The second request should contain the private IP error\n2089: \tbody := mock.Requests[1].Body\n2090: \tif !strings.Contains(body, \"private\") {\n2091: \t\tt.Errorf(\"expected tool result to mention 'private', got request body:\\n%s\", body)\n2092: \t}\n2093: }\n2094: \n2095: func TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts(t *testing.T) {\n2096: \tresetRunCmd(t)\n2097: \n2098: \tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n2099: \t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that.\", []testutil.MockToolCall{\n2100: \t\t\t{ID: \"tc_uf3\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://nonexistent.example.com/data\"}},\n2101: \t\t}),\n2102: \t\ttestutil.AnthropicResponse(\"Got a DNS error, as expected.\"),\n2103: \t})\n2104: \n2105: \tconfigDir, _ := testutil.SetupXDGDirs(t)\n2106: \t// No allowed_hosts — should not block based on hostname\n2107: \twriteAgentConfig(t, configDir, \"fetch-open\", `name = \"fetch-open\"\n2108: model = \"anthropic/claude-sonnet-4-20250514\"\n2109: tools = [\"url_fetch\"]\n2110: `)\n2111: \n2112: \tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n2113: \tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n2114: \n2115: \tbuf := new(bytes.Buffer)\n2116: \trootCmd.SetOut(buf)\n2117: \trootCmd.SetErr(new(bytes.Buffer))\n2118: \trootCmd.SetArgs([]string{\"run\", \"fetch-open\"})\n2119: \n2120: \terr := rootCmd.Execute()\n2121: \tif err != nil {\n2122: \t\tt.Fatalf(\"unexpected error: %v\", err)\n2123: \t}\n2124: \n2125: \tif mock.RequestCount() != 2 {\n2126: \t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n2127: \t}\n2128: \n2129: \t// The error should be a DNS/connection error, NOT an allowlist error\n2130: \tbody := mock.Requests[1].Body\n2131: \tif strings.Contains(body, \"not in allowed_hosts\") {\n2132: \t\tt.Errorf(\"empty allowlist should not produce 'not in allowed_hosts' error, got:\\n%s\", body)\n2133: \t}\n2134: }\n2135: \n2136: func TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist(t *testing.T) {\n2137: \tresetRunCmd(t)\n2138: \n2139: \tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n2140: \t\ttestutil.AnthropicToolUseResponse(\"Fetching localhost.\", []testutil.MockToolCall{\n2141: \t\t\t{ID: \"tc_uf4\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"http://127.0.0.1:8080/secret\"}},\n2142: \t\t}),\n2143: \t\ttestutil.AnthropicResponse(\"Blocked.\"),\n2144: \t})\n2145: \n2146: \tconfigDir, _ := testutil.SetupXDGDirs(t)\n2147: \twriteAgentConfig(t, configDir, \"fetch-loopback\", `name = \"fetch-loopback\"\n2148: model = \"anthropic/claude-sonnet-4-20250514\"\n2149: tools = [\"url_fetch\"]\n2150: allowed_hosts = [\"api.example.com\"]\n2151: `)\n2152: \n2153: \tt.Setenv(\"ANTHROPIC_API_KEY\", \"test-key\")\n2154: \tt.Setenv(\"AXE_ANTHROPIC_BASE_URL\", mock.URL())\n2155: \n2156: \tbuf := new(bytes.Buffer)\n2157: \trootCmd.SetOut(buf)\n2158: \trootCmd.SetErr(new(bytes.Buffer))\n2159: \trootCmd.SetArgs([]string{\"run\", \"fetch-loopback\"})\n2160: \n2161: \terr := rootCmd.Execute()\n2162: \tif err != nil {\n2163: \t\tt.Fatalf(\"unexpected error: %v\", err)\n2164: \t}\n2165: \n2166: \tif mock.RequestCount() != 2 {\n2167: \t\tt.Fatalf(\"expected 2 requests, got %d\", mock.RequestCount())\n2168: \t}\n2169: \n2170: \tbody := mock.Requests[1].Body\n2171: \t// Should be blocked — either by allowlist (raw IP doesn't match hostname) or by private IP check\n2172: \tif !strings.Contains(body, \"not in allowed_hosts\") && !strings.Contains(body, \"private\") {\n2173: \t\tt.Errorf(\"expected allowlist or private IP error, got:\\n%s\", body)\n2174: \t}\n2175: }\n\n(End of file - total 2175 lines)\n</content>",
+            "title": "cmd/run_integration_test.go",
+            "metadata": {
+              "preview": "\t\tt.Errorf(\"expected 2 requests to mock server, got %d\", mock.RequestCount())\n\t}\n}\n\n// --- Allowlist Integration Tests ---\n\nfunc TestIntegration_AllowedHosts_BlocksNonMatchingHost(t *testing.T) {\n\tresetRunCmd(t)\n\n\t// Turn 1: LLM requests url_fetch to a host NOT in allowed_hosts\n\t// Turn 2: LLM receives the error and responds with text\n\tmock := testutil.NewMockLLMServer(t, []testutil.MockLLMResponse{\n\t\ttestutil.AnthropicToolUseResponse(\"Let me fetch that URL.\", []testutil.MockToolCall{\n\t\t\t{ID: \"tc_uf1\", Name: \"url_fetch\", Input: map[string]string{\"url\": \"https://blocked.example.com/data\"}},\n\t\t}),\n\t\ttestutil.AnthropicResponse(\"The URL was blocked by the allowlist.\"),\n\t})\n\n\tconfigDir, _ := testutil.SetupXDGDirs(t)\n\twriteAgentConfig(t, configDir, \"fetch-blocked\", `name = \"fetch-blocked\"",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774022331112,
+              "end": 1774022331121
+            }
+          },
+          "id": "prt_d0bf88914001Icj60GOr145X9T",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf87397001LC21yoB7A6HEgb"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.02194475,
+          "tokens": {
+            "total": 28855,
+            "input": 1,
+            "output": 259,
+            "reasoning": 0,
+            "cache": {
+              "read": 28392,
+              "write": 203
+            }
+          },
+          "id": "prt_d0bf88b02001soFV1NycRVk1K5",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf87397001LC21yoB7A6HEgb"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774022331306,
+          "completed": 1774022352278
+        },
+        "parentID": "msg_d0bf74712001va2pduD3N4Omh1",
+        "modelID": "claude-opus-4-6",
+        "providerID": "anthropic",
+        "mode": "review",
+        "agent": "review",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.05349,
+        "tokens": {
+          "total": 32523,
+          "input": 1,
+          "output": 781,
+          "reasoning": 0,
+          "cache": {
+            "read": 28595,
+            "write": 3146
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0bf88baa001VxQBW6noScQJu1",
+        "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "id": "prt_d0bf896e90015UiICnp04V6TMU",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf88baa001VxQBW6noScQJu1"
+        },
+        {
+          "type": "text",
+          "text": "Now I have a thorough understanding of the changes and the surrounding code. Here is my review:\n\n---\n\n## Code Review: `cmd/run_integration_test.go` — Allowlist Integration Tests\n\n- **In `@cmd/run_integration_test.go`, `TestIntegration_AllowedHosts_EmptyAllowlistPermitsPublicHosts` (line 2095) makes a real DNS query to `nonexistent.example.com` because the empty allowlist permits the hostname through, and the test does not override `urlFetchCheckHost` or `urlFetchResolver`.** This makes the test dependent on external DNS resolution and network availability, which can cause flaky failures in air-gapped CI environments or under DNS misconfiguration. Refactor this test to use the mock server's own host as the fetch target (so it gets a real connection error or response rather than relying on DNS failure for an external domain), or use a hostname that fails the allowlist check instead. Alternatively, target a public IP that is guaranteed to fail (e.g., `192.0.2.1` from TEST-NET-1 RFC 5737) to avoid DNS dependency entirely — though that IP would be blocked by the current implementation since it's not in the private ranges. The cleanest fix: change the test to use the mock server URL itself as the `url_fetch` target (the mock LLM server is already running on localhost), which would then be blocked by the private IP check, invalidating the test's purpose. Instead, consider making this a negative assertion test that uses an allowlist with one entry and verifies a *matching* host passes the allowlist check (getting a DNS/connection error rather than an allowlist error). This better proves the allowlist logic without external DNS.\n\n- **In `@cmd/run_integration_test.go`, `TestIntegration_AllowedHosts_BlocksLoopbackEvenWithAllowlist` (line 2172) uses an overly permissive assertion with `||`.** The test comment says \"either by allowlist (raw IP doesn't match hostname) or by private IP check\" but the actual behavior is deterministic: `127.0.0.1` is checked against `allowed_hosts = [\"api.example.com\"]` — it fails the `IsAllowed` check first and returns `host \"127.0.0.1\" is not in allowed_hosts` without ever reaching the private IP check. Assert specifically for `\"not in allowed_hosts\"` instead of accepting either error. A test that passes for two different reasons is weaker — if the allowlist check were accidentally bypassed, the test would still pass on the private IP fallback, masking the regression.\n\n- **In `@cmd/run_integration_test.go`, `TestIntegration_AllowedHosts_BlocksPrivateIP` (line 2090) uses a weak assertion — checking for the substring `\"private\"` in the entire request body.** The request body is the full JSON payload sent to the mock Anthropic API, which includes tool names, message content, etc. The word \"private\" could appear in other contexts (e.g., if a future test or message content coincidentally contains it). Use the more specific substring `\"private/reserved IP\"` to match the actual error message format from `hostcheck.go:78` (`\"address %s is a private/reserved IP\"`). This makes the test fail if the error message format changes and avoids false positives.",
+          "time": {
+            "start": 1774022352124,
+            "end": 1774022352124
+          },
+          "id": "prt_d0bf896e9002z8koDHut6UgcLv",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf88baa001VxQBW6noScQJu1"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "53df918b94c53303fecbc8e6e6021bb8f837b0ba",
+          "cost": 0.05349,
+          "tokens": {
+            "total": 32523,
+            "input": 1,
+            "output": 781,
+            "reasoning": 0,
+            "cache": {
+              "read": 28595,
+              "write": 3146
+            }
+          },
+          "id": "prt_d0bf8dd2f0012Z4i6miBoilIcF",
+          "sessionID": "ses_2f408b8f5ffeQJLtOHQYtUSbqm",
+          "messageID": "msg_d0bf88baa001VxQBW6noScQJu1"
+        }
+      ]
+    }
+  ]
+}
