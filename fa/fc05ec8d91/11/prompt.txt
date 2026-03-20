@@ -1,0 +1,41 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Add `AllowedHosts []string` to the `ExecContext` struct in `internal/tool/registry.go`.
+
+## Step 1: Read the current `ExecContext` struct
+
+Read `internal/tool/registry.go` and find the `ExecContext` struct (around line 13). It currently has:
+```go
+type ExecContext struct {
+    Workdir string
+    Stderr  io.Writer
+    Verbose bool
+}
+```
+
+## Step 2: Add the field
+
+Add `AllowedHosts []string` to the struct:
+```go
+type ExecContext struct {
+    Workdir      string
+    Stderr       io.Writer
+    Verbose      bool
+    AllowedHosts []string
+}
+```
+
+## Step 3: Verify no compilation errors
+
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./...` to confirm the entire project still compiles. Adding a field to a struct should not break anything since Go allows partial struct literal initialization.
+
+## Step 4: Run all tool tests to verify no regressions
+
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/` to confirm all existing tests still pass.
+
+## What to return
+Return:
+1. The exact change you made (before/after)
+2. The build output
+3. The test output
