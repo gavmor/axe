@@ -1,0 +1,93 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Two related fixes in `internal/tool/url_fetch.go`:
+
+### Fix 5: Move timeout context before host check
+
+Currently the host check on line 141 uses the unbounded parent `ctx`. DNS resolution inside `CheckHost` could hang indefinitely. Move the timeout context creation to before the host check.
+
+**Current order (lines 140-147):**
+```go
+	// Host allowlist and private IP check.
+	safeIP, hostErr := urlFetchCheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+	if hostErr != nil {
+		return provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)
+	defer cancel()
+```
+
+**New order:**
+```go
+	reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)
+	defer cancel()
+
+	// Host allowlist and private IP check.
+	safeIP, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+	if hostErr != nil {
+		return provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}
+	}
+```
+
+Note: pass `reqCtx` (not `ctx`) to `urlFetchCheckHost`.
+
+### Fix 6: DialContext re-resolves per redirect
+
+The current `DialContext` closure captures the initial `safeIP` from the pre-request check. After a redirect, `CheckRedirect` validates the new hostname but the resolved IP is discarded. The `DialContext` still dials the original `safeIP`, which is wrong for redirects.
+
+Fix: have `DialContext` extract the hostname from the `addr` parameter, call `urlFetchCheckHost` to get the correct safe IP for that specific host, and dial that IP. This makes every connection (initial + redirects) validated and pinned atomically.
+
+Since `DialContext` now does the full validation, `CheckRedirect` becomes redundant for host validation — but keep it for the redirect count limit.
+
+**Replace the entire client block (lines 154-175):**
+
+```go
+	client := &http.Client{
+		Timeout: urlFetchTimeout,
+		Transport: &http.Transport{
+			DialContext: func(dialCtx context.Context, network, addr string) (net.Conn, error) {
+				host, port, splitErr := net.SplitHostPort(addr)
+				if splitErr != nil {
+					return nil, splitErr
+				}
+				dialIP, checkErr := urlFetchCheckHost(dialCtx, host, ec.AllowedHosts, urlFetchResolver)
+				if checkErr != nil {
+					return nil, checkErr
+				}
+				if dialIP != nil && port != "" {
+					return (&net.Dialer{}).DialContext(dialCtx, network, net.JoinHostPort(dialIP.String(), port))
+				}
+				return (&net.Dialer{}).DialContext(dialCtx, network, addr)
+			},
+		},
+		CheckRedirect: func(redirectReq *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+```
+
+Also, the initial `safeIP` variable from the pre-request check is no longer used in the `DialContext`. But we still want the pre-request check to fail fast (before building the HTTP request) for non-allowlisted hosts. So keep the pre-request `urlFetchCheckHost` call but we can discard the IP since `DialContext` will re-resolve:
+
+Change line 141 from:
+```go
+	safeIP, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+```
+to:
+```go
+	_, hostErr := urlFetchCheckHost(reqCtx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+```
+
+And remove the `safeIP` variable entirely since it's no longer referenced.
+
+### Verification
+
+1. Run `go build ./...`
+2. Run `go test -v ./internal/tool/` — ALL tests must pass, including the redirect test
+3. Run `go test ./cmd/`
+
+Return all output.

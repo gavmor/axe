@@ -3,7 +3,7 @@
   "checkpoint_id": "8cd709a4f869",
   "strategy": "manual-commit",
   "branch": "ISS-24/allow-list-connections",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "docs/plans/040_output_allowlist_spec.md",
     "internal/agent/agent.go",
@@ -55,13 +55,20 @@
       "context": "/8c/d709a4f869/5/context.md",
       "content_hash": "/8c/d709a4f869/5/content_hash.txt",
       "prompt": "/8c/d709a4f869/5/prompt.txt"
+    },
+    {
+      "metadata": "/8c/d709a4f869/6/metadata.json",
+      "transcript": "/8c/d709a4f869/6/full.jsonl",
+      "context": "/8c/d709a4f869/6/context.md",
+      "content_hash": "/8c/d709a4f869/6/content_hash.txt",
+      "prompt": "/8c/d709a4f869/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 44,
-    "cache_creation_tokens": 90084,
-    "cache_read_tokens": 659744,
-    "output_tokens": 8436,
-    "api_call_count": 33
+    "input_tokens": 52,
+    "cache_creation_tokens": 105722,
+    "cache_read_tokens": 767702,
+    "output_tokens": 10140,
+    "api_call_count": 39
   }
 }
