@@ -1,0 +1,19 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+In /Users/jaronswab/go/src/github.com/jrswab/axe:
+
+1. Run `go build ./...`
+2. Run `go test ./internal/hostcheck/`
+3. Run `go test ./internal/agent/`
+4. Run `go test ./internal/tool/`
+5. Run `go test ./cmd/`
+6. Run `golangci-lint run ./...`
+7. Run `git diff --shortstat`
+8. Run `git status`
+
+Return all output.
+
