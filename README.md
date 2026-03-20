@@ -25,9 +25,12 @@ Axe is the executor, not the scheduler. It is designed to be composed with stand
 - **Memory garbage collection** — LLM-assisted pattern analysis and trimming
 - **Skill system** — reusable instruction sets that can be shared across agents
 - **Stdin piping** — pipe any output directly into an agent (`git diff | axe run reviewer`)
+- **Local agent directories** — auto-discovers agents from `<cwd>/axe/agents/` before the global config, or use `--agents-dir` to point anywhere
 - **Dry-run mode** — inspect resolved context without calling the LLM
 - **JSON output** — structured output with metadata for scripting
 - **Built-in tools** — file operations (read, write, edit, list) sandboxed to working directory; shell command execution; URL fetching; web search
+- **Output allowlist** — restrict `url_fetch` and `web_search` to specific hostnames; private/reserved IPs are always blocked (SSRF protection)
+- **Token budgets** — cap cumulative token usage per agent run via `[budget]` config or `--max-tokens` flag
 - **MCP tool support** — connect to external MCP servers for additional tools via SSE or streamable-HTTP transport
 - **Configurable retry** — exponential, linear, or fixed backoff for transient provider errors (429, 5xx, timeouts)
 - **Minimal dependencies** — four direct dependencies (cobra, toml, mcp-go-sdk, x/net); all LLM calls use the standard library
@@ -265,9 +268,21 @@ Config is read-write because `axe config init` and `axe agents init` write into 
 | `--skill <path>` | from TOML | Override the skill file path |
 | `--workdir <path>` | from TOML or cwd | Override the working directory |
 | `--timeout <seconds>` | 120 | Request timeout |
+| `--max-tokens <int>` | 0 (unlimited) | Cap cumulative token usage for the run (exit code 4 if exceeded) |
 | `--dry-run` | false | Show resolved context without calling the LLM |
 | `--verbose` / `-v` | false | Print debug info (model, timing, tokens, retries) to stderr |
 | `--json` | false | Wrap output in a JSON envelope with metadata |
+| `--agents-dir <path>` | (auto-discover) | Override agent search directory |
+
+### Exit Codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | Runtime error |
+| 2 | Configuration error |
+| 3 | Provider/network error |
+| 4 | Token budget exceeded |
 
 ## Agent Configuration
 
@@ -283,6 +298,7 @@ files = ["src/**/*.go", "CONTRIBUTING.md"]
 workdir = "/home/user/projects/myapp"
 tools = ["read_file", "list_directory", "run_command"]
 sub_agents = ["test-runner", "lint-checker"]
+allowed_hosts = ["api.example.com", "docs.example.com"]
 
 [sub_agents_config]
 max_depth = 3       # maximum nesting depth (hard max: 5)
@@ -303,6 +319,9 @@ headers = { Authorization = "Bearer ${MY_TOKEN}" }
 [params]
 temperature = 0.3
 max_tokens = 4096
+
+[budget]
+max_tokens = 50000    # 0 = unlimited (default)
 
 [retry]
 max_retries = 3           # retry up to 3 times on transient errors
@@ -335,6 +354,43 @@ Only transient errors are retried. Authentication errors (401/403) and bad
 requests (400) are never retried. When `--verbose` is enabled, each retry
 attempt is logged to stderr. The `--json` envelope includes a `retry_attempts`
 field for observability.
+
+### Output Allowlist
+
+Agents that use `url_fetch` or `web_search` can be restricted to specific hostnames with the `allowed_hosts` field:
+
+```toml
+allowed_hosts = ["api.example.com", "docs.example.com"]
+```
+
+| Behavior | Detail |
+|---|---|
+| Empty or absent | All public hostnames allowed |
+| Non-empty list | Only exact hostname matches permitted (case-insensitive, no wildcard subdomains) |
+| Private IPs | Always blocked regardless of allowlist — loopback, link-local, RFC 1918, CGNAT, IPv6 private |
+| Redirects | Each redirect destination is re-validated against the allowlist and private IP check |
+| Sub-agents | Inherit the parent's `allowed_hosts` unless the sub-agent TOML explicitly sets its own |
+
+### Token Budget
+
+Cap cumulative token usage (input + output, across all turns and sub-agent calls) for a single run:
+
+```toml
+[budget]
+max_tokens = 50000   # 0 = unlimited (default)
+```
+
+Or override via flag:
+
+```bash
+axe run my-agent --max-tokens 10000
+```
+
+The flag takes precedence over TOML when set to a value greater than zero.
+
+When the budget is exceeded, the current response is returned but no further tool calls execute. The process exits with **code 4**. Memory is not appended on a budget-exceeded run.
+
+With `--verbose`, each turn logs cumulative usage to stderr. With `--json`, the output envelope includes `budget_max_tokens`, `budget_used_tokens`, and `budget_exceeded` fields (omitted when unlimited).
 
 ## Tools
 
@@ -433,6 +489,43 @@ $XDG_CONFIG_HOME/axe/
         └── scripts/
             └── fetch.sh
 ```
+
+## Local Agent Directories
+
+By default, agents are loaded from `$XDG_CONFIG_HOME/axe/agents/`. Axe also supports project-local agent directories for per-repo agent definitions.
+
+### Auto-Discovery
+
+If `<cwd>/axe/agents/` exists, axe searches it before the global config directory. A local agent with the same name as a global agent shadows the global one.
+
+```
+my-project/
+└── axe/
+    └── agents/
+        └── my-agent.toml   ← found automatically
+```
+
+### Explicit Override
+
+Use `--agents-dir` to point to any directory:
+
+```bash
+axe run my-agent --agents-dir ./custom/agents
+```
+
+This flag is available on all commands: `run`, `agents list`, `agents show`, `agents init`, `agents edit`, and `gc`.
+
+### Resolution Order
+
+1. `--agents-dir` (if provided)
+2. `<cwd>/axe/agents/` (auto-discovered)
+3. `$XDG_CONFIG_HOME/axe/agents/` (global fallback)
+
+The first directory containing a matching `<name>.toml` wins.
+
+### Smart Scaffolding
+
+`axe agents init <name>` writes to `<cwd>/axe/agents/` if that directory already exists, otherwise falls back to the global config directory.
 
 ## Providers
 
