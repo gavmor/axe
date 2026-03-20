@@ -3,7 +3,7 @@
   "checkpoint_id": "76c32a6ad6a0",
   "strategy": "manual-commit",
   "branch": "ISS-24/allow-list-connections",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "internal/tool/url_fetch_test.go"
   ],
@@ -14,13 +14,20 @@
       "context": "/76/c32a6ad6a0/0/context.md",
       "content_hash": "/76/c32a6ad6a0/0/content_hash.txt",
       "prompt": "/76/c32a6ad6a0/0/prompt.txt"
+    },
+    {
+      "metadata": "/76/c32a6ad6a0/1/metadata.json",
+      "transcript": "/76/c32a6ad6a0/1/full.jsonl",
+      "context": "/76/c32a6ad6a0/1/context.md",
+      "content_hash": "/76/c32a6ad6a0/1/content_hash.txt",
+      "prompt": "/76/c32a6ad6a0/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 3,
-    "cache_creation_tokens": 485,
-    "cache_read_tokens": 12653,
-    "output_tokens": 75,
-    "api_call_count": 2
+    "input_tokens": 12,
+    "cache_creation_tokens": 24115,
+    "cache_read_tokens": 134421,
+    "output_tokens": 4989,
+    "api_call_count": 9
   }
 }
