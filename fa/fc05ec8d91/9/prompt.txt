@@ -1,0 +1,134 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Implement sub-agent AllowedHosts propagation in `internal/tool/tool.go` — Tasks 6a, 6b, 6c from the implementation plan.
+
+## What to change
+
+### Change 1: Add `AllowedHosts` to `ExecuteOptions` struct (line 28)
+
+Add `AllowedHosts []string` field to the struct:
+```go
+type ExecuteOptions struct {
+    AllowedAgents []string
+    ParentModel   string
+    Depth         int
+    MaxDepth      int
+    Timeout       int
+    GlobalConfig  *config.GlobalConfig
+    MCPRouter     *mcpclient.Router
+    Verbose       bool
+    Stderr        io.Writer
+    BudgetTracker *budget.BudgetTracker
+    AgentsDir     string
+    AgentsBase    string
+    AllowedHosts  []string
+}
+```
+
+### Change 2: Compute effective allowlist in `ExecuteCallAgent()` (after line 140)
+
+After loading the sub-agent's TOML config (`cfg` at line 137), compute the effective allowlist. Add this after the model parsing (after line 146, before step 8):
+
+```go
+	// Compute effective allowed hosts: sub-agent's own list wins, else inherit parent's
+	effectiveAllowedHosts := cfg.AllowedHosts
+	if len(effectiveAllowedHosts) == 0 {
+		effectiveAllowedHosts = opts.AllowedHosts
+	}
+```
+
+### Change 3: Pass `effectiveAllowedHosts` to `runConversationLoop()` (line 306)
+
+Current call:
+```go
+resp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)
+```
+
+Change to:
+```go
+runOpts.AllowedHosts = effectiveAllowedHosts
+resp, err := runConversationLoop(callCtx, prov, req, cfg, registry, newDepth, runOpts, workdir)
+```
+
+Actually, `runOpts` is already a copy of `opts` (line 304: `runOpts := opts`). So just set `runOpts.AllowedHosts = effectiveAllowedHosts` before the call. The `runOpts.MCPRouter` is already being set on line 305. Add the AllowedHosts line right after:
+
+```go
+runOpts := opts
+runOpts.MCPRouter = mcpRouter
+runOpts.AllowedHosts = effectiveAllowedHosts
+```
+
+### Change 4: Thread `AllowedHosts` through `dispatchToolCall()` in tool.go (line 429/438)
+
+Current `dispatchToolCall` in tool.go:
+```go
+func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *Registry, opts ExecuteOptions, toolWorkdir string) provider.ToolResult {
+    if opts.MCPRouter != nil && opts.MCPRouter.Has(tc.Name) {
+        result, err := opts.MCPRouter.Dispatch(ctx, tc)
+        if err != nil {
+            return provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}
+        }
+        return result
+    }
+
+    execCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose}
+    result, dispatchErr := registry.Dispatch(ctx, tc, execCtx)
+```
+
+Change the `ExecContext` construction to include `AllowedHosts`:
+```go
+    execCtx := ExecContext{Workdir: toolWorkdir, Stderr: opts.Stderr, Verbose: opts.Verbose, AllowedHosts: opts.AllowedHosts}
+```
+
+### Change 5: Thread `AllowedHosts` through recursive `subOpts` in `runConversationLoop()` (lines 398-411)
+
+Current:
+```go
+subOpts := ExecuteOptions{
+    AllowedAgents: cfg.SubAgents,
+    ParentModel:   cfg.Model,
+    Depth:         depth,
+    MaxDepth:      opts.MaxDepth,
+    Timeout:       opts.Timeout,
+    GlobalConfig:  opts.GlobalConfig,
+    MCPRouter:     nil,
+    Verbose:       opts.Verbose,
+    Stderr:        opts.Stderr,
+    BudgetTracker: opts.BudgetTracker,
+    AgentsDir:     opts.AgentsDir,
+    AgentsBase:    toolWorkdir,
+}
+```
+
+Add `AllowedHosts`:
+```go
+subOpts := ExecuteOptions{
+    AllowedAgents: cfg.SubAgents,
+    ParentModel:   cfg.Model,
+    Depth:         depth,
+    MaxDepth:      opts.MaxDepth,
+    Timeout:       opts.Timeout,
+    GlobalConfig:  opts.GlobalConfig,
+    MCPRouter:     nil,
+    Verbose:       opts.Verbose,
+    Stderr:        opts.Stderr,
+    BudgetTracker: opts.BudgetTracker,
+    AgentsDir:     opts.AgentsDir,
+    AgentsBase:    toolWorkdir,
+    AllowedHosts:  opts.AllowedHosts,
+}
+```
+
+This passes the effective allowlist (which was already computed and set on `opts.AllowedHosts` in ExecuteCallAgent) down to sub-sub-agents.
+
+## Verification
+
+After making all changes:
+1. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go build ./...` to verify compilation
+2. Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test ./internal/tool/` to verify no regressions
+
+## What to return
+1. Each change you made with before/after
+2. Build output
+3. Test output
