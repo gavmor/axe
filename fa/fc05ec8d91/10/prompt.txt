@@ -1,0 +1,428 @@
+You are working in /Users/jaronswab/go/src/github.com/jrswab/axe on branch ISS-24/allow-list-connections.
+
+## Task
+Gate the `url_fetch` tool with the `hostcheck` package using red/green TDD. This is Task 4 + 4b from the implementation plan.
+
+## Context
+- `internal/hostcheck/hostcheck.go` already exists with `CheckHost(ctx, hostname, allowlist, resolver) (net.IP, error)`, `IsAllowed()`, `IsPrivateIP()`, and a `Resolver` interface.
+- `internal/tool/registry.go` `ExecContext` already has `AllowedHosts []string` field.
+- `internal/tool/url_fetch.go` currently makes HTTP requests with `http.DefaultClient.Do(req)` at line 137 with no host filtering.
+
+## Step 1: Write tests FIRST in `internal/tool/url_fetch_test.go`
+
+Append these tests to the EXISTING test file. Follow the existing pattern: `httptest.NewServer` + direct `urlFetchEntry().Execute()` calls.
+
+Add a package-level var for the resolver (following the existing `urlFetchTimeout` pattern at line 21 of url_fetch.go):
+
+In `url_fetch.go`, add near line 21:
+```go
+var urlFetchResolver hostcheck.Resolver = net.DefaultResolver
+```
+
+Then write these tests:
+
+```go
+func TestURLFetch_AllowlistPermitsMatchingHost(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	// Extract hostname from test server URL
+	u, _ := url.Parse(ts.URL)
+	hostname := u.Hostname()
+
+	entry := urlFetchEntry()
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-1",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": ts.URL},
+	}, ExecContext{AllowedHosts: []string{hostname}})
+
+	if result.IsError {
+		t.Errorf("expected success, got error: %s", result.Content)
+	}
+}
+
+func TestURLFetch_AllowlistBlocksNonMatchingHost(t *testing.T) {
+	entry := urlFetchEntry()
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-2",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": "https://blocked.example.com/page"},
+	}, ExecContext{AllowedHosts: []string{"allowed.example.com"}})
+
+	if !result.IsError {
+		t.Error("expected error for non-matching host")
+	}
+	if !strings.Contains(result.Content, "not in allowed_hosts") {
+		t.Errorf("expected 'not in allowed_hosts' in error, got: %s", result.Content)
+	}
+}
+
+func TestURLFetch_EmptyAllowlistPermitsAll(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	entry := urlFetchEntry()
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-3",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": ts.URL},
+	}, ExecContext{})
+
+	if result.IsError {
+		t.Errorf("expected success with empty allowlist, got error: %s", result.Content)
+	}
+}
+
+func TestURLFetch_BlocksPrivateIP(t *testing.T) {
+	entry := urlFetchEntry()
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-4",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": "http://192.168.1.1/data"},
+	}, ExecContext{})
+
+	if !result.IsError {
+		t.Error("expected error for private IP")
+	}
+	if !strings.Contains(result.Content, "private") {
+		t.Errorf("expected 'private' in error, got: %s", result.Content)
+	}
+}
+
+func TestURLFetch_BlocksLoopbackIP(t *testing.T) {
+	entry := urlFetchEntry()
+	// Override resolver to avoid actual DNS
+	orig := urlFetchResolver
+	urlFetchResolver = &fakeURLFetchResolver{
+		addrs: []net.IPAddr{{IP: net.ParseIP("127.0.0.1")}},
+	}
+	defer func() { urlFetchResolver = orig }()
+
+	result := entry.Execute(context.Background(), provider.ToolCall{
+		ID:        "test-5",
+		Name:      "url_fetch",
+		Arguments: map[string]string{"url": "http://evil.example.com/steal"},
+	}, ExecContext{})
+
+	if !result.IsError {
+		t.Error("expected error for loopback IP")
+	}
+	if !strings.Contains(result.Content, "private") {
+		t.Errorf("expected 'private' in error, got: %s", result.Content)
+	}
+}
+```
+
+Also add the fake resolver type in the test file:
+```go
+type fakeURLFetchResolver struct {
+	addrs []net.IPAddr
+	err   error
+}
+
+func (f *fakeURLFetchResolver) LookupIPAddr(ctx context.Context, host string) ([]net.IPAddr, error) {
+	return f.addrs, f.err
+}
+```
+
+Make sure to add the necessary imports: `"net"`, `"net/url"`, `"strings"` (check which are already imported).
+
+## Step 2: Run tests — they should FAIL (red phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run "TestURLFetch_Allowlist|TestURLFetch_BlocksPrivate|TestURLFetch_BlocksLoopback|TestURLFetch_EmptyAllowlist" ./internal/tool/` and confirm they fail.
+
+## Step 3: Implement the gating in `internal/tool/url_fetch.go`
+
+Make these changes:
+
+1. Add imports: `"net"`, `"net/http"` is already there, add `"github.com/jrswab/axe/internal/hostcheck"`.
+
+2. Add package-level var near line 21 (after `urlFetchTimeout`):
+```go
+var urlFetchResolver hostcheck.Resolver = net.DefaultResolver
+```
+
+3. After the scheme check (line 127) and before the timeout context (line 129), add the host check:
+```go
+	// Host allowlist and private IP check
+	safeIP, hostErr := hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+	if hostErr != nil {
+		return provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}
+	}
+```
+
+4. Replace the `http.DefaultClient.Do(req)` call (line 137) with a DNS-pinned client that uses the safe IP:
+```go
+	// Use a DNS-pinned transport to prevent rebinding between check and connection
+	client := &http.Client{
+		Timeout: urlFetchTimeout,
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				// Replace the hostname with the verified safe IP
+				_, port, _ := net.SplitHostPort(addr)
+				if safeIP != nil && port != "" {
+					return (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(safeIP.String(), port))
+				}
+				return (&net.Dialer{}).DialContext(ctx, network, addr)
+			},
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Validate redirect targets against allowlist and private IP check
+			redirectIP, err := hostcheck.CheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+			if err != nil {
+				return err
+			}
+			_ = redirectIP
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+	resp, err := client.Do(req)
+```
+
+Also remove the separate `context.WithTimeout` wrapping since the client now has its own timeout. Actually wait — keep the context timeout for cancellation but remove the duplicate. Let me think...
+
+Actually, the cleanest approach: keep the `reqCtx` with timeout for the request context, and set the transport's DialContext to pin to the safe IP. The client timeout is a backup. Let's keep it simple:
+
+```go
+	client := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				_, port, _ := net.SplitHostPort(addr)
+				if safeIP != nil && port != "" {
+					return (&net.Dialer{}).DialContext(ctx, network, net.JoinHostPort(safeIP.String(), port))
+				}
+				return (&net.Dialer{}).DialContext(ctx, network, addr)
+			},
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			_, err := hostcheck.CheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+			if err != nil {
+				return err
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+	resp, err := client.Do(req)
+```
+
+Keep the existing `reqCtx` timeout context and `http.NewRequestWithContext(reqCtx, ...)` — that handles the timeout via context.
+
+## Step 4: Run tests — they should PASS (green phase)
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -run "TestURLFetch_Allowlist|TestURLFetch_BlocksPrivate|TestURLFetch_BlocksLoopback|TestURLFetch_EmptyAllowlist" -v ./internal/tool/`
+
+## Step 5: Run ALL url_fetch tests to verify no regressions
+Run `cd /Users/jaronswab/go/src/github.com/jrswab/axe && go test -v ./internal/tool/`
+
+## IMPORTANT
+- The `httptest.NewServer` runs on `127.0.0.1` which is a loopback address. For tests that need to actually reach the test server (like `TestURLFetch_AllowlistPermitsMatchingHost` and `TestURLFetch_EmptyAllowlistPermitsAll`), you need to override `urlFetchResolver` to return a public IP, BUT then the pinned transport will try to connect to that public IP instead of the test server. 
+
+The solution: for tests that need to reach the test server, DON'T pin the IP. Make the `safeIP` pinning conditional — only pin when `safeIP` is not a loopback. Actually, the simpler approach: in tests that use httptest.NewServer, override the resolver to return the actual test server IP (127.0.0.1), and the private IP check needs to be bypassed for test servers.
+
+Actually, the cleanest approach for tests: override `urlFetchResolver` with a fake that returns a public IP (like 93.184.216.34), but DON'T use the pinned transport for the actual connection. The issue is that the pinned transport will try to connect to 93.184.216.34 instead of 127.0.0.1.
+
+Let me reconsider. The best approach for testability:
+
+For `TestURLFetch_AllowlistPermitsMatchingHost` and `TestURLFetch_EmptyAllowlistPermitsAll`: These tests use `httptest.NewServer` which binds to 127.0.0.1. The private IP check will block 127.0.0.1. So we need to override the resolver AND make the private IP check pass.
+
+The simplest solution: make the `safeIP` pinning only happen when `safeIP` is non-nil AND the allowlist is non-empty (meaning we're in restricted mode). When allowlist is empty, use the default transport (current behavior). Wait, but we always want private IP blocking...
+
+OK here's the real issue: `httptest.NewServer` uses 127.0.0.1 which IS a private IP. Our private IP blocking will block it. For tests, we need to either:
+1. Skip the host check entirely in tests, OR
+2. Override the resolver to return a "public" IP and don't pin
+
+The cleanest approach: make the host check use the package-level `urlFetchResolver` var. In tests that need to reach the test server, set the resolver to one that returns a public IP, and DON'T use IP pinning (let the default dialer connect to the actual test server address). To do this, only pin the IP when `safeIP` is not nil AND the hostname is not a raw IP (i.e., DNS was involved). For raw IPs and test servers, let the default dialer handle it.
+
+Actually, the simplest approach that works: In the DialContext, only override the address when `safeIP` is not nil. When `safeIP` is nil (which happens when... it doesn't, CheckHost always returns an IP on success). 
+
+Let me think about this differently. The test server is at 127.0.0.1. CheckHost will block it because it's private. So for tests that need to reach the test server:
+
+1. Override `urlFetchResolver` with a fake that returns a public IP like `93.184.216.34`
+2. The DialContext will try to connect to `93.184.216.34:PORT` instead of `127.0.0.1:PORT` — this won't work.
+
+The real solution: DON'T use IP pinning in the DialContext. The DNS rebinding protection is nice-to-have but adds significant test complexity. The spec says "DNS resolution for the purpose of private IP checking is done by the host validation layer, not by the HTTP client." — this means CheckHost does the resolution and check, but the actual HTTP connection can use normal DNS. The pinning is an extra hardening step not required by the spec.
+
+So the simpler implementation:
+1. Call `hostcheck.CheckHost()` to validate the host (allowlist + private IP check with DNS resolution)
+2. If it passes, make the HTTP request normally with `http.DefaultClient` (or a client with redirect checking)
+3. For redirects, validate each redirect URL with `hostcheck.CheckHost()` in `CheckRedirect`
+4. Don't pin IPs in DialContext
+
+This is simpler, testable, and satisfies all spec requirements. The only gap is a theoretical DNS rebinding between the check and the connection, but that's an extremely narrow race window.
+
+Implement it this way:
+
+```go
+	// Host allowlist and private IP check
+	_, hostErr := hostcheck.CheckHost(ctx, parsedURL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+	if hostErr != nil {
+		return provider.ToolResult{CallID: call.ID, Content: hostErr.Error(), IsError: true}
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, urlFetchTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlStr, nil)
+	if err != nil {
+		return provider.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}
+	}
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			_, err := hostcheck.CheckHost(req.Context(), req.URL.Hostname(), ec.AllowedHosts, urlFetchResolver)
+			if err != nil {
+				return err
+			}
+			if len(via) >= 10 {
+				return fmt.Errorf("too many redirects")
+			}
+			return nil
+		},
+	}
+	resp, err := client.Do(req)
+```
+
+For the tests:
+- `TestURLFetch_AllowlistPermitsMatchingHost`: Override resolver to return a public IP. The actual HTTP request goes to the test server normally (no IP pinning). The hostname from the test server URL (127.0.0.1) is a raw IP literal, so CheckHost won't do DNS lookup — it'll parse it directly and check IsPrivateIP. This means 127.0.0.1 WILL be blocked.
+
+Hmm. The test server URL is `http://127.0.0.1:PORT`. The hostname is `127.0.0.1`. CheckHost step 2 parses it as a raw IP, finds it's private, and blocks it. The resolver override doesn't help because raw IPs skip DNS.
+
+The real solution for tests: use the test server's actual URL but override the entire CheckHost call. OR, accept that we can't test the full flow with httptest.NewServer for the "permits" case, and instead test:
+1. The blocking cases (which don't need a real server)
+2. The integration with a real server separately
+
+Actually, the simplest test approach:
+- For "allowlist permits" and "empty allowlist permits": override `urlFetchResolver` to return a public IP, AND change the test to use a hostname-based URL instead of an IP-based URL. We can do this by constructing the URL with a fake hostname and having the resolver return the test server's actual IP.
+
+Wait, but then the HTTP client will try to connect to the fake hostname, which won't resolve... unless we also override the HTTP transport's DNS.
+
+OK, I think the cleanest approach is:
+
+For tests that need to verify the request actually succeeds through the allowlist:
+1. Start `httptest.NewServer` 
+2. Get its port
+3. Override `urlFetchResolver` to return a non-private IP (like `93.184.216.34`)
+4. Construct URL as `http://allowed.example.com:PORT/` 
+5. The CheckHost call will: pass allowlist check, resolve via fake resolver to 93.184.216.34, pass private IP check
+6. The HTTP client will try to connect to `allowed.example.com:PORT` which won't work...
+
+This is getting circular. Let me just use the simplest approach that actually works:
+
+For the "permits" tests, temporarily set `urlFetchResolver` to a fake that returns the loopback IP, AND temporarily patch the private ranges to exclude loopback. No, that's terrible.
+
+**Final approach — the pragmatic one:**
+
+For tests that verify blocking: no server needed, just check the error message. These work perfectly.
+
+For tests that verify allowing: we need to accept that `httptest.NewServer` uses 127.0.0.1 which is private. The test should verify that when the host check passes, the request goes through. We can do this by:
+
+1. Making `urlFetchResolver` a package-level var (already planned)
+2. In the test, DON'T test the full CheckHost flow — instead, test that url_fetch calls CheckHost and respects its result. Since CheckHost is already thoroughly tested in hostcheck_test.go, we just need to verify the integration.
+
+The simplest working test for "permits matching host":
+```go
+func TestURLFetch_AllowlistPermitsMatchingHost(t *testing.T) {
+    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(200)
+        w.Write([]byte("ok"))
+    }))
+    defer ts.Close()
+
+    // Test server is on 127.0.0.1 which is private. 
+    // Since we're testing with empty allowlist (allow-all mode) and the URL
+    // contains a raw IP, CheckHost will block it. So we test with a hostname
+    // and a resolver that returns a public IP, but we need the HTTP request
+    // to actually reach the test server.
+    
+    // Actually, just test that the blocking works correctly and trust that
+    // if CheckHost returns nil, the request proceeds (which is trivially true
+    // from reading the code).
+}
+```
+
+You know what, let me just be practical. Here's what to do:
+
+**For the "permits" tests:** Use the test server URL directly. Override `urlFetchResolver` with a fake resolver. But the test server URL has `127.0.0.1` as hostname, which is a raw IP literal — CheckHost will parse it directly without using the resolver, and it'll be blocked as private.
+
+**The only way to test "permits" with httptest is to NOT have the private IP check block the test server.** 
+
+So here's the approach: make the private IP check in url_fetch skippable for tests by using the resolver var. When CheckHost receives a raw IP, it doesn't use the resolver. So we can't intercept that.
+
+**Final decision:** For the "permits" tests, just verify that:
+1. With empty allowlist and a real public URL (or mock), the function doesn't error on the allowlist check
+2. The blocking tests verify the error paths
+
+Actually, the REAL simplest approach: just test the error cases (blocking). The success path is trivially correct — if CheckHost returns nil, the existing code runs unchanged. The success path is already tested by all the existing url_fetch tests (which use httptest.NewServer with empty AllowedHosts, and since CheckHost with empty allowlist + raw IP literal that's public would pass... but 127.0.0.1 is private).
+
+Wait — the existing tests! They use httptest.NewServer which is 127.0.0.1. After our change, CheckHost will block 127.0.0.1 as private. ALL EXISTING TESTS WILL BREAK.
+
+This is the key issue. We need to handle this. Options:
+1. Only run the private IP check when `AllowedHosts` is non-empty — NO, spec says private IP blocking is unconditional.
+2. Override the resolver in all existing tests — but raw IPs skip the resolver.
+3. Make the private IP check skippable via a package-level var for testing.
+
+Option 3 is the way. Add a package-level var:
+```go
+var urlFetchCheckHost = hostcheck.CheckHost
+```
+
+Then in tests, override it:
+```go
+orig := urlFetchCheckHost
+urlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {
+    return net.ParseIP("127.0.0.1"), nil  // bypass for tests
+}
+defer func() { urlFetchCheckHost = orig }()
+```
+
+But wait, we don't want to add this to EVERY existing test. Better approach: only call CheckHost when the URL hostname is NOT a raw private IP that we're connecting to in tests... no, that defeats the purpose.
+
+**Best approach:** Add a `var urlFetchCheckHost` function var. In the implementation, call `urlFetchCheckHost(...)` instead of `hostcheck.CheckHost(...)` directly. In tests that need to bypass it, override it. For existing tests, add a `TestMain` that sets it to a passthrough, or add it to each test that needs it.
+
+Actually, the cleanest: since existing tests all use `ExecContext{}` (empty AllowedHosts), and the spec says empty allowlist = allow-all for the allowlist check, the only thing that would break existing tests is the private IP check on 127.0.0.1. 
+
+So: make the function var approach work. In `url_fetch.go`:
+```go
+var urlFetchCheckHost = hostcheck.CheckHost
+```
+
+Then in the test file, add a helper:
+```go
+func skipHostCheck(t *testing.T) {
+    t.Helper()
+    orig := urlFetchCheckHost
+    urlFetchCheckHost = func(ctx context.Context, hostname string, allowlist []string, resolver hostcheck.Resolver) (net.IP, error) {
+        return net.ParseIP("127.0.0.1"), nil
+    }
+    t.Cleanup(func() { urlFetchCheckHost = orig })
+}
+```
+
+Then add `skipHostCheck(t)` to each existing test that uses httptest.NewServer. There are about 10-15 such tests.
+
+Actually, let me check how many existing tests use httptest.NewServer. Read the test file first, then decide.
+
+Read `internal/tool/url_fetch_test.go` to see all existing tests, then:
+
+1. Add the `var urlFetchCheckHost` to `url_fetch.go`
+2. Add the `skipHostCheck` helper to the test file
+3. Add `skipHostCheck(t)` to every existing test that starts an httptest.NewServer
+4. Write the new allowlist/private-IP tests (which DON'T use skipHostCheck)
+5. Verify all tests pass
+
+## What to return
+1. Red phase output (new tests fail)
+2. Green phase output (all tests pass including existing ones)
+3. List of all existing tests you had to add `skipHostCheck(t)` to
+4. Count of total tests passing
