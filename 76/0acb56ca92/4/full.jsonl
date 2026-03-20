@@ -1,0 +1,1687 @@
+{
+  "info": {
+    "id": "ses_2f3876aaeffeobGInC1cjOS39c",
+    "slug": "gentle-engine",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2f38cdd00ffexBON02raOmPosW",
+    "title": "Update CHANGELOG.md for v1.5.0 (@general subagent)",
+    "version": "1.2.20",
+    "summary": {
+      "additions": 15,
+      "deletions": 3,
+      "files": 2
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774030722385,
+      "updated": 1774030736442
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774030722387
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "CHANGELOG.md",
+              "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+              "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+              "additions": 12,
+              "deletions": 0,
+              "status": "modified"
+            },
+            {
+              "file": "cmd/version_test.go",
+              "before": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.4.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.4.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.4.0\")\n\t}\n}\n",
+              "after": "package cmd\n\nimport (\n\t\"bytes\"\n\t\"testing\"\n)\n\nfunc TestVersionCommand_Output(t *testing.T) {\n\tbuf := new(bytes.Buffer)\n\trootCmd.SetOut(buf)\n\trootCmd.SetArgs([]string{\"version\"})\n\n\terr := rootCmd.Execute()\n\tif err != nil {\n\t\tt.Fatalf(\"unexpected error: %v\", err)\n\t}\n\n\tgot := buf.String()\n\twant := \"axe version 1.5.0\\n\"\n\tif got != want {\n\t\tt.Errorf(\"version output = %q, want %q\", got, want)\n\t}\n}\n\nfunc TestVersionConstant(t *testing.T) {\n\tif Version != \"1.5.0\" {\n\t\tt.Errorf(\"Version = %q, want %q\", Version, \"1.5.0\")\n\t}\n}\n",
+              "additions": 3,
+              "deletions": 3,
+              "status": "modified"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d0c789553001LNZjea0gf4VU94",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "In the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe, update CHANGELOG.md with the v1.5.0 release section.\n\n**Insert this new section AFTER line 7 (after the \"and this project adheres to...\" line) and BEFORE the existing `## [1.4.0]` section:**\n\n```\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n```\n\n**Also update the reference links at the bottom of the file.** Add this line BEFORE the existing `[1.4.0]` link line:\n\n```\n[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n```\n\nThe final reference links section should look like:\n```\n[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n...\n```\n\nAfter editing, read the full file back and return it so I can verify the structure is correct.",
+          "id": "prt_d0c7895530028gyqjiTGao5tbX",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c789553001LNZjea0gf4VU94"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030722389,
+          "completed": 1774030724462
+        },
+        "parentID": "msg_d0c789553001LNZjea0gf4VU94",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0077724,
+        "tokens": {
+          "total": 13474,
+          "input": 3,
+          "output": 80,
+          "reasoning": 0,
+          "cache": {
+            "read": 12653,
+            "write": 738
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c7895550015L7hV8qB34iyH5",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "530e984639c68d07fc4e43e6a09b8eddd6c3d37a",
+          "id": "prt_d0c789cf1001Fq5o3ffuro6NvJ",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c7895550015L7hV8qB34iyH5"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md</path>\n<type>file</type>\n<content>1: # Changelog\n2: \n3: All notable changes to this project will be documented in this file.\n4: \n5: The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n6: and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n7: \n8: ## [1.4.0] - 2026-03-17\n9: \n10: ### Added\n11: - AWS Bedrock provider support (#18)\n12: - Retry logic for intermittent LLM provider failures (#35)\n13: \n14: ### Fixed\n15: - Add path sandbox enforcement to `run_command` tool (#31)\n16: - Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n17: \n18: ## [1.3.0] - 2026-03-15\n19: \n20: ### Added\n21: - Google Gemini provider support\n22: - MiniMax provider support (#27)\n23: - GHCR docker publish workflow on version tags (#33)\n24: \n25: ### Fixed\n26: - Use max_completion_tokens for OpenAI provider (#34)\n27: \n28: ## [1.2.0] - 2026-03-10\n29: \n30: ### Added\n31: - OpenCode provider support\n32: - HTTP request timeout (15s per-request) for `url_fetch` tool\n33: - HTML tag stripping for `url_fetch` responses\n34: \n35: ## [1.1.1] - 2026-03-06\n36: \n37: ### Fixed\n38: - Remove hardcoded `/v1` from OpenAI provider URL path\n39: \n40: ## [1.1.0] - 2026-03-06\n41: \n42: ### Added\n43: - MCP tool support\n44: - `web_search` built-in tool using Tavily Search API\n45: - `url_fetch` built-in tool\n46: - JSON `tool_call_details` in run output\n47: - Refusal detection in JSON output\n48: - Executable examples\n49: \n50: ### Changed\n51: - Docker docs for running a single agent with selective mounts\n52: \n53: ## [1.0.0] - 2026-03-02\n54: \n55: ### Added\n56: - Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n57: - TOML-based agent configuration with SKILL.md context support\n58: - Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n59: - Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n60: - Sub-agent orchestration with `call_agent` tool and depth-limited execution\n61: - Agent memory system with XDG-compliant data storage and garbage collection\n62: - Path security: `~` and `$VAR` expansion for user-supplied paths\n63: - Stdin piping support for composing with Unix tools\n64: - Dry-run mode and per-tool verbose logging\n65: - Docker containerization support\n66: - CI workflows: lint, test, build, and GoReleaser\n67: \n68: ### Fixed\n69: - Arg validation UX and skill path resolution\n70: - staticcheck/errcheck lint issues\n71: - Duplicate error silencing, glob validation, and nil ExitError guard\n72: \n73: [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n74: [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n75: [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n76: [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n77: [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n78: [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n\n(End of file - total 78 lines)\n</content>",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "preview": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774030724337,
+              "end": 1774030724338
+            }
+          },
+          "id": "prt_d0c789cf1002AgsQ0HPevHehT2",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c7895550015L7hV8qB34iyH5"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "530e984639c68d07fc4e43e6a09b8eddd6c3d37a",
+          "cost": 0.0077724,
+          "tokens": {
+            "total": 13474,
+            "input": 3,
+            "output": 80,
+            "reasoning": 0,
+            "cache": {
+              "read": 12653,
+              "write": 738
+            }
+          },
+          "id": "prt_d0c789d0e0016NUB9AB26WNjaz",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c7895550015L7hV8qB34iyH5"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030724462,
+          "completed": 1774030729527
+        },
+        "parentID": "msg_d0c789553001LNZjea0gf4VU94",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.01247655,
+        "tokens": {
+          "total": 14903,
+          "input": 1,
+          "output": 248,
+          "reasoning": 0,
+          "cache": {
+            "read": 13391,
+            "write": 1263
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "5d1e38349fdeeb71de7b6f9435ff18cb5f1ba874",
+          "id": "prt_d0c78a469001i56t8g58DPjd9z",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01Bw2PN2fmS7gFnDAdtbAm2R",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+              "oldString": "## [1.4.0] - 2026-03-17",
+              "newString": "## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17"
+            },
+            "output": "Edit applied successfully.",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/main.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/budget/budget.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 66,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 66,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 111,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 362,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 362,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 474,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 474,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/agents.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 720,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 720,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/router.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 284,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 284,
+                        "character": 24
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 688,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 688,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 717,
+                        "character": 46
+                      },
+                      "end": {
+                        "line": 717,
+                        "character": 57
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 769,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 769,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 796,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 796,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 839,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 839,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 890,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 890,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 943,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 943,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 956,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 956,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 963,
+                        "character": 37
+                      },
+                      "end": {
+                        "line": 963,
+                        "character": 48
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 970,
+                        "character": 44
+                      },
+                      "end": {
+                        "line": 970,
+                        "character": 55
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1658,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1658,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1672,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 1672,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1681,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 1681,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1808,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1808,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1813,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1813,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1814,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1814,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1855,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1855,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1860,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1860,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1861,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1861,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1934,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1934,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1982,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1982,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/release.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.goreleaser.yml": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n@@ -4,8 +4,19 @@\n \n The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n \n+## [1.5.0] - 2026-03-20\n+\n+### Added\n+- Output allowlist for outgoing connections (#45)\n+- Local agent directory support (#41)\n+- Token budget limits per agent run (#37)\n+\n+### Changed\n+- Consolidate Docker release workflow (#44)\n+- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n+\n ## [1.4.0] - 2026-03-17\n \n ### Added\n - AWS Bedrock provider support (#18)\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+                "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "additions": 11,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030729415,
+              "end": 1774030729432
+            }
+          },
+          "id": "prt_d0c78a46a001tsm35Rz7VVrK7D",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "25f21732c47cc493bb7c8db6f1872908136f5cab",
+          "cost": 0.01247655,
+          "tokens": {
+            "total": 14903,
+            "input": 1,
+            "output": 248,
+            "reasoning": 0,
+            "cache": {
+              "read": 13391,
+              "write": 1263
+            }
+          },
+          "id": "prt_d0c78b0e1001uaLJZ0QZNLYoYa",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "5d1e38349fdeeb71de7b6f9435ff18cb5f1ba874",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+          ],
+          "id": "prt_d0c78b135001hbQhkpo1zeJtdg",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030729528,
+          "completed": 1774030733844
+        },
+        "parentID": "msg_d0c789553001LNZjea0gf4VU94",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00871545,
+        "tokens": {
+          "total": 15140,
+          "input": 1,
+          "output": 222,
+          "reasoning": 0,
+          "cache": {
+            "read": 14654,
+            "write": 263
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "25f21732c47cc493bb7c8db6f1872908136f5cab",
+          "id": "prt_d0c78b58200192OK617m4Ni2s2",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "edit",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+              "oldString": "[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0",
+              "newString": "[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0"
+            },
+            "output": "Edit applied successfully.",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/root.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/main.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/hostcheck/hostcheck.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/budget/budget.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 66,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 66,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 545,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 545,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/tool.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 111,
+                        "character": 1
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 2
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#slicescontains"
+                    },
+                    "source": "slicescontains",
+                    "message": "Loop can be simplified using slices.Contains"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 362,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 362,
+                        "character": 51
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 474,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 474,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/url_fetch.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/agents.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 720,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 720,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/mcpclient_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/mcpclient/router.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run_integration_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 284,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 284,
+                        "character": 24
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 688,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 688,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 717,
+                        "character": 46
+                      },
+                      "end": {
+                        "line": 717,
+                        "character": 57
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 769,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 769,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 796,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 796,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 839,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 839,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 890,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 890,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 943,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 943,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 956,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 956,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 963,
+                        "character": 37
+                      },
+                      "end": {
+                        "line": 963,
+                        "character": 48
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 970,
+                        "character": 44
+                      },
+                      "end": {
+                        "line": 970,
+                        "character": 55
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1658,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1658,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1672,
+                        "character": 30
+                      },
+                      "end": {
+                        "line": 1672,
+                        "character": 41
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1681,
+                        "character": 31
+                      },
+                      "end": {
+                        "line": 1681,
+                        "character": 42
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1808,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1808,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1813,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1813,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1814,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1814,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1855,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1855,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1860,
+                        "character": 43
+                      },
+                      "end": {
+                        "line": 1860,
+                        "character": 54
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1861,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 1861,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1934,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1934,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 1982,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 1982,
+                        "character": 34
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/version_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/release.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/.goreleaser.yml": []
+              },
+              "diff": "Index: /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n===================================================================\n--- /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n+++ /Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md\n@@ -80,8 +80,9 @@\n - Arg validation UX and skill path resolution\n - staticcheck/errcheck lint issues\n - Duplicate error silencing, glob validation, and nil ExitError guard\n \n+[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n",
+              "filediff": {
+                "file": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md",
+                "before": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "after": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n\n### Added\n- AWS Bedrock provider support (#18)\n- Retry logic for intermittent LLM provider failures (#35)\n\n### Fixed\n- Add path sandbox enforcement to `run_command` tool (#31)\n- Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n\n## [1.3.0] - 2026-03-15\n\n### Added\n- Google Gemini provider support\n- MiniMax provider support (#27)\n- GHCR docker publish workflow on version tags (#33)\n\n### Fixed\n- Use max_completion_tokens for OpenAI provider (#34)\n\n## [1.2.0] - 2026-03-10\n\n### Added\n- OpenCode provider support\n- HTTP request timeout (15s per-request) for `url_fetch` tool\n- HTML tag stripping for `url_fetch` responses\n\n## [1.1.1] - 2026-03-06\n\n### Fixed\n- Remove hardcoded `/v1` from OpenAI provider URL path\n\n## [1.1.0] - 2026-03-06\n\n### Added\n- MCP tool support\n- `web_search` built-in tool using Tavily Search API\n- `url_fetch` built-in tool\n- JSON `tool_call_details` in run output\n- Refusal detection in JSON output\n- Executable examples\n\n### Changed\n- Docker docs for running a single agent with selective mounts\n\n## [1.0.0] - 2026-03-02\n\n### Added\n- Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n- TOML-based agent configuration with SKILL.md context support\n- Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n- Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n- Sub-agent orchestration with `call_agent` tool and depth-limited execution\n- Agent memory system with XDG-compliant data storage and garbage collection\n- Path security: `~` and `$VAR` expansion for user-supplied paths\n- Stdin piping support for composing with Unix tools\n- Dry-run mode and per-tool verbose logging\n- Docker containerization support\n- CI workflows: lint, test, build, and GoReleaser\n\n### Fixed\n- Arg validation UX and skill path resolution\n- staticcheck/errcheck lint issues\n- Duplicate error silencing, glob validation, and nil ExitError guard\n\n[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n",
+                "additions": 1,
+                "deletions": 0
+              },
+              "truncated": false
+            },
+            "time": {
+              "start": 1774030731958,
+              "end": 1774030731984
+            }
+          },
+          "id": "prt_d0c78b5830013L4GQidiDpzMdl",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "6f1f4214c29489fc361b2bea6e8eaccfe1bcc7c4",
+          "cost": 0.00871545,
+          "tokens": {
+            "total": 15140,
+            "input": 1,
+            "output": 222,
+            "reasoning": 0,
+            "cache": {
+              "read": 14654,
+              "write": 263
+            }
+          },
+          "id": "prt_d0c78bad1001aIihyo3a815d8M",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "25f21732c47cc493bb7c8db6f1872908136f5cab",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+          ],
+          "id": "prt_d0c78c212001HmIllaE76Aqeok",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030733845,
+          "completed": 1774030736350
+        },
+        "parentID": "msg_d0c789553001LNZjea0gf4VU94",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00655185,
+        "tokens": {
+          "total": 15234,
+          "input": 1,
+          "output": 79,
+          "reasoning": 0,
+          "cache": {
+            "read": 14917,
+            "write": 237
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d0c78c215001Z0kieEkLRpfYVY",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "6f1f4214c29489fc361b2bea6e8eaccfe1bcc7c4",
+          "id": "prt_d0c78c9bd0015SN7gj16vtaeeT",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78c215001Z0kieEkLRpfYVY"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/CHANGELOG.md</path>\n<type>file</type>\n<content>1: # Changelog\n2: \n3: All notable changes to this project will be documented in this file.\n4: \n5: The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n6: and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n7: \n8: ## [1.5.0] - 2026-03-20\n9: \n10: ### Added\n11: - Output allowlist for outgoing connections (#45)\n12: - Local agent directory support (#41)\n13: - Token budget limits per agent run (#37)\n14: \n15: ### Changed\n16: - Consolidate Docker release workflow (#44)\n17: - Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n18: \n19: ## [1.4.0] - 2026-03-17\n20: \n21: ### Added\n22: - AWS Bedrock provider support (#18)\n23: - Retry logic for intermittent LLM provider failures (#35)\n24: \n25: ### Fixed\n26: - Add path sandbox enforcement to `run_command` tool (#31)\n27: - Update Dockerfile to Go 1.25 and bump CI actions to Node 24\n28: \n29: ## [1.3.0] - 2026-03-15\n30: \n31: ### Added\n32: - Google Gemini provider support\n33: - MiniMax provider support (#27)\n34: - GHCR docker publish workflow on version tags (#33)\n35: \n36: ### Fixed\n37: - Use max_completion_tokens for OpenAI provider (#34)\n38: \n39: ## [1.2.0] - 2026-03-10\n40: \n41: ### Added\n42: - OpenCode provider support\n43: - HTTP request timeout (15s per-request) for `url_fetch` tool\n44: - HTML tag stripping for `url_fetch` responses\n45: \n46: ## [1.1.1] - 2026-03-06\n47: \n48: ### Fixed\n49: - Remove hardcoded `/v1` from OpenAI provider URL path\n50: \n51: ## [1.1.0] - 2026-03-06\n52: \n53: ### Added\n54: - MCP tool support\n55: - `web_search` built-in tool using Tavily Search API\n56: - `url_fetch` built-in tool\n57: - JSON `tool_call_details` in run output\n58: - Refusal detection in JSON output\n59: - Executable examples\n60: \n61: ### Changed\n62: - Docker docs for running a single agent with selective mounts\n63: \n64: ## [1.0.0] - 2026-03-02\n65: \n66: ### Added\n67: - Core CLI with `run`, `agents list`, `agents show`, `agents init`, `agents edit`, `gc`, and `config init` commands\n68: - TOML-based agent configuration with SKILL.md context support\n69: - Multi-provider LLM support: Anthropic, OpenAI, and Ollama\n70: - Tool-calling system with `read_file`, `write_file`, `edit_file`, `list_directory`, and `run_command` tools\n71: - Sub-agent orchestration with `call_agent` tool and depth-limited execution\n72: - Agent memory system with XDG-compliant data storage and garbage collection\n73: - Path security: `~` and `$VAR` expansion for user-supplied paths\n74: - Stdin piping support for composing with Unix tools\n75: - Dry-run mode and per-tool verbose logging\n76: - Docker containerization support\n77: - CI workflows: lint, test, build, and GoReleaser\n78: \n79: ### Fixed\n80: - Arg validation UX and skill path resolution\n81: - staticcheck/errcheck lint issues\n82: - Duplicate error silencing, glob validation, and nil ExitError guard\n83: \n84: [1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n85: [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n86: [1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n87: [1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n88: [1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n89: [1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n90: [1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n\n(End of file - total 90 lines)\n</content>",
+            "title": "CHANGELOG.md",
+            "metadata": {
+              "preview": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774030736120,
+              "end": 1774030736131
+            }
+          },
+          "id": "prt_d0c78c9bd002jiTNK4NpcIY0gH",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78c215001Z0kieEkLRpfYVY"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "6f1f4214c29489fc361b2bea6e8eaccfe1bcc7c4",
+          "cost": 0.00655185,
+          "tokens": {
+            "total": 15234,
+            "input": 1,
+            "output": 79,
+            "reasoning": 0,
+            "cache": {
+              "read": 14917,
+              "write": 237
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78c215001Z0kieEkLRpfYVY"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774030736351,
+          "completed": 1774030744938
+        },
+        "parentID": "msg_d0c789553001LNZjea0gf4VU94",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0180567,
+        "tokens": {
+          "total": 17128,
+          "input": 1,
+          "output": 543,
+          "reasoning": 0,
+          "cache": {
+            "read": 15154,
+            "write": 1430
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d0c78cbdf001uKAOddy68VWNrq",
+        "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "6f1f4214c29489fc361b2bea6e8eaccfe1bcc7c4",
+          "id": "prt_d0c78d1df001SkbSP6FQnn8282",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78cbdf001uKAOddy68VWNrq"
+        },
+        {
+          "type": "text",
+          "text": "The file is correct. Here's the full content for your verification:\n\n```\n# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [1.5.0] - 2026-03-20\n\n### Added\n- Output allowlist for outgoing connections (#45)\n- Local agent directory support (#41)\n- Token budget limits per agent run (#37)\n\n### Changed\n- Consolidate Docker release workflow (#44)\n- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)\n\n## [1.4.0] - 2026-03-17\n...\n[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0\n[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0\n[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0\n[1.2.0]: https://github.com/jrswab/axe/compare/v1.1.1...v1.2.0\n[1.1.1]: https://github.com/jrswab/axe/compare/v1.1.0...v1.1.1\n[1.1.0]: https://github.com/jrswab/axe/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/jrswab/axe/releases/tag/v1.0.0\n```\n\nBoth edits applied cleanly:\n- `[1.5.0]` section inserted at line 8, immediately after the header block and before `[1.4.0]`\n- `[1.5.0]` reference link inserted at line 84, first in the link list",
+          "time": {
+            "start": 1774030744732,
+            "end": 1774030744732
+          },
+          "id": "prt_d0c78d1e00019FBjgnItFWSYoE",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78cbdf001uKAOddy68VWNrq"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "6f1f4214c29489fc361b2bea6e8eaccfe1bcc7c4",
+          "cost": 0.0180567,
+          "tokens": {
+            "total": 17128,
+            "input": 1,
+            "output": 543,
+            "reasoning": 0,
+            "cache": {
+              "read": 15154,
+              "write": 1430
+            }
+          },
+          "id": "prt_d0c78ecb4001ngGd5fFUEc0Sgn",
+          "sessionID": "ses_2f3876aaeffeobGInC1cjOS39c",
+          "messageID": "msg_d0c78cbdf001uKAOddy68VWNrq"
+        }
+      ]
+    }
+  ]
+}

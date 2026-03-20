@@ -1,0 +1,32 @@
+In the axe project at /Users/jaronswab/go/src/github.com/jrswab/axe, update CHANGELOG.md with the v1.5.0 release section.
+
+**Insert this new section AFTER line 7 (after the "and this project adheres to..." line) and BEFORE the existing `## [1.4.0]` section:**
+
+```
+## [1.5.0] - 2026-03-20
+
+### Added
+- Output allowlist for outgoing connections (#45)
+- Local agent directory support (#41)
+- Token budget limits per agent run (#37)
+
+### Changed
+- Consolidate Docker release workflow (#44)
+- Bump github.com/modelcontextprotocol/go-sdk from 1.4.0 to 1.4.1 (#39)
+```
+
+**Also update the reference links at the bottom of the file.** Add this line BEFORE the existing `[1.4.0]` link line:
+
+```
+[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0
+```
+
+The final reference links section should look like:
+```
+[1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/jrswab/axe/compare/v1.2.0...v1.3.0
+...
+```
+
+After editing, read the full file back and return it so I can verify the structure is correct.
