@@ -1,0 +1,31 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Run the following commands in order. Return the exact output of each command. Stop immediately if any command fails.
+
+1. Stage and commit:
+```bash
+git add .
+git commit -m "docs: update changelog for v1.6.0"
+```
+
+2. Push the commit:
+```bash
+git push
+```
+
+3. Create the annotated tag:
+```bash
+git tag -a v1.6.0 -m "Release v1.6.0"
+```
+
+4. Push the tag:
+```bash
+git push origin v1.6.0
+```
+
+Return the output of all commands clearly labeled. Do NOT use force push under any circumstances.
+
