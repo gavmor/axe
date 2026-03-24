@@ -1,0 +1,12 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Run the full unit test suite for the project and return only the summary and any failures:
+```bash
+go test ./... 2>&1
+```
+Return the full output.
+
