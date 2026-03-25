@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "d32c2337529b",
+  "session_id": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-25T17:53:12.479629Z",
+  "branch": "ISS-40-cicd-workflow",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".github/workflows/smoke-test.yml",
+    "docs/plans/ISS-40_smoke_test_agents_milestones.md"
+  ],
+  "agent": "OpenCode",
+  "turn_id": "11fd562c66af",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-25T17:53:12.465653Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "agent_percentage": 0
+  }
+}
