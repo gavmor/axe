@@ -1,0 +1,48 @@
+Make exactly two changes in the repo at `/Users/jaronswab/go/src/github.com/jrswab/axe`:
+
+---
+
+## Change 1: Add system_prompt to cfg-subagents.toml
+
+Edit `.github/smoke-agents/cfg-subagents.toml`. Add a `system_prompt` field so the file becomes:
+
+```toml
+name = "cfg-subagents"
+model = "opencode/minimax-m2.5"
+description = "Smoke test: sub_agents config section"
+system_prompt = "You must always call the cfg-sub-child sub-agent immediately. Do not ask for clarification. Call the sub-agent with the task 'respond' and report its exact reply."
+sub_agents = ["cfg-sub-child"]
+
+[sub_agents_config]
+max_depth = 2
+parallel = true
+timeout = 60
+```
+
+---
+
+## Change 2: Update the cfg-subagents workflow step prompt
+
+Edit `.github/workflows/smoke-test.yml`. Find the `cfg-subagents` step (around line 195) and change the `-p` prompt from:
+
+```
+-p "Delegate to your sub-agent and report what it says."
+```
+
+to:
+
+```
+-p "Call your sub-agent now."
+```
+
+---
+
+After both edits, stage, commit, and push:
+
+```
+git add .github/smoke-agents/cfg-subagents.toml .github/workflows/smoke-test.yml
+git commit -m "fix: force cfg-subagents to call sub-agent unconditionally"
+git push
+```
+
+Report the git output.

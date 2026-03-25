@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "f216db78d0a9",
+  "strategy": "manual-commit",
+  "branch": "ISS-40-cicd-workflow",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".github/smoke-agents/cfg-subagents.toml",
+    ".github/workflows/smoke-test.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f2/16db78d0a9/0/metadata.json",
+      "transcript": "/f2/16db78d0a9/0/full.jsonl",
+      "context": "/f2/16db78d0a9/0/context.md",
+      "content_hash": "/f2/16db78d0a9/0/content_hash.txt",
+      "prompt": "/f2/16db78d0a9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 1667,
+    "cache_read_tokens": 26280,
+    "output_tokens": 660,
+    "api_call_count": 3
+  }
+}
