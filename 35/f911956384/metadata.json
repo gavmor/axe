@@ -3,7 +3,7 @@
   "checkpoint_id": "35f911956384",
   "strategy": "manual-commit",
   "branch": "ISS-040/cicd-smoke-tests",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     ".github/smoke-agents/cfg-basic.toml",
     ".github/smoke-agents/cfg-files.toml",
@@ -69,6 +69,20 @@
       "context": "",
       "content_hash": "/35/f911956384/4/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/35/f911956384/5/metadata.json",
+      "transcript": "/35/f911956384/5/full.jsonl",
+      "context": "/35/f911956384/5/context.md",
+      "content_hash": "/35/f911956384/5/content_hash.txt",
+      "prompt": "/35/f911956384/5/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 1427,
+    "cache_read_tokens": 52491,
+    "output_tokens": 401,
+    "api_call_count": 4
+  }
 }

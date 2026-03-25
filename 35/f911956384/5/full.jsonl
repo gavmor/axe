@@ -1,0 +1,1310 @@
+{
+  "info": {
+    "id": "ses_2da1f9f15ffe3kLcohTN4De34i",
+    "slug": "crisp-circuit",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2da23011cffeWlYXgD83DGFKfK",
+    "title": "Create pipe-basic agent (@general subagent)",
+    "version": "1.3.0",
+    "summary": {
+      "additions": 42,
+      "deletions": 0,
+      "files": 9
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774456955114,
+      "updated": 1774456964529
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774456955117
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": ".github/smoke-agents/cfg-basic.toml",
+              "before": "",
+              "after": "name = \"cfg-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: basic config (name + model only)\"\n",
+              "additions": 3,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/cfg-files.toml",
+              "before": "",
+              "after": "name = \"cfg-files\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: files config section\"\nfiles = [\".github/smoke-agents/smoke-context.txt\"]\n",
+              "additions": 4,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/cfg-memory.toml",
+              "before": "",
+              "after": "name = \"cfg-memory\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: memory config section\"\n\n[memory]\nenabled = true\nlast_n = 5\nmax_entries = 50\n",
+              "additions": 8,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/cfg-skill.toml",
+              "before": "",
+              "after": "name = \"cfg-skill\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: skill config section\"\n",
+              "additions": 3,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/cfg-subagents.toml",
+              "before": "",
+              "after": "name = \"cfg-subagents\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: sub_agents config section\"\nsub_agents = [\"cfg-sub-child\"]\n\n[sub_agents_config]\nmax_depth = 2\nparallel = true\ntimeout = 60\n",
+              "additions": 9,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/pipe-basic.toml",
+              "before": "",
+              "after": "name = \"pipe-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: piped stdin input\"\n",
+              "additions": 3,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/tool-run-cmd.toml",
+              "before": "",
+              "after": "name = \"tool-run-cmd\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: run_command tool\"\ntools = [\"run_command\"]\n",
+              "additions": 4,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/tool-url-fetch.toml",
+              "before": "",
+              "after": "name = \"tool-url-fetch\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: url_fetch tool\"\ntools = [\"url_fetch\"]\n",
+              "additions": 4,
+              "deletions": 0,
+              "status": "added"
+            },
+            {
+              "file": ".github/smoke-agents/tool-web-search.toml",
+              "before": "",
+              "after": "name = \"tool-web-search\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: web_search tool\"\ntools = [\"web_search\"]\n",
+              "additions": 4,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d25e060ec0014tN4B0T3Bu1wng",
+        "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Create the following TOML file in /Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/. Create the directory if it doesn't exist.\n\nThe file must be valid TOML parseable by github.com/BurntSushi/toml. String values must be quoted. No fields beyond those specified.\n\n`pipe-basic.toml`:\n```toml\nname = \"pipe-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: piped stdin input\"\n```\n\nReturn confirmation that the file was created with its exact contents.",
+          "id": "prt_d25e060ed001qeU3Yh1g9VEz0S",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e060ec0014tN4B0T3Bu1wng"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774456955118,
+          "completed": 1774456957789
+        },
+        "parentID": "msg_d25e060ec0014tN4B0T3Bu1wng",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0070854,
+        "tokens": {
+          "total": 13358,
+          "input": 3,
+          "output": 99,
+          "reasoning": 0,
+          "cache": {
+            "read": 12788,
+            "write": 468
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d25e060ee001C3ls6aHcgFKrAG",
+        "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "eb2ccf089d53447d54f73a97e33804b04454af65",
+          "id": "prt_d25e06956001CgV8E2khPAewAv",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e060ee001C3ls6aHcgFKrAG"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01XN3SsJwyPF1KsorPr1zJbb",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "ls /Users/jaronswab/go/src/github.com/jrswab/axe/.github/",
+              "description": "Check .github directory contents"
+            },
+            "output": "smoke-agents\nworkflows\n",
+            "title": "Check .github directory contents",
+            "metadata": {
+              "output": "smoke-agents\nworkflows\n",
+              "exit": 0,
+              "description": "Check .github directory contents",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774456957660,
+              "end": 1774456957674
+            }
+          },
+          "id": "prt_d25e06956002BGRdLVvtCX9iKJ",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e060ee001C3ls6aHcgFKrAG"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "d20785776d507fa7ae5adbc8b6f6a50421bb0af0",
+          "cost": 0.0070854,
+          "tokens": {
+            "total": 13358,
+            "input": 3,
+            "output": 99,
+            "reasoning": 0,
+            "cache": {
+              "read": 12788,
+              "write": 468
+            }
+          },
+          "id": "prt_d25e06afa001ziimRLLVcohVi3",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e060ee001C3ls6aHcgFKrAG"
+        },
+        {
+          "type": "patch",
+          "hash": "eb2ccf089d53447d54f73a97e33804b04454af65",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/tool-run-cmd.toml"
+          ],
+          "id": "REDACTED",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e060ee001C3ls6aHcgFKrAG"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774456957790,
+          "completed": 1774456961191
+        },
+        "parentID": "msg_d25e060ec0014tN4B0T3Bu1wng",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00827565,
+        "tokens": {
+          "total": 13525,
+          "input": 1,
+          "output": 149,
+          "reasoning": 0,
+          "cache": {
+            "read": 12788,
+            "write": 587
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d25e06b5e001iMQCWNyvb3j783",
+        "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "15d3d68d8da47ae57a5f3aa65e624011134e34f8",
+          "id": "prt_d25e0735f001EY95haWNXbi7tD",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e06b5e001iMQCWNyvb3j783"
+        },
+        {
+          "type": "text",
+          "text": "The directory already exists. Creating the file:",
+          "time": {
+            "start": 1774456960762,
+            "end": 1774456960762
+          },
+          "id": "prt_d25e0735f002TdGHoaFXhifgpa",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e06b5e001iMQCWNyvb3j783"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "write",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/pipe-basic.toml",
+              "content": "name = \"pipe-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: piped stdin input\"\n"
+            },
+            "output": "Wrote file successfully.",
+            "title": ".github/smoke-agents/pipe-basic.toml",
+            "metadata": {
+              "diagnostics": {
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/run.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 78,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 78,
+                        "character": 21
+                      }
+                    },
+                    "severity": 4,
+                    "code": "stringscut",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize#stringscut"
+                    },
+                    "source": "stringscut",
+                    "message": "strings.Index can be simplified using strings.Cut"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 514,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 514,
+                        "character": 52
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 624,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 624,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 643,
+                        "character": 37
+                      },
+                      "end": {
+                        "line": 643,
+                        "character": 48
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 645,
+                        "character": 33
+                      },
+                      "end": {
+                        "line": 645,
+                        "character": 44
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/write_file.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 135,
+                        "character": 23
+                      },
+                      "end": {
+                        "line": 135,
+                        "character": 42
+                      }
+                    },
+                    "severity": 3,
+                    "code": "unusedparams",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/unusedparams#unusedparams"
+                    },
+                    "source": "unusedparams",
+                    "message": "unused parameter: ctx"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/tool/registry.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/smoke_test.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/cmd/golden_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 72,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 72,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 80,
+                        "character": 52
+                      },
+                      "end": {
+                        "line": 80,
+                        "character": 63
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 82,
+                        "character": 32
+                      },
+                      "end": {
+                        "line": 82,
+                        "character": 43
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 148,
+                        "character": 4
+                      },
+                      "end": {
+                        "line": 148,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#minmax"
+                    },
+                    "source": "minmax",
+                    "message": "if statement can be modernized using max"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 259,
+                        "character": 2
+                      },
+                      "end": {
+                        "line": 259,
+                        "character": 10
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#forvar"
+                    },
+                    "source": "forvar",
+                    "message": "copying variable is unneeded",
+                    "tags": [
+                      1
+                    ]
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 294,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 294,
+                        "character": 11
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#mapsloop"
+                    },
+                    "source": "mapsloop",
+                    "message": "Replace m[k]=v loop with maps.Copy"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 440,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 440,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/testutil.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/testutil/mockserver.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/opencode.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 78,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 78,
+                        "character": 33
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 86,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 86,
+                        "character": 20
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 121,
+                        "character": 19
+                      },
+                      "end": {
+                        "line": 121,
+                        "character": 30
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 162,
+                        "character": 29
+                      },
+                      "end": {
+                        "line": 162,
+                        "character": 40
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 355,
+                        "character": 19
+                      },
+                      "end": {
+                        "line": 355,
+                        "character": 30
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 435,
+                        "character": 50
+                      },
+                      "end": {
+                        "line": 435,
+                        "character": 61
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 436,
+                        "character": 12
+                      },
+                      "end": {
+                        "line": 436,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 548,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 548,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 714,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 714,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider.go": [],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/provider_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 115,
+                        "character": 8
+                      },
+                      "end": {
+                        "line": 115,
+                        "character": 8
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field System"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 116,
+                        "character": 21
+                      },
+                      "end": {
+                        "line": 116,
+                        "character": 21
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Messages"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 131,
+                        "character": 7
+                      },
+                      "end": {
+                        "line": 131,
+                        "character": 7
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Model"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 132,
+                        "character": 13
+                      },
+                      "end": {
+                        "line": 132,
+                        "character": 13
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field InputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 133,
+                        "character": 14
+                      },
+                      "end": {
+                        "line": 133,
+                        "character": 14
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field OutputTokens"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 134,
+                        "character": 12
+                      },
+                      "end": {
+                        "line": 134,
+                        "character": 12
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field StopReason"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 147,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 147,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 148,
+                        "character": 9
+                      },
+                      "end": {
+                        "line": 148,
+                        "character": 9
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Content"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 169,
+                        "character": 6
+                      },
+                      "end": {
+                        "line": 169,
+                        "character": 6
+                      }
+                    },
+                    "severity": 3,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/unusedwrite"
+                    },
+                    "source": "unusedwrite",
+                    "message": "unused write to field Role"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/provider/opencode_test.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 83,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 83,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 84,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 84,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 421,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 421,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 424,
+                        "character": 25
+                      },
+                      "end": {
+                        "line": 424,
+                        "character": 36
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 427,
+                        "character": 28
+                      },
+                      "end": {
+                        "line": 427,
+                        "character": 39
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 668,
+                        "character": 20
+                      },
+                      "end": {
+                        "line": 668,
+                        "character": 31
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 670,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 670,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 673,
+                        "character": 26
+                      },
+                      "end": {
+                        "line": 673,
+                        "character": 37
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#any"
+                    },
+                    "source": "any",
+                    "message": "interface{} can be replaced by any"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/resolve/resolve.go": [
+                  {
+                    "range": {
+                      "start": {
+                        "line": 165,
+                        "character": 22
+                      },
+                      "end": {
+                        "line": 165,
+                        "character": 35
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#stringsseq"
+                    },
+                    "source": "stringsseq",
+                    "message": "Ranging over SplitSeq is more efficient"
+                  },
+                  {
+                    "range": {
+                      "start": {
+                        "line": 288,
+                        "character": 5
+                      },
+                      "end": {
+                        "line": 288,
+                        "character": 23
+                      }
+                    },
+                    "severity": 4,
+                    "code": "default",
+                    "codeDescription": {
+                      "href": "https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize#rangeint"
+                    },
+                    "source": "rangeint",
+                    "message": "for loop can be modernized using range over int"
+                  }
+                ],
+                "/Users/jaronswab/go/src/github.com/jrswab/axe/internal/agent/agent.go": []
+              },
+              "filepath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/pipe-basic.toml",
+              "exists": false,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774456961064,
+              "end": 1774456961066
+            }
+          },
+          "id": "prt_d25e07733001fN2PGNGoX8sevc",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e06b5e001iMQCWNyvb3j783"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "aa64790f2acdd17ef4fcc4b4a1b057c00e17f474",
+          "cost": 0.00827565,
+          "tokens": {
+            "total": 13525,
+            "input": 1,
+            "output": 149,
+            "reasoning": 0,
+            "cache": {
+              "read": 12788,
+              "write": 587
+            }
+          },
+          "id": "prt_d25e07838001RC6Ak95hiZ85yX",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e06b5e001iMQCWNyvb3j783"
+        },
+        {
+          "type": "patch",
+          "hash": "15d3d68d8da47ae57a5f3aa65e624011134e34f8",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/cfg-basic.toml",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/cfg-skill.toml",
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/pipe-basic.toml"
+          ],
+          "id": "prt_d25e078a60014pnL6D5g17Vj47",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e06b5e001iMQCWNyvb3j783"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774456961192,
+          "completed": 1774456964344
+        },
+        "parentID": "msg_d25e060ec0014tN4B0T3Bu1wng",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00593925,
+        "tokens": {
+          "total": 13628,
+          "input": 1,
+          "output": 87,
+          "reasoning": 0,
+          "cache": {
+            "read": 13375,
+            "write": 165
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d25e078a8001xGLRhCgq4T1OKm",
+        "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "63432cfe0900d9cc041b848ca6edf6756dba6d93",
+          "id": "REDACTED",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e078a8001xGLRhCgq4T1OKm"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/pipe-basic.toml"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.github/smoke-agents/pipe-basic.toml</path>\n<type>file</type>\n<content>1: name = \"pipe-basic\"\n2: model = \"opencode/minimax-m2.5\"\n3: description = \"Smoke test: piped stdin input\"\n\n(End of file - total 3 lines)\n</content>",
+            "title": ".github/smoke-agents/pipe-basic.toml",
+            "metadata": {
+              "preview": "name = \"pipe-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: piped stdin input\"",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774456964234,
+              "end": 1774456964246
+            }
+          },
+          "id": "prt_d25e083cd0011LW1uZCU1hv9W1",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e078a8001xGLRhCgq4T1OKm"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "63432cfe0900d9cc041b848ca6edf6756dba6d93",
+          "cost": 0.00593925,
+          "tokens": {
+            "total": 13628,
+            "input": 1,
+            "output": 87,
+            "reasoning": 0,
+            "cache": {
+              "read": 13375,
+              "write": 165
+            }
+          },
+          "id": "prt_d25e0849a001q1UmRz55xbeD8s",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e078a8001xGLRhCgq4T1OKm"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774456964344,
+          "completed": 1774456966419
+        },
+        "parentID": "msg_d25e060ec0014tN4B0T3Bu1wng",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00583125,
+        "tokens": {
+          "total": 13814,
+          "input": 1,
+          "output": 66,
+          "reasoning": 0,
+          "cache": {
+            "read": 13540,
+            "write": 207
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d25e084f8001nlzRGgr742YXPl",
+        "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "86149fc9539d4d33b69a5a232394e743b700681e",
+          "id": "prt_d25e08a8f001KhMni8KYjsFf7w",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e084f8001nlzRGgr742YXPl"
+        },
+        {
+          "type": "text",
+          "text": "File created at `.github/smoke-agents/pipe-basic.toml` with exact contents:\n\n```toml\nname = \"pipe-basic\"\nmodel = \"opencode/minimax-m2.5\"\ndescription = \"Smoke test: piped stdin input\"\n```",
+          "time": {
+            "start": 1774456966272,
+            "end": 1774456966272
+          },
+          "id": "prt_d25e08a96001Xn1HsJ0KAhd5c3",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e084f8001nlzRGgr742YXPl"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "86149fc9539d4d33b69a5a232394e743b700681e",
+          "cost": 0.00583125,
+          "tokens": {
+            "total": 13814,
+            "input": 1,
+            "output": 66,
+            "reasoning": 0,
+            "cache": {
+              "read": 13540,
+              "write": 207
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2da1f9f15ffe3kLcohTN4De34i",
+          "messageID": "msg_d25e084f8001nlzRGgr742YXPl"
+        }
+      ]
+    }
+  ]
+}
