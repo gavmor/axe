@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774462186116,
-      "updated": 1774462195928
+      "updated": 1774462238065
     }
   },
   "messages": [
@@ -361,7 +361,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774462195860
+          "created": 1774462195860,
+          "completed": 1774462237993
         },
         "parentID": "msg_d2630328c001SB5gC5QCh7fME0",
         "modelID": "claude-sonnet-4-6",
@@ -372,16 +373,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.00842325,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 15116,
+          "input": 1,
+          "output": 143,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 14455,
+            "write": 517
           }
         },
+        "finish": "tool-calls",
         "id": "REDACTED",
         "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU"
       },
@@ -409,22 +412,117 @@
           "callID": "REDACTED",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add .github/smoke-agents/cfg-subagents.toml .github/workflows/smoke-test.yml && git commit -m \"fix: force cfg-subagents to call sub-agent unconditionally\" && git push",
               "description": "Stage, commit, and push the two changes"
             },
+            "output": "[ISS-40-cicd-workflow 9a11f3f] fix: force cfg-subagents to call sub-agent unconditionally\n 2 files changed, 2 insertions(+), 1 deletion(-)\n[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   c0540b7..9a11f3f  ISS-40-cicd-workflow -> ISS-40-cicd-workflow\n",
+            "title": "Stage, commit, and push the two changes",
             "metadata": {
-              "output": "",
-              "description": "Stage, commit, and push the two changes"
+              "output": "[ISS-40-cicd-workflow 9a11f3f] fix: force cfg-subagents to call sub-agent unconditionally\n 2 files changed, 2 insertions(+), 1 deletion(-)\n[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   c0540b7..9a11f3f  ISS-40-cicd-workflow -> ISS-40-cicd-workflow\n",
+              "exit": 0,
+              "description": "Stage, commit, and push the two changes",
+              "truncated": false
             },
             "time": {
-              "start": 1774462198309
+              "start": 1774462198304,
+              "end": 1774462237807
             }
           },
           "id": "prt_d26305f1a0011kXsjtKuGh8dfa",
           "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU",
           "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "c28867955acc50c04f7970156d9a2787aa9185e1",
+          "cost": 0.00842325,
+          "tokens": {
+            "total": 15116,
+            "input": 1,
+            "output": 143,
+            "reasoning": 0,
+            "cache": {
+              "read": 14455,
+              "write": 517
+            }
+          },
+          "id": "prt_d2630fc72001BTFEBLtJ9RVTB7",
+          "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774462237994,
+          "completed": 1774462243317
+        },
+        "parentID": "msg_d2630328c001SB5gC5QCh7fME0",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0075621,
+        "tokens": {
+          "total": 15380,
+          "input": 1,
+          "output": 137,
+          "reasoning": 0,
+          "cache": {
+            "read": 14972,
+            "write": 270
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d2630fd2a001S6cuEwvvngWsBQ",
+        "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "c28867955acc50c04f7970156d9a2787aa9185e1",
+          "id": "prt_d26310775001tq3it5OXRswYsR",
+          "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU",
+          "messageID": "msg_d2630fd2a001S6cuEwvvngWsBQ"
+        },
+        {
+          "type": "text",
+          "text": "Done. Git output:\n\n```\n[ISS-40-cicd-workflow 9a11f3f] fix: force cfg-subagents to call sub-agent unconditionally\n 2 files changed, 2 insertions(+), 1 deletion(-)\n\nTo github.com:jrswab/axe.git\n   c0540b7..9a11f3f  ISS-40-cicd-workflow -> ISS-40-cicd-workflow\n```\n\nBoth changes are committed and pushed on branch `ISS-40-cicd-workflow`.",
+          "time": {
+            "start": 1774462243111,
+            "end": 1774462243111
+          },
+          "id": "prt_d26310776001cZ5xtvgtBwRhD2",
+          "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU",
+          "messageID": "msg_d2630fd2a001S6cuEwvvngWsBQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "c28867955acc50c04f7970156d9a2787aa9185e1",
+          "cost": 0.0075621,
+          "tokens": {
+            "total": 15380,
+            "input": 1,
+            "output": 137,
+            "reasoning": 0,
+            "cache": {
+              "read": 14972,
+              "write": 270
+            }
+          },
+          "id": "prt_d26311182001nISE9m1YToE7sT",
+          "sessionID": "ses_2d9cfcd7bffeH9frbO47eE4RCU",
+          "messageID": "msg_d2630fd2a001S6cuEwvvngWsBQ"
         }
       ]
     }
