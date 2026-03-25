@@ -120,6 +120,13 @@
       "context": "",
       "content_hash": "/62/8c119f5a01/15/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/62/8c119f5a01/16/metadata.json",
+      "transcript": "/62/8c119f5a01/16/full.jsonl",
+      "context": "",
+      "content_hash": "/62/8c119f5a01/16/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
