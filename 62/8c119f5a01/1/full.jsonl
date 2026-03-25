@@ -1,0 +1,418 @@
+{
+  "info": {
+    "id": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+    "slug": "cosmic-forest",
+    "projectID": "f41eda22c31366c4dba329069ee3369b2d9dd378",
+    "directory": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+    "parentID": "ses_2da08adf8ffeAYHY3iSJfMq3GF",
+    "title": "Create smoke-test.yml workflow (@general subagent)",
+    "version": "1.3.0",
+    "summary": {
+      "additions": 229,
+      "deletions": 0,
+      "files": 1
+    },
+    "permission": [
+      {
+        "permission": "todowrite",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "todoread",
+        "pattern": "*",
+        "action": "deny"
+      },
+      {
+        "permission": "task",
+        "pattern": "*",
+        "action": "deny"
+      }
+    ],
+    "time": {
+      "created": 1774460413238,
+      "updated": 1774460445330
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1774460413248
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": ".github/workflows/smoke-test.yml",
+              "before": "",
+              "after": "# .github/workflows/smoke-test.yml\nname: Smoke Tests\n\non:\n  push:\n    branches: [ \"master\" ]\n  pull_request:\n\njobs:\n\n  dry-run:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: dry-basic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-basic --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"=== Dry Run ===\" || { echo \"FAIL: '=== Dry Run ===' not found\"; exit 1; }\n\n    - name: dry-tools\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-tools --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Tools ---\" || { echo \"FAIL: '--- Tools ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"read_file\" || { echo \"FAIL: 'read_file' not found in tools section\"; exit 1; }\n\n    - name: dry-skill\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Skill ---\" || { echo \"FAIL: '--- Skill ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -A1 \"--- Skill ---\" | grep -q \"(none)\" && { echo \"FAIL: skill section is '(none)'\"; exit 1; } || true\n\n    - name: dry-memory\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-memory --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Memory ---\" || { echo \"FAIL: '--- Memory ---' not found\"; exit 1; }\n\n    - name: dry-files\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-files --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Files ---\" || { echo \"FAIL: '--- Files ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"smoke-context.txt\" || { echo \"FAIL: 'smoke-context.txt' not found in files section\"; exit 1; }\n\n  providers:\n    runs-on: ubuntu-latest\n    env:\n      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: provider-anthropic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-anthropic -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: provider-openai\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-openai -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: provider-opencode\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-opencode -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  tools:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: tool-list-dir\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-list-dir -p \"List the files in the current directory and tell me what you see.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: tool-read-file\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-read-file -p \"Read the file .github/smoke-agents/smoke-context.txt and tell me its contents.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-context-loaded\" || { echo \"FAIL: 'smoke-context-loaded' not found\"; exit 1; }\n\n    - name: tool-write-file\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-write-file -p \"Write the text 'smoke-write-ok' to the file /tmp/smoke-write-test.txt\")\n        echo \"$OUTPUT\"\n        grep -q \"smoke-write-ok\" /tmp/smoke-write-test.txt || { echo \"FAIL: write file content not found\"; exit 1; }\n\n    - name: tool-edit-file\n      run: |\n        echo \"original-content\" > /tmp/smoke-edit-test.txt\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-edit-file -p \"Edit the file /tmp/smoke-edit-test.txt: replace 'original-content' with 'edited-content'\")\n        echo \"$OUTPUT\"\n        grep -q \"edited-content\" /tmp/smoke-edit-test.txt || { echo \"FAIL: edited content not found\"; exit 1; }\n\n    - name: tool-run-cmd\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-run-cmd -p \"Run the shell command: echo hello-smoke\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"hello-smoke\" || { echo \"FAIL: 'hello-smoke' not found\"; exit 1; }\n\n    - name: tool-url-fetch\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-url-fetch -p \"Fetch the URL https://example.com and tell me the page title.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"Example Domain\" || { echo \"FAIL: 'Example Domain' not found\"; exit 1; }\n\n    - name: tool-web-search\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-web-search -p \"Search the web for 'axe cli golang' and summarize what you find.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  config-sections:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: cfg-basic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-basic -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: cfg-skill\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" -p \"Follow your instructions.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-skill-loaded\" || { echo \"FAIL: 'smoke-skill-loaded' not found\"; exit 1; }\n\n    - name: cfg-memory\n      run: |\n        ./axe run --agents-dir .github/smoke-agents cfg-memory -p \"Remember this: memory-smoke-test\"\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Memory ---\" || { echo \"FAIL: '--- Memory ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"memory-smoke-test\" || { echo \"FAIL: memory entry not found in dry-run output\"; exit 1; }\n\n    - name: cfg-files\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-files -p \"What does the context file say?\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-context-loaded\" || { echo \"FAIL: 'smoke-context-loaded' not found\"; exit 1; }\n\n    - name: cfg-subagents\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-subagents -p \"Delegate to your sub-agent and report what it says.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"sub-agent-ok\" || { echo \"FAIL: 'sub-agent-ok' not found\"; exit 1; }\n\n    - name: cfg-params\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-params -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  piped-input:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: pipe-basic\n      run: |\n        OUTPUT=$(echo \"pipe-smoke-input\" | ./axe run --agents-dir .github/smoke-agents pipe-basic)\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: pipe-with-prompt\n      run: |\n        OUTPUT=$(echo \"context: pipe-smoke-context\" | ./axe run --agents-dir .github/smoke-agents pipe-basic -p \"Repeat back the context you were given.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n",
+              "additions": 229,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "agent": "general",
+        "model": {
+          "providerID": "anthropic",
+          "modelID": "claude-sonnet-4-6"
+        },
+        "tools": {
+          "todowrite": false,
+          "todoread": false,
+          "task": false
+        },
+        "id": "msg_d2615253d001f67Ypd10m0unsC",
+        "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "Create the file `.github/workflows/smoke-test.yml` in the repo at `/Users/jaronswab/go/src/github.com/jrswab/axe`.\n\nThis is a GitHub Actions workflow for smoke-testing the `axe` binary using real LLM provider calls. Here is the complete specification:\n\n---\n\n## Triggers\n- `push` to `master`\n- `pull_request`\n\nSame triggers as `.github/workflows/go.yml`.\n\n---\n\n## Jobs Overview\n\n5 jobs total:\n1. `dry-run` — no API keys needed, free\n2. `providers` — tests Anthropic, OpenAI, OpenCode connectivity\n3. `tools` — exercises all 7 built-in tools via OpenCode\n4. `config-sections` — verifies TOML config parsing\n5. `piped-input` — verifies stdin piping\n\nAll jobs:\n- Run on `ubuntu-latest`\n- Build the binary first: `go build -o axe .`\n- Use Go 1.24 (`actions/setup-go@v5`)\n- Run from the repo root\n- Use `--agents-dir .github/smoke-agents` for all `axe run` invocations\n\n---\n\n## Job 1: `dry-run`\n\n**No secrets needed.**\n\nSteps (after checkout + go setup + build):\n\n1. **dry-basic** — baseline dry-run:\n   ```\n   ./axe run --agents-dir .github/smoke-agents dry-basic --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `=== Dry Run ===`\n\n2. **dry-tools** — tools section populated:\n   ```\n   ./axe run --agents-dir .github/smoke-agents dry-tools --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `--- Tools ---`, stdout does NOT contain `(none)` in the tools section (check that `read_file` appears in stdout)\n\n3. **dry-skill** — skill section not `(none)`:\n   ```\n   ./axe run --agents-dir .github/smoke-agents dry-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `--- Skill ---`, stdout does NOT contain `(none)` after `--- Skill ---`\n\n4. **dry-memory** — memory section present:\n   ```\n   ./axe run --agents-dir .github/smoke-agents dry-memory --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `--- Memory ---`\n\n5. **dry-files** — files section not `(none)`:\n   ```\n   ./axe run --agents-dir .github/smoke-agents dry-files --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `--- Files ---`, stdout contains `smoke-context.txt`\n\nFor assertions, use shell `grep` with `-q` flag and fail with a descriptive message if the assertion fails. Pattern:\n```bash\nOUTPUT=$(./axe run ...)\necho \"$OUTPUT\"\necho \"$OUTPUT\" | grep -q \"expected string\" || { echo \"FAIL: expected string not found\"; exit 1; }\n```\n\n---\n\n## Job 2: `providers`\n\n**Secrets needed:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENCODE_API_KEY`\n\nInject secrets as env vars on the job level:\n```yaml\nenv:\n  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}\n  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n```\n\nSteps (after checkout + go setup + build):\n\n1. **provider-anthropic**:\n   ```\n   ./axe run --agents-dir .github/smoke-agents provider-anthropic -p \"Reply with only the word: pong\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n2. **provider-openai**:\n   ```\n   ./axe run --agents-dir .github/smoke-agents provider-openai -p \"Reply with only the word: pong\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n3. **provider-opencode**:\n   ```\n   ./axe run --agents-dir .github/smoke-agents provider-opencode -p \"Reply with only the word: pong\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\nFor non-empty assertion:\n```bash\nOUTPUT=$(./axe run ...)\necho \"$OUTPUT\"\n[ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n```\n\n---\n\n## Job 3: `tools`\n\n**Secrets needed:** `OPENCODE_API_KEY`, `TAVILY_API_KEY`\n\nInject on job level:\n```yaml\nenv:\n  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n  TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}\n```\n\nSteps (after checkout + go setup + build):\n\n1. **tool-list-dir** — list_directory tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-list-dir -p \"List the files in the current directory and tell me what you see.\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n2. **tool-read-file** — read_file tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-read-file -p \"Read the file .github/smoke-agents/smoke-context.txt and tell me its contents.\"\n   ```\n   Assert: exit 0, stdout contains `smoke-context-loaded`\n\n3. **tool-write-file** — write_file tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-write-file -p \"Write the text 'smoke-write-ok' to the file /tmp/smoke-write-test.txt\"\n   ```\n   Assert: exit 0, file `/tmp/smoke-write-test.txt` exists and contains `smoke-write-ok`\n   ```bash\n   grep -q \"smoke-write-ok\" /tmp/smoke-write-test.txt || { echo \"FAIL: write file content not found\"; exit 1; }\n   ```\n\n4. **tool-edit-file** — edit_file tool:\n   First create a file to edit:\n   ```bash\n   echo \"original-content\" > /tmp/smoke-edit-test.txt\n   ```\n   Then run:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-edit-file -p \"Edit the file /tmp/smoke-edit-test.txt: replace 'original-content' with 'edited-content'\"\n   ```\n   Assert: exit 0, file `/tmp/smoke-edit-test.txt` contains `edited-content`\n\n5. **tool-run-cmd** — run_command tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-run-cmd -p \"Run the shell command: echo hello-smoke\"\n   ```\n   Assert: exit 0, stdout contains `hello-smoke`\n\n6. **tool-url-fetch** — url_fetch tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-url-fetch -p \"Fetch the URL https://example.com and tell me the page title.\"\n   ```\n   Assert: exit 0, stdout contains `Example Domain`\n\n7. **tool-web-search** — web_search tool:\n   ```\n   ./axe run --agents-dir .github/smoke-agents tool-web-search -p \"Search the web for 'axe cli golang' and summarize what you find.\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n---\n\n## Job 4: `config-sections`\n\n**Secrets needed:** `OPENCODE_API_KEY`\n\nInject on job level:\n```yaml\nenv:\n  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n```\n\nSteps (after checkout + go setup + build):\n\n1. **cfg-basic** — minimal config:\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-basic -p \"Reply with only the word: pong\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n2. **cfg-skill** — skill config section:\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" -p \"Follow your instructions.\"\n   ```\n   Assert: exit 0, stdout contains `smoke-skill-loaded`\n\n3. **cfg-memory** — memory config section (two sequential runs):\n   Run 1 (seed memory):\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-memory -p \"Remember this: memory-smoke-test\"\n   ```\n   Assert: exit 0\n   \n   Run 2 (verify memory persisted via dry-run):\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p \"ping\"\n   ```\n   Assert: exit 0, stdout contains `--- Memory ---`, stdout does NOT contain `(none)` immediately after `--- Memory ---` (i.e., memory has content)\n   \n   For the memory assertion, check that the memory section is non-empty:\n   ```bash\n   OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p \"ping\")\n   echo \"$OUTPUT\"\n   echo \"$OUTPUT\" | grep -q \"memory-smoke-test\" || { echo \"FAIL: memory entry not found in dry-run output\"; exit 1; }\n   ```\n\n4. **cfg-files** — files config section:\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-files -p \"What does the context file say?\"\n   ```\n   Assert: exit 0, stdout contains `smoke-context-loaded`\n\n5. **cfg-subagents** — sub_agents config section:\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-subagents -p \"Delegate to your sub-agent and report what it says.\"\n   ```\n   Assert: exit 0, stdout contains `sub-agent-ok`\n\n6. **cfg-params** — params config section:\n   ```\n   ./axe run --agents-dir .github/smoke-agents cfg-params -p \"Reply with only the word: pong\"\n   ```\n   Assert: exit 0, stdout is non-empty\n\n---\n\n## Job 5: `piped-input`\n\n**Secrets needed:** `OPENCODE_API_KEY`\n\nInject on job level:\n```yaml\nenv:\n  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n```\n\nSteps (after checkout + go setup + build):\n\n1. **pipe-basic** — basic stdin piping:\n   ```bash\n   OUTPUT=$(echo \"pipe-smoke-input\" | ./axe run --agents-dir .github/smoke-agents pipe-basic)\n   echo \"$OUTPUT\"\n   [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n   ```\n   Assert: exit 0, stdout is non-empty\n\n2. **pipe-with-prompt** — stdin + explicit prompt:\n   ```bash\n   OUTPUT=$(echo \"context: pipe-smoke-context\" | ./axe run --agents-dir .github/smoke-agents pipe-basic -p \"Repeat back the context you were given.\")\n   echo \"$OUTPUT\"\n   [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n   ```\n   Assert: exit 0, stdout is non-empty\n\n---\n\n## Important Implementation Notes\n\n1. **Each step should capture output and echo it** before asserting, so failures are debuggable in CI logs.\n\n2. **Use `set -e` is NOT needed** — each step is its own shell invocation in GitHub Actions and already fails on non-zero exit. But explicit `|| { echo \"FAIL: ...\"; exit 1; }` patterns are preferred for clarity.\n\n3. **The `go build` step** in each job:\n   ```yaml\n   - name: Build axe\n     run: go build -o axe .\n   ```\n\n4. **Checkout and Go setup** are standard:\n   ```yaml\n   - uses: actions/checkout@v4\n   - name: Set up Go\n     uses: actions/setup-go@v5\n     with:\n       go-version: '1.24'\n   ```\n\n5. **Each assertion step should have a descriptive `name:`** in the YAML so failures are easy to identify in the Actions UI.\n\n6. **The workflow file header:**\n   ```yaml\n   # .github/workflows/smoke-test.yml\n   name: Smoke Tests\n   ```\n\n7. **No `needs:` dependencies between jobs** — all 5 jobs run in parallel (they're independent).\n\n8. **`continue-on-error: false`** (default) — a failing step fails the job.\n\nWrite the complete `.github/workflows/smoke-test.yml` file. Do not create any other files.\n",
+          "id": "prt_d261525400010JQNxLUnmMNuiU",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d2615253d001f67Ypd10m0unsC"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774460413253,
+          "completed": 1774460416087
+        },
+        "parentID": "msg_d2615253d001f67Ypd10m0unsC",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0625485,
+        "tokens": {
+          "total": 16443,
+          "input": 2,
+          "output": 79,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 16362
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d26152545001K58FpRhIGoPL6M",
+        "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "id": "prt_d26152ea6001g8Z3WmxtEdkt3M",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26152545001K58FpRhIGoPL6M"
+        },
+        {
+          "type": "tool",
+          "callID": "toolu_01WEz2on9PUnnb6yt9QumoAQ",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows</path>\n<type>directory</type>\n<entries>\ndocs.yml\ngo.yml\nrelease.yml\n\n(3 entries)\n</entries>",
+            "title": ".github/workflows",
+            "metadata": {
+              "preview": "docs.yml\ngo.yml\nrelease.yml",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774460415888,
+              "end": 1774460415890
+            }
+          },
+          "id": "prt_d26152ea6002kQVmjiqGPdRNBQ",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26152545001K58FpRhIGoPL6M"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "cost": 0.0625485,
+          "tokens": {
+            "total": 16443,
+            "input": 2,
+            "output": 79,
+            "reasoning": 0,
+            "cache": {
+              "read": 0,
+              "write": 16362
+            }
+          },
+          "id": "prt_d26152f9a001g7EFSfXPT1oIPc",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26152545001K58FpRhIGoPL6M"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774460416088,
+          "completed": 1774460418467
+        },
+        "parentID": "msg_d2615253d001f67Ypd10m0unsC",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0067266,
+        "tokens": {
+          "total": 16601,
+          "input": 1,
+          "output": 82,
+          "reasoning": 0,
+          "cache": {
+            "read": 16362,
+            "write": 156
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d26153058001FDNywIPSe2Iaz6",
+        "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "id": "prt_d261539270011i3A5gdjmQi85Y",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26153058001FDNywIPSe2Iaz6"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "read",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml"
+            },
+            "output": "<path>/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/go.yml</path>\n<type>file</type>\n<content>1: \n2: name: Check\n3: \n4: on:\n5:   push:\n6:     branches: [ \"master\" ]\n7:   pull_request:\n8: \n9: jobs:\n10: \n11:   lint:\n12:     runs-on: ubuntu-latest\n13:     steps:\n14:     - uses: actions/checkout@v4\n15: \n16:     - name: Set up Go\n17:       uses: actions/setup-go@v5\n18:       with:\n19:         go-version: '1.24'\n20: \n21:     - name: Lint\n22:       uses: golangci/golangci-lint-action@v7\n23: \n24:   test:\n25:     runs-on: ubuntu-latest\n26:     steps:\n27:     - uses: actions/checkout@v4\n28: \n29:     - name: Set up Go\n30:       uses: actions/setup-go@v5\n31:       with:\n32:         go-version: '1.24'\n33: \n34:     - name: Test\n35:       run: go test -race -v ./...\n36: \n37:   build:\n38:     runs-on: ubuntu-latest\n39:     steps:\n40:     - uses: actions/checkout@v4\n41: \n42:     - name: Set up Go\n43:       uses: actions/setup-go@v5\n44:       with:\n45:         go-version: '1.24'\n46: \n47:     - name: Build\n48:       run: go build -v ./...\n\n(End of file - total 48 lines)\n</content>",
+            "title": ".github/workflows/go.yml",
+            "metadata": {
+              "preview": "\nname: Check\n\non:\n  push:\n    branches: [ \"master\" ]\n  pull_request:\n\njobs:\n\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n",
+              "truncated": false,
+              "loaded": []
+            },
+            "time": {
+              "start": 1774460418344,
+              "end": 1774460418344
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26153058001FDNywIPSe2Iaz6"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "cost": 0.0067266,
+          "tokens": {
+            "total": 16601,
+            "input": 1,
+            "output": 82,
+            "reasoning": 0,
+            "cache": {
+              "read": 16362,
+              "write": 156
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d26153058001FDNywIPSe2Iaz6"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774460418468,
+          "completed": 1774460445273
+        },
+        "parentID": "msg_d2615253d001f67Ypd10m0unsC",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0530466,
+        "tokens": {
+          "total": 20103,
+          "input": 1,
+          "output": 3032,
+          "reasoning": 0,
+          "cache": {
+            "read": 16362,
+            "write": 708
+          }
+        },
+        "finish": "tool-calls",
+        "id": "REDACTED",
+        "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "id": "REDACTED",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "write",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/smoke-test.yml",
+              "content": "# .github/workflows/smoke-test.yml\nname: Smoke Tests\n\non:\n  push:\n    branches: [ \"master\" ]\n  pull_request:\n\njobs:\n\n  dry-run:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: dry-basic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-basic --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"=== Dry Run ===\" || { echo \"FAIL: '=== Dry Run ===' not found\"; exit 1; }\n\n    - name: dry-tools\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-tools --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Tools ---\" || { echo \"FAIL: '--- Tools ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"read_file\" || { echo \"FAIL: 'read_file' not found in tools section\"; exit 1; }\n\n    - name: dry-skill\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Skill ---\" || { echo \"FAIL: '--- Skill ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -A1 \"--- Skill ---\" | grep -q \"(none)\" && { echo \"FAIL: skill section is '(none)'\"; exit 1; } || true\n\n    - name: dry-memory\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-memory --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Memory ---\" || { echo \"FAIL: '--- Memory ---' not found\"; exit 1; }\n\n    - name: dry-files\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents dry-files --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Files ---\" || { echo \"FAIL: '--- Files ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"smoke-context.txt\" || { echo \"FAIL: 'smoke-context.txt' not found in files section\"; exit 1; }\n\n  providers:\n    runs-on: ubuntu-latest\n    env:\n      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}\n      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: provider-anthropic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-anthropic -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: provider-openai\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-openai -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: provider-opencode\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents provider-opencode -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  tools:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: tool-list-dir\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-list-dir -p \"List the files in the current directory and tell me what you see.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: tool-read-file\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-read-file -p \"Read the file .github/smoke-agents/smoke-context.txt and tell me its contents.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-context-loaded\" || { echo \"FAIL: 'smoke-context-loaded' not found\"; exit 1; }\n\n    - name: tool-write-file\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-write-file -p \"Write the text 'smoke-write-ok' to the file /tmp/smoke-write-test.txt\")\n        echo \"$OUTPUT\"\n        grep -q \"smoke-write-ok\" /tmp/smoke-write-test.txt || { echo \"FAIL: write file content not found\"; exit 1; }\n\n    - name: tool-edit-file\n      run: |\n        echo \"original-content\" > /tmp/smoke-edit-test.txt\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-edit-file -p \"Edit the file /tmp/smoke-edit-test.txt: replace 'original-content' with 'edited-content'\")\n        echo \"$OUTPUT\"\n        grep -q \"edited-content\" /tmp/smoke-edit-test.txt || { echo \"FAIL: edited content not found\"; exit 1; }\n\n    - name: tool-run-cmd\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-run-cmd -p \"Run the shell command: echo hello-smoke\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"hello-smoke\" || { echo \"FAIL: 'hello-smoke' not found\"; exit 1; }\n\n    - name: tool-url-fetch\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-url-fetch -p \"Fetch the URL https://example.com and tell me the page title.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"Example Domain\" || { echo \"FAIL: 'Example Domain' not found\"; exit 1; }\n\n    - name: tool-web-search\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents tool-web-search -p \"Search the web for 'axe cli golang' and summarize what you find.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  config-sections:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: cfg-basic\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-basic -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: cfg-skill\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-skill --skill \"$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md\" -p \"Follow your instructions.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-skill-loaded\" || { echo \"FAIL: 'smoke-skill-loaded' not found\"; exit 1; }\n\n    - name: cfg-memory\n      run: |\n        ./axe run --agents-dir .github/smoke-agents cfg-memory -p \"Remember this: memory-smoke-test\"\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p \"ping\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"--- Memory ---\" || { echo \"FAIL: '--- Memory ---' not found\"; exit 1; }\n        echo \"$OUTPUT\" | grep -q \"memory-smoke-test\" || { echo \"FAIL: memory entry not found in dry-run output\"; exit 1; }\n\n    - name: cfg-files\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-files -p \"What does the context file say?\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"smoke-context-loaded\" || { echo \"FAIL: 'smoke-context-loaded' not found\"; exit 1; }\n\n    - name: cfg-subagents\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-subagents -p \"Delegate to your sub-agent and report what it says.\")\n        echo \"$OUTPUT\"\n        echo \"$OUTPUT\" | grep -q \"sub-agent-ok\" || { echo \"FAIL: 'sub-agent-ok' not found\"; exit 1; }\n\n    - name: cfg-params\n      run: |\n        OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-params -p \"Reply with only the word: pong\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n  piped-input:\n    runs-on: ubuntu-latest\n    env:\n      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}\n    steps:\n    - uses: actions/checkout@v4\n\n    - name: Set up Go\n      uses: actions/setup-go@v5\n      with:\n        go-version: '1.24'\n\n    - name: Build axe\n      run: go build -o axe .\n\n    - name: pipe-basic\n      run: |\n        OUTPUT=$(echo \"pipe-smoke-input\" | ./axe run --agents-dir .github/smoke-agents pipe-basic)\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n\n    - name: pipe-with-prompt\n      run: |\n        OUTPUT=$(echo \"context: pipe-smoke-context\" | ./axe run --agents-dir .github/smoke-agents pipe-basic -p \"Repeat back the context you were given.\")\n        echo \"$OUTPUT\"\n        [ -n \"$OUTPUT\" ] || { echo \"FAIL: empty output\"; exit 1; }\n"
+            },
+            "output": "Wrote file successfully.",
+            "title": ".github/workflows/smoke-test.yml",
+            "metadata": {
+              "diagnostics": {},
+              "filepath": "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/smoke-test.yml",
+              "exists": false,
+              "truncated": false
+            },
+            "time": {
+              "start": 1774460445095,
+              "end": 1774460445102
+            }
+          },
+          "id": "prt_d26154363001eL56ePx5fidc5m",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "8f9fe4442ff282c4c6364cb39c3ba7ab715012f4",
+          "cost": 0.0530466,
+          "tokens": {
+            "total": 20103,
+            "input": 1,
+            "output": 3032,
+            "reasoning": 0,
+            "cache": {
+              "read": 16362,
+              "write": 708
+            }
+          },
+          "id": "prt_d2615a1c6001xvPl4BKBh1qLXd",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "REDACTED"
+        },
+        {
+          "type": "patch",
+          "hash": "4f3adffc436fc7b8afb6c9918dfde0b2855b0869",
+          "files": [
+            "/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/smoke-test.yml"
+          ],
+          "id": "prt_d2615a258001CP01wYAf05KYqp",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774460445274,
+          "completed": 1774460451693
+        },
+        "parentID": "msg_d2615253d001f67Ypd10m0unsC",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.019659,
+        "tokens": {
+          "total": 20326,
+          "input": 1,
+          "output": 207,
+          "reasoning": 0,
+          "cache": {
+            "read": 17070,
+            "write": 3048
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d2615a25a001AsbnqChCyNqmAg",
+        "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "8f9fe4442ff282c4c6364cb39c3ba7ab715012f4",
+          "id": "prt_d2615a9bb001TaAdijrJDBfdic",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d2615a25a001AsbnqChCyNqmAg"
+        },
+        {
+          "type": "text",
+          "text": "Created `.github/workflows/smoke-test.yml` with all 5 jobs:\n\n- **`dry-run`** — 5 steps testing `--dry-run` output assertions (no secrets required)\n- **`providers`** — 3 steps verifying Anthropic, OpenAI, and OpenCode connectivity\n- **`tools`** — 7 steps exercising all built-in tools via OpenCode\n- **`config-sections`** — 6 steps verifying TOML config parsing (basic, skill, memory, files, sub-agents, params)\n- **`piped-input`** — 2 steps verifying stdin piping (basic and with explicit prompt)\n\nAll jobs run in parallel on `ubuntu-latest`, build the binary first, use `--agents-dir .github/smoke-agents`, and follow the capture-then-assert pattern for debuggable CI logs.",
+          "time": {
+            "start": 1774460451524,
+            "end": 1774460451524
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d2615a25a001AsbnqChCyNqmAg"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "8f9fe4442ff282c4c6364cb39c3ba7ab715012f4",
+          "cost": 0.019659,
+          "tokens": {
+            "total": 20326,
+            "input": 1,
+            "output": 207,
+            "reasoning": 0,
+            "cache": {
+              "read": 17070,
+              "write": 3048
+            }
+          },
+          "id": "prt_d2615bac5001uYR0Za3nOqUdR0",
+          "sessionID": "ses_2d9eadac9ffeINnp9HFWtiV3p6",
+          "messageID": "msg_d2615a25a001AsbnqChCyNqmAg"
+        }
+      ]
+    }
+  ]
+}

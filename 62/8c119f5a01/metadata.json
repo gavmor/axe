@@ -3,7 +3,7 @@
   "checkpoint_id": "628c119f5a01",
   "strategy": "manual-commit",
   "branch": "ISS-40-cicd-workflow",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     ".github/workflows/smoke-test.yml",
     "docs/plans/ISS-40_smoke_test_agents_milestones.md"
@@ -15,6 +15,20 @@
       "context": "",
       "content_hash": "/62/8c119f5a01/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/62/8c119f5a01/1/metadata.json",
+      "transcript": "/62/8c119f5a01/1/full.jsonl",
+      "context": "/62/8c119f5a01/1/context.md",
+      "content_hash": "/62/8c119f5a01/1/content_hash.txt",
+      "prompt": "/62/8c119f5a01/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 5,
+    "cache_creation_tokens": 20274,
+    "cache_read_tokens": 49794,
+    "output_tokens": 3400,
+    "api_call_count": 4
+  }
 }

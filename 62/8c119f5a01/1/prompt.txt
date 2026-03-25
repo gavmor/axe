@@ -1,0 +1,311 @@
+Create the file `.github/workflows/smoke-test.yml` in the repo at `/Users/jaronswab/go/src/github.com/jrswab/axe`.
+
+This is a GitHub Actions workflow for smoke-testing the `axe` binary using real LLM provider calls. Here is the complete specification:
+
+---
+
+## Triggers
+- `push` to `master`
+- `pull_request`
+
+Same triggers as `.github/workflows/go.yml`.
+
+---
+
+## Jobs Overview
+
+5 jobs total:
+1. `dry-run` — no API keys needed, free
+2. `providers` — tests Anthropic, OpenAI, OpenCode connectivity
+3. `tools` — exercises all 7 built-in tools via OpenCode
+4. `config-sections` — verifies TOML config parsing
+5. `piped-input` — verifies stdin piping
+
+All jobs:
+- Run on `ubuntu-latest`
+- Build the binary first: `go build -o axe .`
+- Use Go 1.24 (`actions/setup-go@v5`)
+- Run from the repo root
+- Use `--agents-dir .github/smoke-agents` for all `axe run` invocations
+
+---
+
+## Job 1: `dry-run`
+
+**No secrets needed.**
+
+Steps (after checkout + go setup + build):
+
+1. **dry-basic** — baseline dry-run:
+   ```
+   ./axe run --agents-dir .github/smoke-agents dry-basic --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `=== Dry Run ===`
+
+2. **dry-tools** — tools section populated:
+   ```
+   ./axe run --agents-dir .github/smoke-agents dry-tools --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `--- Tools ---`, stdout does NOT contain `(none)` in the tools section (check that `read_file` appears in stdout)
+
+3. **dry-skill** — skill section not `(none)`:
+   ```
+   ./axe run --agents-dir .github/smoke-agents dry-skill --skill "$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md" --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `--- Skill ---`, stdout does NOT contain `(none)` after `--- Skill ---`
+
+4. **dry-memory** — memory section present:
+   ```
+   ./axe run --agents-dir .github/smoke-agents dry-memory --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `--- Memory ---`
+
+5. **dry-files** — files section not `(none)`:
+   ```
+   ./axe run --agents-dir .github/smoke-agents dry-files --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `--- Files ---`, stdout contains `smoke-context.txt`
+
+For assertions, use shell `grep` with `-q` flag and fail with a descriptive message if the assertion fails. Pattern:
+```bash
+OUTPUT=$(./axe run ...)
+echo "$OUTPUT"
+echo "$OUTPUT" | grep -q "expected string" || { echo "FAIL: expected string not found"; exit 1; }
+```
+
+---
+
+## Job 2: `providers`
+
+**Secrets needed:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENCODE_API_KEY`
+
+Inject secrets as env vars on the job level:
+```yaml
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+```
+
+Steps (after checkout + go setup + build):
+
+1. **provider-anthropic**:
+   ```
+   ./axe run --agents-dir .github/smoke-agents provider-anthropic -p "Reply with only the word: pong"
+   ```
+   Assert: exit 0, stdout is non-empty
+
+2. **provider-openai**:
+   ```
+   ./axe run --agents-dir .github/smoke-agents provider-openai -p "Reply with only the word: pong"
+   ```
+   Assert: exit 0, stdout is non-empty
+
+3. **provider-opencode**:
+   ```
+   ./axe run --agents-dir .github/smoke-agents provider-opencode -p "Reply with only the word: pong"
+   ```
+   Assert: exit 0, stdout is non-empty
+
+For non-empty assertion:
+```bash
+OUTPUT=$(./axe run ...)
+echo "$OUTPUT"
+[ -n "$OUTPUT" ] || { echo "FAIL: empty output"; exit 1; }
+```
+
+---
+
+## Job 3: `tools`
+
+**Secrets needed:** `OPENCODE_API_KEY`, `TAVILY_API_KEY`
+
+Inject on job level:
+```yaml
+env:
+  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+  TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+```
+
+Steps (after checkout + go setup + build):
+
+1. **tool-list-dir** — list_directory tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-list-dir -p "List the files in the current directory and tell me what you see."
+   ```
+   Assert: exit 0, stdout is non-empty
+
+2. **tool-read-file** — read_file tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-read-file -p "Read the file .github/smoke-agents/smoke-context.txt and tell me its contents."
+   ```
+   Assert: exit 0, stdout contains `smoke-context-loaded`
+
+3. **tool-write-file** — write_file tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-write-file -p "Write the text 'smoke-write-ok' to the file /tmp/smoke-write-test.txt"
+   ```
+   Assert: exit 0, file `/tmp/smoke-write-test.txt` exists and contains `smoke-write-ok`
+   ```bash
+   grep -q "smoke-write-ok" /tmp/smoke-write-test.txt || { echo "FAIL: write file content not found"; exit 1; }
+   ```
+
+4. **tool-edit-file** — edit_file tool:
+   First create a file to edit:
+   ```bash
+   echo "original-content" > /tmp/smoke-edit-test.txt
+   ```
+   Then run:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-edit-file -p "Edit the file /tmp/smoke-edit-test.txt: replace 'original-content' with 'edited-content'"
+   ```
+   Assert: exit 0, file `/tmp/smoke-edit-test.txt` contains `edited-content`
+
+5. **tool-run-cmd** — run_command tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-run-cmd -p "Run the shell command: echo hello-smoke"
+   ```
+   Assert: exit 0, stdout contains `hello-smoke`
+
+6. **tool-url-fetch** — url_fetch tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-url-fetch -p "Fetch the URL https://example.com and tell me the page title."
+   ```
+   Assert: exit 0, stdout contains `Example Domain`
+
+7. **tool-web-search** — web_search tool:
+   ```
+   ./axe run --agents-dir .github/smoke-agents tool-web-search -p "Search the web for 'axe cli golang' and summarize what you find."
+   ```
+   Assert: exit 0, stdout is non-empty
+
+---
+
+## Job 4: `config-sections`
+
+**Secrets needed:** `OPENCODE_API_KEY`
+
+Inject on job level:
+```yaml
+env:
+  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+```
+
+Steps (after checkout + go setup + build):
+
+1. **cfg-basic** — minimal config:
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-basic -p "Reply with only the word: pong"
+   ```
+   Assert: exit 0, stdout is non-empty
+
+2. **cfg-skill** — skill config section:
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-skill --skill "$(pwd)/.github/smoke-agents/skills/smoke-skill/SKILL.md" -p "Follow your instructions."
+   ```
+   Assert: exit 0, stdout contains `smoke-skill-loaded`
+
+3. **cfg-memory** — memory config section (two sequential runs):
+   Run 1 (seed memory):
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-memory -p "Remember this: memory-smoke-test"
+   ```
+   Assert: exit 0
+   
+   Run 2 (verify memory persisted via dry-run):
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p "ping"
+   ```
+   Assert: exit 0, stdout contains `--- Memory ---`, stdout does NOT contain `(none)` immediately after `--- Memory ---` (i.e., memory has content)
+   
+   For the memory assertion, check that the memory section is non-empty:
+   ```bash
+   OUTPUT=$(./axe run --agents-dir .github/smoke-agents cfg-memory --dry-run -p "ping")
+   echo "$OUTPUT"
+   echo "$OUTPUT" | grep -q "memory-smoke-test" || { echo "FAIL: memory entry not found in dry-run output"; exit 1; }
+   ```
+
+4. **cfg-files** — files config section:
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-files -p "What does the context file say?"
+   ```
+   Assert: exit 0, stdout contains `smoke-context-loaded`
+
+5. **cfg-subagents** — sub_agents config section:
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-subagents -p "Delegate to your sub-agent and report what it says."
+   ```
+   Assert: exit 0, stdout contains `sub-agent-ok`
+
+6. **cfg-params** — params config section:
+   ```
+   ./axe run --agents-dir .github/smoke-agents cfg-params -p "Reply with only the word: pong"
+   ```
+   Assert: exit 0, stdout is non-empty
+
+---
+
+## Job 5: `piped-input`
+
+**Secrets needed:** `OPENCODE_API_KEY`
+
+Inject on job level:
+```yaml
+env:
+  OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+```
+
+Steps (after checkout + go setup + build):
+
+1. **pipe-basic** — basic stdin piping:
+   ```bash
+   OUTPUT=$(echo "pipe-smoke-input" | ./axe run --agents-dir .github/smoke-agents pipe-basic)
+   echo "$OUTPUT"
+   [ -n "$OUTPUT" ] || { echo "FAIL: empty output"; exit 1; }
+   ```
+   Assert: exit 0, stdout is non-empty
+
+2. **pipe-with-prompt** — stdin + explicit prompt:
+   ```bash
+   OUTPUT=$(echo "context: pipe-smoke-context" | ./axe run --agents-dir .github/smoke-agents pipe-basic -p "Repeat back the context you were given.")
+   echo "$OUTPUT"
+   [ -n "$OUTPUT" ] || { echo "FAIL: empty output"; exit 1; }
+   ```
+   Assert: exit 0, stdout is non-empty
+
+---
+
+## Important Implementation Notes
+
+1. **Each step should capture output and echo it** before asserting, so failures are debuggable in CI logs.
+
+2. **Use `set -e` is NOT needed** — each step is its own shell invocation in GitHub Actions and already fails on non-zero exit. But explicit `|| { echo "FAIL: ..."; exit 1; }` patterns are preferred for clarity.
+
+3. **The `go build` step** in each job:
+   ```yaml
+   - name: Build axe
+     run: go build -o axe .
+   ```
+
+4. **Checkout and Go setup** are standard:
+   ```yaml
+   - uses: actions/checkout@v4
+   - name: Set up Go
+     uses: actions/setup-go@v5
+     with:
+       go-version: '1.24'
+   ```
+
+5. **Each assertion step should have a descriptive `name:`** in the YAML so failures are easy to identify in the Actions UI.
+
+6. **The workflow file header:**
+   ```yaml
+   # .github/workflows/smoke-test.yml
+   name: Smoke Tests
+   ```
+
+7. **No `needs:` dependencies between jobs** — all 5 jobs run in parallel (they're independent).
+
+8. **`continue-on-error: false`** (default) — a failing step fails the job.
+
+Write the complete `.github/workflows/smoke-test.yml` file. Do not create any other files.
