@@ -90,6 +90,13 @@
       "context": "",
       "content_hash": "/35/f911956384/7/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/35/f911956384/8/metadata.json",
+      "transcript": "/35/f911956384/8/full.jsonl",
+      "context": "",
+      "content_hash": "/35/f911956384/8/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
