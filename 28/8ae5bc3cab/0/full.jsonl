@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774462026194,
-      "updated": 1774462032419
+      "updated": 1774462074267
     }
   },
   "messages": [
@@ -271,7 +271,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774462032365
+          "created": 1774462032365,
+          "completed": 1774462074211
         },
         "parentID": "msg_d262dc1d9001xSyAgoeo1hgecY",
         "modelID": "claude-sonnet-4-6",
@@ -282,16 +283,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.00658995,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 14060,
+          "input": 1,
+          "output": 114,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 13744,
+            "write": 201
           }
         },
+        "finish": "tool-calls",
         "id": "msg_d262dd9ed001IwlDHK205eDS0g",
         "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin"
       },
@@ -308,22 +311,117 @@
           "callID": "REDACTED",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add .github/workflows/smoke-test.yml && git commit -m \"fix: match '--- Files' prefix in dry-files grep\" && git push",
               "description": "Stage, commit, and push the smoke-test.yml change"
             },
+            "output": "[ISS-40-cicd-workflow c0540b7] fix: match '--- Files' prefix in dry-files grep\n 1 file changed, 1 insertion(+), 1 deletion(-)\n[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   d2b93a7..c0540b7  ISS-40-cicd-workflow -> ISS-40-cicd-workflow\n",
+            "title": "Stage, commit, and push the smoke-test.yml change",
             "metadata": {
-              "output": "",
-              "description": "Stage, commit, and push the smoke-test.yml change"
+              "output": "[ISS-40-cicd-workflow c0540b7] fix: match '--- Files' prefix in dry-files grep\n 1 file changed, 1 insertion(+), 1 deletion(-)\n[entire] Pushing session logs to origin...\nTo github.com:jrswab/axe.git\n   d2b93a7..c0540b7  ISS-40-cicd-workflow -> ISS-40-cicd-workflow\n",
+              "exit": 0,
+              "description": "Stage, commit, and push the smoke-test.yml change",
+              "truncated": false
             },
             "time": {
-              "start": 1774462035133
+              "start": 1774462035129,
+              "end": 1774462074042
             }
           },
           "id": "prt_d262de2d4001ps1o887GxkEFzE",
           "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin",
           "messageID": "msg_d262dd9ed001IwlDHK205eDS0g"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "5bdd3f707adbc19a3ad4aa635c28bd6008e76ffc",
+          "cost": 0.00658995,
+          "tokens": {
+            "total": 14060,
+            "input": 1,
+            "output": 114,
+            "reasoning": 0,
+            "cache": {
+              "read": 13744,
+              "write": 201
+            }
+          },
+          "id": "prt_d262e7cbb001Zw0DYkpBq3XEOB",
+          "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin",
+          "messageID": "msg_d262dd9ed001IwlDHK205eDS0g"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774462074211,
+          "completed": 1774462077320
+        },
+        "parentID": "msg_d262dc1d9001xSyAgoeo1hgecY",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00634275,
+        "tokens": {
+          "total": 14266,
+          "input": 1,
+          "output": 85,
+          "reasoning": 0,
+          "cache": {
+            "read": 13945,
+            "write": 235
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d262e7d63001hOq4rrB3X0KyZZ",
+        "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "5bdd3f707adbc19a3ad4aa635c28bd6008e76ffc",
+          "id": "prt_d262e85cb001G3183mDRWeRhVf",
+          "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin",
+          "messageID": "msg_d262e7d63001hOq4rrB3X0KyZZ"
+        },
+        {
+          "type": "text",
+          "text": "Done. Output summary:\n\n- **Commit**: `c0540b7` — `fix: match '--- Files' prefix in dry-files grep` (1 file changed, 1 insertion, 1 deletion)\n- **Push**: `d2b93a7..c0540b7` pushed to `ISS-40-cicd-workflow`",
+          "time": {
+            "start": 1774462077039,
+            "end": 1774462077039
+          },
+          "id": "prt_d262e85cc001fFlT0DOGDruaPV",
+          "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin",
+          "messageID": "msg_d262e7d63001hOq4rrB3X0KyZZ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "5bdd3f707adbc19a3ad4aa635c28bd6008e76ffc",
+          "cost": 0.00634275,
+          "tokens": {
+            "total": 14266,
+            "input": 1,
+            "output": 85,
+            "reasoning": 0,
+            "cache": {
+              "read": 13945,
+              "write": 235
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_2d9d23e2dffeLX3UOHgPIXNsin",
+          "messageID": "msg_d262e7d63001hOq4rrB3X0KyZZ"
         }
       ]
     }
