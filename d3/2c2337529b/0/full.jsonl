@@ -31,7 +31,7 @@
     ],
     "time": {
       "created": 1774461186894,
-      "updated": 1774461186943
+      "updated": 1774461227967
     }
   },
   "messages": [
@@ -71,7 +71,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1774461186898
+          "created": 1774461186898,
+          "completed": 1774461225623
         },
         "parentID": "msg_d2620f34f0015DyN2sjNkTKhhy",
         "modelID": "claude-sonnet-4-6",
@@ -82,16 +83,18 @@
           "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
           "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
         },
-        "cost": 0,
+        "cost": 0.0087804,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 13501,
+          "input": 3,
+          "output": 202,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "read": 12788,
+            "write": 508
           }
         },
+        "finish": "tool-calls",
         "id": "REDACTED",
         "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV"
       },
@@ -108,22 +111,204 @@
           "callID": "REDACTED",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git commit --amend -m \"feat: add smoke-test CI workflow\n\nAdd .github/workflows/smoke-test.yml with five parallel jobs\nthat exercise the axe binary against real LLM providers. The\ndry-run job validates context resolution without API keys. The\nproviders, tools, config-sections, and piped-input jobs verify\nAnthropic, OpenAI, and OpenCode connectivity, all seven built-in\ntools, TOML config parsing, and stdin piping respectively. Mark\nISS-40 milestones 044-049 as complete.\"",
               "description": "Amend the last commit message"
             },
+            "output": "[ISS-40-cicd-workflow ac984fb] feat: add smoke-test CI workflow\n Date: Wed Mar 25 13:48:52 2026 -0400\n 2 files changed, 235 insertions(+), 6 deletions(-)\n create mode 100644 .github/workflows/smoke-test.yml\n",
+            "title": "Amend the last commit message",
             "metadata": {
-              "output": "",
-              "description": "Amend the last commit message"
+              "output": "[ISS-40-cicd-workflow ac984fb] feat: add smoke-test CI workflow\n Date: Wed Mar 25 13:48:52 2026 -0400\n 2 files changed, 235 insertions(+), 6 deletions(-)\n create mode 100644 .github/workflows/smoke-test.yml\n",
+              "exit": 0,
+              "description": "Amend the last commit message",
+              "truncated": false
             },
             "time": {
-              "start": 1774461189873
+              "start": 1774461189869,
+              "end": 1774461225516
             }
           },
           "id": "prt_d2620fae4001Ggk1J1YFfyMEA6",
           "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
           "messageID": "REDACTED"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "6c719a3df6d4a91a824e2f506bb1866a02fd9bc1",
+          "cost": 0.0087804,
+          "tokens": {
+            "total": 13501,
+            "input": 3,
+            "output": 202,
+            "reasoning": 0,
+            "cache": {
+              "read": 12788,
+              "write": 508
+            }
+          },
+          "id": "prt_d26218a2c001LLkvrDg56wTct1",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "REDACTED"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774461225624,
+          "completed": 1774461227930
+        },
+        "parentID": "msg_d2620f34f0015DyN2sjNkTKhhy",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.00638805,
+        "tokens": {
+          "total": 13681,
+          "input": 1,
+          "output": 85,
+          "reasoning": 0,
+          "cache": {
+            "read": 13296,
+            "write": 299
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_d26218a98001s5U28qHjm9nuOW",
+        "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "6c719a3df6d4a91a824e2f506bb1866a02fd9bc1",
+          "id": "prt_d2621926e0013M46YcWV6YDZ6D",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d26218a98001s5U28qHjm9nuOW"
+        },
+        {
+          "type": "tool",
+          "callID": "REDACTED",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git log --format=\"%B\" -1",
+              "description": "Show the full commit message of the latest commit"
+            },
+            "output": "feat: add smoke-test CI workflow\n\nAdd .github/workflows/smoke-test.yml with five parallel jobs\nthat exercise the axe binary against real LLM providers. The\ndry-run job validates context resolution without API keys. The\nproviders, tools, config-sections, and piped-input jobs verify\nAnthropic, OpenAI, and OpenCode connectivity, all seven built-in\ntools, TOML config parsing, and stdin piping respectively. Mark\nISS-40 milestones 044-049 as complete.\n\nEntire-Checkpoint: d32c2337529b\n\n",
+            "title": "Show the full commit message of the latest commit",
+            "metadata": {
+              "output": "feat: add smoke-test CI workflow\n\nAdd .github/workflows/smoke-test.yml with five parallel jobs\nthat exercise the axe binary against real LLM providers. The\ndry-run job validates context resolution without API keys. The\nproviders, tools, config-sections, and piped-input jobs verify\nAnthropic, OpenAI, and OpenCode connectivity, all seven built-in\ntools, TOML config parsing, and stdin piping respectively. Mark\nISS-40 milestones 044-049 as complete.\n\nEntire-Checkpoint: d32c2337529b\n\n",
+              "exit": 0,
+              "description": "Show the full commit message of the latest commit",
+              "truncated": false
+            },
+            "time": {
+              "start": 1774461227721,
+              "end": 1774461227758
+            }
+          },
+          "id": "prt_d2621926e0025K0o53lGq48wgC",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d26218a98001s5U28qHjm9nuOW"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "6c719a3df6d4a91a824e2f506bb1866a02fd9bc1",
+          "cost": 0.00638805,
+          "tokens": {
+            "total": 13681,
+            "input": 1,
+            "output": 85,
+            "reasoning": 0,
+            "cache": {
+              "read": 13296,
+              "write": 299
+            }
+          },
+          "id": "prt_d26219309001y86wfOS5jvskDr",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d26218a98001s5U28qHjm9nuOW"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1774461227931,
+          "completed": 1774461231578
+        },
+        "parentID": "msg_d2620f34f0015DyN2sjNkTKhhy",
+        "modelID": "claude-sonnet-4-6",
+        "providerID": "anthropic",
+        "mode": "general",
+        "agent": "general",
+        "path": {
+          "cwd": "/Users/jaronswab/go/src/github.com/jrswab/axe",
+          "root": "/Users/jaronswab/go/src/github.com/jrswab/axe"
+        },
+        "cost": 0.0079665,
+        "tokens": {
+          "total": 14029,
+          "input": 1,
+          "output": 201,
+          "reasoning": 0,
+          "cache": {
+            "read": 13595,
+            "write": 232
+          }
+        },
+        "finish": "stop",
+        "id": "msg_d2621939b0011LlLS0SquWyJxN",
+        "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "6c719a3df6d4a91a824e2f506bb1866a02fd9bc1",
+          "id": "prt_d262198a6001UaX1s4nwuvg7o8",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d2621939b0011LlLS0SquWyJxN"
+        },
+        {
+          "type": "text",
+          "text": "The commit message was amended successfully. The output of `git log --format=\"%B\" -1`:\n\n```\nfeat: add smoke-test CI workflow\n\nAdd .github/workflows/smoke-test.yml with five parallel jobs\nthat exercise the axe binary against real LLM providers. The\ndry-run job validates context resolution without API keys. The\nproviders, tools, config-sections, and piped-input jobs verify\nAnthropic, OpenAI, and OpenCode connectivity, all seven built-in\ntools, TOML config parsing, and stdin piping respectively. Mark\nISS-40 milestones 044-049 as complete.\n\nEntire-Checkpoint: d32c2337529b\n```\n\nNote: the `Entire-Checkpoint: d32c2337529b` trailer was already present in the original commit and was preserved by git during the amend.",
+          "time": {
+            "start": 1774461231351,
+            "end": 1774461231351
+          },
+          "id": "prt_d262198a6002qOVj5lHUUG157r",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d2621939b0011LlLS0SquWyJxN"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "6c719a3df6d4a91a824e2f506bb1866a02fd9bc1",
+          "cost": 0.0079665,
+          "tokens": {
+            "total": 14029,
+            "input": 1,
+            "output": 201,
+            "reasoning": 0,
+            "cache": {
+              "read": 13595,
+              "write": 232
+            }
+          },
+          "id": "prt_d2621a146001oDV7jpP0txAyNq",
+          "sessionID": "ses_2d9df0cb1ffehQmhk5csIqYFMV",
+          "messageID": "msg_d2621939b0011LlLS0SquWyJxN"
         }
       ]
     }
