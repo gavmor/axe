@@ -160,6 +160,13 @@
       "context": "",
       "content_hash": "/35/f911956384/17/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/35/f911956384/18/metadata.json",
+      "transcript": "/35/f911956384/18/full.jsonl",
+      "context": "",
+      "content_hash": "/35/f911956384/18/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
