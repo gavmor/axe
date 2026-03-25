@@ -1,0 +1,21 @@
+In the file `/Users/jaronswab/go/src/github.com/jrswab/axe/.github/workflows/smoke-test.yml`, make exactly one change:
+
+On line 54, change:
+```
+        echo "$OUTPUT" | grep -q -- "--- Files ---" || { echo "FAIL: '--- Files ---' not found"; exit 1; }
+```
+to:
+```
+        echo "$OUTPUT" | grep -q -- "--- Files" || { echo "FAIL: '--- Files' not found"; exit 1; }
+```
+
+The actual dry-run output is `--- Files (1) ---` (with a count), so the pattern must match the invariant prefix `--- Files` rather than the full `--- Files ---`.
+
+Then stage, commit, and push:
+```
+git add .github/workflows/smoke-test.yml
+git commit -m "fix: match '--- Files' prefix in dry-files grep"
+git push
+```
+
+Report the output of the git commands.
