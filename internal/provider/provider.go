@@ -66,7 +66,8 @@ type Request struct {
 	Messages    []Message
 	Temperature float64
 	MaxTokens   int
-	Tools       []Tool // Tool definitions to send to the LLM. If nil or empty, no tools are sent.
+	Tools       []Tool      // Tool definitions to send to the LLM. If nil or empty, no tools are sent.
+	Format      interface{} // Optional: "json" for JSON mode, or a JSON Schema object for structured output (Ollama only).
 }
 
 // Response represents an LLM completion response.

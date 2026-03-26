@@ -361,6 +361,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		Messages:    []provider.Message{{Role: "user", Content: userMessage}},
 		Temperature: cfg.Params.Temperature,
 		MaxTokens:   cfg.Params.MaxTokens,
+		Format:      cfg.Format,
 	}
 
 	// Step 16b: Create tool registry and resolve configured tools

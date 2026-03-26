@@ -89,6 +89,10 @@ type AgentConfig struct {
 	Retry         RetryConfig       `toml:"retry"`
 	Budget        BudgetConfig      `toml:"budget"`
 	Artifacts     ArtifactsConfig   `toml:"artifacts"`
+	// Format controls structured output. Set to "json" for JSON mode, or a
+	// JSON Schema object (as a TOML table) to constrain output to a specific schema.
+	// Only supported by the Ollama provider.
+	Format        interface{}       `toml:"format"`
 }
 
 // Validate checks that required fields are present in the agent configuration.
