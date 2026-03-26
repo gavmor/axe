@@ -65,6 +65,8 @@ type ollamaRequest struct {
 	Stream   bool            `json:"stream"`
 	Options  *ollamaOptions  `json:"options,omitempty"`
 	Tools    []ollamaToolDef `json:"tools,omitempty"`
+	// Format controls structured output: "json" for JSON mode, or a JSON Schema object.
+	Format   interface{}     `json:"format,omitempty"`
 }
 
 // ollamaMessage is the wire format for a message in the Ollama API.
@@ -229,6 +231,10 @@ func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 
 	if len(req.Tools) > 0 {
 		body.Tools = convertToOllamaTools(req.Tools)
+	}
+
+	if req.Format != nil {
+		body.Format = req.Format
 	}
 
 	jsonBody, err := json.Marshal(body)
