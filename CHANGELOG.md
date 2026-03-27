@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-03-26
+
+### Fixed
+- Resolve relative artifact dirs against agent workdir, not process CWD
+
 ## [1.6.0] - 2026-03-24
 
 ### Added
@@ -93,7 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - staticcheck/errcheck lint issues
 - Duplicate error silencing, glob validation, and nil ExitError guard
 
-[unreleased]: https://github.com/jrswab/axe/compare/v1.6.0...HEAD
+[unreleased]: https://github.com/jrswab/axe/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/jrswab/axe/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/jrswab/axe/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/jrswab/axe/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/jrswab/axe/compare/v1.3.0...v1.4.0
