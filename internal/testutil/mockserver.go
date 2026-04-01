@@ -14,8 +14,9 @@ import (
 
 // MockLLMResponse represents a canned response for the mock LLM server.
 type MockLLMResponse struct {
-	StatusCode int
-	Body       string
+	StatusCode  int
+	Body        string
+	ContentType string
 }
 
 // MockLLMRequest captures an HTTP request received by the mock server.
@@ -100,9 +101,16 @@ func NewMockLLMServer(t *testing.T, responses []MockLLMResponse) *MockLLMServer 
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		ct := "application/json"
+		if resp.ContentType != "" {
+			ct = resp.ContentType
+		}
+		w.Header().Set("Content-Type", ct)
 		w.WriteHeader(resp.StatusCode)
 		_, _ = fmt.Fprint(w, resp.Body)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
 	}))
 
 	t.Cleanup(m.Server.Close)
@@ -231,6 +239,69 @@ func GeminiToolCallResponse(text string, toolCalls []MockToolCall) MockLLMRespon
 func GeminiErrorResponse(statusCode int, message string) MockLLMResponse {
 	body := fmt.Sprintf(`{"error":{"code":%d,"message":%s,"status":"ERROR"}}`, statusCode, jsonString(message))
 	return MockLLMResponse{StatusCode: statusCode, Body: body}
+}
+
+// AnthropicStreamResponse returns a MockLLMResponse with SSE-formatted
+// Anthropic streaming events for a text-only response.
+func AnthropicStreamResponse(text string, inputTokens, outputTokens int) MockLLMResponse {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_mock\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-sonnet-4-20250514\",\"usage\":{\"input_tokens\":%d,\"output_tokens\":0}}}\n\n", inputTokens)
+	sb.WriteString("event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n")
+	for _, ch := range text {
+		fmt.Fprintf(&sb, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":%s}}\n\n", jsonString(string(ch)))
+	}
+	sb.WriteString("event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\n")
+	fmt.Fprintf(&sb, "event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":%d}}\n\n", outputTokens)
+	sb.WriteString("event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+	return MockLLMResponse{StatusCode: 200, Body: sb.String(), ContentType: "text/event-stream"}
+}
+
+func OpenAIStreamResponse(text string, inputTokens, outputTokens int) MockLLMResponse {
+	var sb strings.Builder
+	for _, ch := range text {
+		chunk := fmt.Sprintf(`{"model":"gpt-4o","choices":[{"delta":{"content":%s},"index":0}]}`, jsonString(string(ch)))
+		sb.WriteString("data: " + chunk + "\n\n")
+	}
+	// finish_reason chunk
+	sb.WriteString(`data: {"model":"gpt-4o","choices":[{"delta":{},"index":0,"finish_reason":"stop"}]}` + "\n\n")
+	// usage chunk
+	usage := fmt.Sprintf(`data: {"model":"gpt-4o","choices":[],"usage":{"prompt_tokens":%d,"completion_tokens":%d}}`, inputTokens, outputTokens)
+	sb.WriteString(usage + "\n\n")
+	sb.WriteString("data: [DONE]\n\n")
+	return MockLLMResponse{StatusCode: 200, Body: sb.String(), ContentType: "text/event-stream"}
+}
+
+// OpenAIStreamToolCallResponse returns a MockLLMResponse with SSE-formatted
+// OpenAI streaming chunks containing tool calls.
+func OpenAIStreamToolCallResponse(text string, toolCalls []MockToolCall, inputTokens, outputTokens int) MockLLMResponse {
+	var sb strings.Builder
+
+	// Text chunks (if any)
+	if text != "" {
+		chunk := fmt.Sprintf(`{"model":"gpt-4o","choices":[{"delta":{"content":%s},"index":0}]}`, jsonString(text))
+		sb.WriteString("data: " + chunk + "\n\n")
+	}
+
+	// Tool call chunks
+	for i, tc := range toolCalls {
+		argsJSON, _ := json.Marshal(tc.Input)
+
+		// tool_start: ID + function name
+		startChunk := fmt.Sprintf(`{"model":"gpt-4o","choices":[{"delta":{"tool_calls":[{"index":%d,"id":%s,"type":"function","function":{"name":%s,"arguments":""}}]},"index":0}]}`, i, jsonString(tc.ID), jsonString(tc.Name))
+		sb.WriteString("data: " + startChunk + "\n\n")
+
+		// tool_delta: arguments
+		deltaChunk := fmt.Sprintf(`{"model":"gpt-4o","choices":[{"delta":{"tool_calls":[{"index":%d,"function":{"arguments":%s}}]},"index":0}]}`, i, jsonString(string(argsJSON)))
+		sb.WriteString("data: " + deltaChunk + "\n\n")
+	}
+
+	// finish_reason chunk
+	sb.WriteString(`data: {"model":"gpt-4o","choices":[{"delta":{},"index":0,"finish_reason":"tool_calls"}]}` + "\n\n")
+	// usage chunk
+	usage := fmt.Sprintf(`data: {"model":"gpt-4o","choices":[],"usage":{"prompt_tokens":%d,"completion_tokens":%d}}`, inputTokens, outputTokens)
+	sb.WriteString(usage + "\n\n")
+	sb.WriteString("data: [DONE]\n\n")
+	return MockLLMResponse{StatusCode: 200, Body: sb.String(), ContentType: "text/event-stream"}
 }
 
 // jsonString returns a JSON-encoded string value (with quotes and escaping).
