@@ -391,6 +391,13 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		streamEnabled = false
 	}
 
+	if cfg.Format != nil && provName != "ollama" {
+		return &ExitError{
+			Code: 2,
+			Err:  fmt.Errorf("format is only supported with provider %q; remove format or switch model provider", "ollama"),
+		}
+	}
+
 	// Step 16: Build request
 	req := &provider.Request{
 		Model:       modelName,

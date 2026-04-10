@@ -186,6 +186,19 @@ func Validate(cfg *AgentConfig) error {
 		return &ValidationError{msg: "artifacts.dir must not contain path traversal sequences"}
 	}
 
+	if cfg.Format != nil {
+		switch v := cfg.Format.(type) {
+		case string:
+			if v != "json" {
+				return &ValidationError{msg: `format must be "json" or a JSON Schema table`}
+			}
+		case map[string]interface{}:
+			// Valid JSON Schema table
+		default:
+			return &ValidationError{msg: `format must be "json" or a JSON Schema table`}
+		}
+	}
+
 	return nil
 }
 
