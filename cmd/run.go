@@ -23,8 +23,10 @@ import (
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/refusal"
 	"github.com/jrswab/axe/internal/resolve"
+	"github.com/jrswab/axe/internal/telemetry"
 	"github.com/jrswab/axe/internal/tool"
 	"github.com/jrswab/axe/internal/xdg"
+	"go.opentelemetry.io/otel/attribute"
 	"github.com/spf13/cobra"
 )
 
@@ -119,6 +121,12 @@ func truncateOutput(s string) string {
 func runAgent(cmd *cobra.Command, args []string) error {
 	agentName := args[0]
 
+	// Start root span. The span is ended at function return so it covers the
+	// entire agent run including LLM calls and tool dispatches.
+	tracer := telemetry.Tracer()
+	ctx, rootSpan := tracer.Start(cmd.Context(), "axe.run")
+	defer rootSpan.End()
+
 	// Get the agents-dir flag early (before workdir resolution)
 	flagAgentsDir, _ := cmd.Flags().GetString("agents-dir")
 
@@ -166,6 +174,14 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return &ExitError{Code: 2, Err: err}
 	}
+
+	// Set root span attributes now that we have agent, model, and workdir.
+	// timeout flag is read later; use cfg default for now — we'll overwrite below.
+	rootSpan.SetAttributes(
+		attribute.String("axe.agent", agentName),
+		attribute.String("axe.model", cfg.Model),
+		attribute.String("axe.workdir", workdir),
+	)
 
 	// Artifact directory lifecycle
 	flagArtifactDir, _ := cmd.Flags().GetString("artifact-dir")
@@ -281,13 +297,16 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	var memoryPath string
 	var memoryCount int
 	if cfg.Memory.Enabled {
+		_, memLoadSpan := tracer.Start(ctx, "axe.memory.load")
 		var memErr error
 		memoryPath, memErr = memory.FilePath(agentName, cfg.Memory.Path)
 		if memErr != nil {
+			telemetry.RecordError(memLoadSpan, memErr)
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 		} else {
 			memoryEntries, memErr = memory.LoadEntries(memoryPath, cfg.Memory.LastN)
 			if memErr != nil {
+				telemetry.RecordError(memLoadSpan, memErr)
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 			} else if memoryEntries != "" {
 				systemPrompt += "\n\n---\n\n## Memory\n\n" + memoryEntries
@@ -295,11 +314,14 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 			memoryCount, memErr = memory.CountEntries(memoryPath)
 			if memErr != nil {
+				telemetry.RecordError(memLoadSpan, memErr)
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to load memory for %q: %v\n", agentName, memErr)
 			} else if cfg.Memory.MaxEntries > 0 && memoryCount >= cfg.Memory.MaxEntries {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: agent %q memory has %d entries (max_entries: %d). Run 'axe gc %s' to trim.\n", agentName, memoryCount, cfg.Memory.MaxEntries, agentName)
 			}
 		}
+		memLoadSpan.SetAttributes(attribute.Int("axe.memory.entries_loaded", memoryCount))
+		memLoadSpan.End()
 	}
 
 	// Flags
@@ -319,6 +341,8 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		streamEnabled, _ = cmd.Flags().GetBool("stream")
 	}
 
+	// Record timeout on the root span now that we have it.
+	rootSpan.SetAttributes(attribute.Int("axe.timeout_s", timeout))
 
 	// Resolve effective budget
 	flagMaxTokens, _ := cmd.Flags().GetInt("max-tokens")
@@ -343,7 +367,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		return printDryRun(cmd, cfg, provName, modelName, workdir, timeout, streamEnabled, systemPrompt, skillContent, files, userMessage, memoryEntries, effectiveMaxTokens)
 	}
 
-	ctx, cancel := context.WithTimeout(cmd.Context(), time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	// Step 12-13: Resolve API key and validate
@@ -521,10 +545,19 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 	if len(req.Tools) == 0 {
 		// Single-shot: no tools, no conversation loop
+		llmCallStart := time.Now()
+		_, llmSpan := tracer.Start(ctx, "axe.llm.call")
+		llmSpan.SetAttributes(
+			attribute.String("axe.provider", provName),
+			attribute.String("axe.model", modelName),
+		)
 		if streamEnabled {
 			if sp, ok := prov.(provider.StreamProvider); ok {
 				stream, streamErr := sp.SendStream(ctx, req)
 				if streamErr != nil {
+					llmSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmCallStart).Milliseconds()))
+					telemetry.RecordError(llmSpan, streamErr)
+					llmSpan.End()
 					durationMs := time.Since(start).Milliseconds()
 					if verbose {
 						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
@@ -537,6 +570,9 @@ func runAgent(cmd *cobra.Command, args []string) error {
 				}
 				resp, err = drainEventStream(stream, textWriter)
 				if err != nil {
+					llmSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmCallStart).Milliseconds()))
+					telemetry.RecordError(llmSpan, err)
+					llmSpan.End()
 					return mapProviderError(err)
 				}
 				if !jsonOutput {
@@ -548,13 +584,21 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		} else {
 			resp, err = prov.Send(ctx, req)
 		}
+		llmSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmCallStart).Milliseconds()))
 		if err != nil {
+			telemetry.RecordError(llmSpan, err)
+			llmSpan.End()
 			durationMs := time.Since(start).Milliseconds()
 			if verbose {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
 			}
 			return mapProviderError(err)
 		}
+		llmSpan.SetAttributes(
+			attribute.Int("axe.input_tokens", resp.InputTokens),
+			attribute.Int("axe.output_tokens", resp.OutputTokens),
+		)
+		llmSpan.End()
 		totalInputTokens = resp.InputTokens
 		totalOutputTokens = resp.OutputTokens
 		tracker.Add(resp.InputTokens, resp.OutputTokens)
@@ -600,10 +644,19 @@ func runAgent(cmd *cobra.Command, args []string) error {
 				}
 			}
 
+			llmTurnStart := time.Now()
+			_, llmTurnSpan := tracer.Start(ctx, "axe.llm.call")
+			llmTurnSpan.SetAttributes(
+				attribute.String("axe.provider", provName),
+				attribute.String("axe.model", modelName),
+			)
 			if streamEnabled {
 				if sp, ok := prov.(provider.StreamProvider); ok {
 					stream, streamErr := sp.SendStream(ctx, req)
 					if streamErr != nil {
+						llmTurnSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmTurnStart).Milliseconds()))
+						telemetry.RecordError(llmTurnSpan, streamErr)
+						llmTurnSpan.End()
 						durationMs := time.Since(start).Milliseconds()
 						if verbose {
 							_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
@@ -616,6 +669,9 @@ func runAgent(cmd *cobra.Command, args []string) error {
 					}
 					resp, err = drainEventStream(stream, textWriter)
 					if err != nil {
+						llmTurnSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmTurnStart).Milliseconds()))
+						telemetry.RecordError(llmTurnSpan, err)
+						llmTurnSpan.End()
 						return mapProviderError(err)
 					}
 					if !jsonOutput && resp.Content != "" {
@@ -627,13 +683,21 @@ func runAgent(cmd *cobra.Command, args []string) error {
 			} else {
 				resp, err = prov.Send(ctx, req)
 			}
+			llmTurnSpan.SetAttributes(attribute.Int64("axe.duration_ms", time.Since(llmTurnStart).Milliseconds()))
 			if err != nil {
+				telemetry.RecordError(llmTurnSpan, err)
+				llmTurnSpan.End()
 				durationMs := time.Since(start).Milliseconds()
 				if verbose {
 					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
 				}
 				return mapProviderError(err)
 			}
+			llmTurnSpan.SetAttributes(
+				attribute.Int("axe.input_tokens", resp.InputTokens),
+				attribute.Int("axe.output_tokens", resp.OutputTokens),
+			)
+			llmTurnSpan.End()
 
 			totalInputTokens += resp.InputTokens
 			totalOutputTokens += resp.OutputTokens
@@ -778,14 +842,22 @@ func runAgent(cmd *cobra.Command, args []string) error {
 
 	// Step 21: Append memory entry after successful response
 	if cfg.Memory.Enabled {
+		_, memSaveSpan := tracer.Start(ctx, "axe.memory.save")
+		saved := 0
 		appendPath, appendErr := memory.FilePath(agentName, cfg.Memory.Path)
 		if appendErr != nil {
+			telemetry.RecordError(memSaveSpan, appendErr)
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
 		} else {
 			if appendErr = memory.AppendEntry(appendPath, userMessage, resp.Content); appendErr != nil {
+				telemetry.RecordError(memSaveSpan, appendErr)
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: failed to save memory for %q: %v\n", agentName, appendErr)
+			} else {
+				saved = 1
 			}
 		}
+		memSaveSpan.SetAttributes(attribute.Int("axe.memory.entries_saved", saved))
+		memSaveSpan.End()
 	}
 
 	return nil
@@ -911,19 +983,26 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a
 		ArtifactTracker: artifactTracker,
 	}
 
+	tracer := telemetry.Tracer()
+
+	dispatchOne := func(callCtx context.Context, tc provider.ToolCall) provider.ToolResult {
+		if tc.Name == tool.CallAgentToolName {
+			_, agentSpan := tracer.Start(callCtx, "axe.tool.call")
+			agentSpan.SetAttributes(attribute.String("axe.tool.name", tc.Name))
+			res := tool.ExecuteCallAgent(callCtx, tc, execOpts)
+			agentSpan.SetAttributes(attribute.Bool("axe.tool.success", !res.IsError))
+			agentSpan.End()
+			return res
+		}
+		return dispatchToolCall(callCtx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
+	}
+
 	if len(toolCalls) == 1 || !parallel {
 		// Sequential execution (also used for single call)
 		for i, tc := range toolCalls {
-			start := time.Now()
-			var r provider.ToolResult
-			if mcpRouter != nil && mcpRouter.Has(tc.Name) {
-				r = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-			} else if tc.Name == tool.CallAgentToolName {
-				r = tool.ExecuteCallAgent(ctx, tc, execOpts)
-			} else {
-				r = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-			}
-			results[i] = toolExecResult{Result: r, Duration: time.Since(start)}
+			toolStart := time.Now()
+			r := dispatchOne(ctx, tc)
+			results[i] = toolExecResult{Result: r, Duration: time.Since(toolStart)}
 		}
 	} else {
 		// Parallel execution
@@ -934,16 +1013,9 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a
 		ch := make(chan indexedResult, len(toolCalls))
 		for i, tc := range toolCalls {
 			go func(idx int, call provider.ToolCall) {
-				start := time.Now()
-				var res provider.ToolResult
-				if mcpRouter != nil && mcpRouter.Has(call.Name) {
-					res = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-				} else if call.Name == tool.CallAgentToolName {
-					res = tool.ExecuteCallAgent(ctx, call, execOpts)
-				} else {
-					res = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-				}
-				ch <- indexedResult{index: idx, result: toolExecResult{Result: res, Duration: time.Since(start)}}
+				toolStart := time.Now()
+				r := dispatchOne(ctx, call)
+				ch <- indexedResult{index: idx, result: toolExecResult{Result: r, Duration: time.Since(toolStart)}}
 			}(i, tc)
 		}
 		for range toolCalls {
@@ -956,6 +1028,11 @@ func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *a
 }
 
 func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string, artifactDir string, artifactTracker *artifact.Tracker) provider.ToolResult {
+	tracer := telemetry.Tracer()
+	_, toolSpan := tracer.Start(ctx, "axe.tool.call")
+	toolSpan.SetAttributes(attribute.String("axe.tool.name", tc.Name))
+	defer toolSpan.End()
+
 	if mcpRouter != nil && mcpRouter.Has(tc.Name) {
 		if verbose && stderr != nil {
 			if serverName, ok := mcpRouter.ServerName(tc.Name); ok {
@@ -964,8 +1041,11 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.
 		}
 		result, err := mcpRouter.Dispatch(ctx, tc)
 		if err != nil {
+			toolSpan.SetAttributes(attribute.Bool("axe.tool.success", false))
+			telemetry.RecordError(toolSpan, err)
 			return provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}
 		}
+		toolSpan.SetAttributes(attribute.Bool("axe.tool.success", !result.IsError))
 		return result
 	}
 
@@ -978,8 +1058,11 @@ func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.
 		ArtifactTracker: artifactTracker,
 	})
 	if dispatchErr != nil {
+		toolSpan.SetAttributes(attribute.Bool("axe.tool.success", false))
+		telemetry.RecordError(toolSpan, dispatchErr)
 		return provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}
 	}
+	toolSpan.SetAttributes(attribute.Bool("axe.tool.success", !result.IsError))
 	return result
 }
 

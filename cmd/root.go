@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/jrswab/axe/internal/telemetry"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +38,16 @@ func exitCodeFromError(err error) int {
 
 // Execute runs the root command and exits with the appropriate exit code on error.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	ctx := context.Background()
+
+	shutdown, err := telemetry.Init(ctx)
+	if err != nil {
+		// Non-fatal: log and continue without tracing.
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: failed to initialise telemetry: %v\n", err)
+	}
+	defer func() { _ = shutdown(ctx) }()
+
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(exitCodeFromError(err))
 	}
