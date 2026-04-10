@@ -369,6 +369,10 @@ func (o *Ollama) SendStream(ctx context.Context, req *Request) (EventStream, err
 		body.Tools = convertToOllamaTools(req.Tools)
 	}
 
+	if req.Format != nil {
+		body.Format = req.Format
+	}
+
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)

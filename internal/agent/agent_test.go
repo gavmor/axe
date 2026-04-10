@@ -1807,6 +1807,60 @@ func TestValidate_Artifacts(t *testing.T) {
 	}
 }
 
+func TestValidate_Format(t *testing.T) {
+	cases := []struct {
+		name    string
+		cfg     *AgentConfig
+		wantErr bool
+		wantMsg string
+	}{
+		{
+			name:    "valid json string",
+			cfg:     &AgentConfig{Name: "test", Model: "openai/gpt-4o", Format: "json"},
+			wantErr: false,
+		},
+		{
+			name:    "valid schema map",
+			cfg:     &AgentConfig{Name: "test", Model: "openai/gpt-4o", Format: map[string]interface{}{"type": "object"}},
+			wantErr: false,
+		},
+		{
+			name:    "invalid string",
+			cfg:     &AgentConfig{Name: "test", Model: "openai/gpt-4o", Format: "xml"},
+			wantErr: true,
+			wantMsg: `format must be "json" or a JSON Schema table`,
+		},
+		{
+			name:    "invalid type",
+			cfg:     &AgentConfig{Name: "test", Model: "openai/gpt-4o", Format: 123},
+			wantErr: true,
+			wantMsg: `format must be "json" or a JSON Schema table`,
+		},
+		{
+			name:    "nil format",
+			cfg:     &AgentConfig{Name: "test", Model: "openai/gpt-4o", Format: nil},
+			wantErr: false,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := Validate(tc.cfg)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				if !strings.Contains(err.Error(), tc.wantMsg) {
+					t.Errorf("got %q, want error containing %q", err.Error(), tc.wantMsg)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+			}
+		})
+	}
+}
+
 func TestScaffold_IncludesArtifactsConfig(t *testing.T) {
 	out, err := Scaffold("test")
 	if err != nil {

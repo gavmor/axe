@@ -146,6 +146,37 @@ model = "fakeprovider/some-model"
 	}
 }
 
+func TestRun_FormatRequiresOllamaProvider(t *testing.T) {
+	resetRunCmd(t)
+	setupRunTestAgent(t, "format-agent", `name = "format-agent"
+model = "openai/gpt-4o"
+format = "json"
+`)
+	t.Setenv("OPENAI_API_KEY", "dummy")
+
+	buf := new(bytes.Buffer)
+	errBuf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(errBuf)
+	rootCmd.SetArgs([]string{"run", "format-agent"})
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected error for format on unsupported provider, got nil")
+	}
+	
+	exitErr, ok := err.(*ExitError)
+	if !ok {
+		t.Fatalf("expected *ExitError, got %T: %v", err, err)
+	}
+	if exitErr.Code != 2 {
+		t.Errorf("expected exit code 2, got %d", exitErr.Code)
+	}
+	if !strings.Contains(err.Error(), `format is only supported with provider "ollama"`) {
+		t.Errorf("expected format unsupported error, got: %v", err)
+	}
+}
+
 // --- Phase 11c: Config Loading and Overrides ---
 
 func TestRun_MissingAgent(t *testing.T) {
