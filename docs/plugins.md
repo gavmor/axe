@@ -14,7 +14,7 @@ Axe plugins are not standard executables. They are compiled as **WASI Reactors**
 Unlike a standard Wasm "command" module that runs its `main()` function and immediately terminates, a reactor instance remains continuously alive in memory after its initial setup. This allows the Axe kernel to invoke your plugin's exported functions repeatedly without paying the overhead of re-initialization.
 
 ## Step 1: Implement the Contract
-First, import the Axe protocol package. Your plugin must expose specific lifecycle functions that the Axe kernel expects (e.g., `Metadata` and `Execute`).
+First, import the Axe protocol package. Your plugin must expose specific lifecycle functions that the Axe kernel expects: `Metadata`, `Execute`, and `allocate`.
 
 To make a Go function available to the Axe Wasm host, you must annotate it with the `//go:wasmexport` compiler directive.
 
@@ -71,16 +71,19 @@ func allocate(size uint32) uint32 {
 ```
 
 ## Step 2: Using Host Functions (Capability Injection)
-Because your plugin runs in a sandbox, it cannot directly write to the host's filesystem or network. Instead, Axe injects "Host Functions" into your Wasm environment.
+Because your plugin runs in a sandbox, it cannot directly write to the host's filesystem or network. Instead, Axe injects "Host Functions" into your Wasm environment via the `axe_kernel` module.
 
 You can consume these host capabilities using the `//go:wasmimport` directive. 
 
 **Important Memory Note:** WebAssembly utilizes a 32-bit address space, meaning any memory address is represented by a 32-bit integer. You cannot pass complex Go structs or nested pointers directly across the ABI boundary. Instead, you must pass data as a "fat pointer"—a combination of a 32-bit memory address and a 32-bit length.
 
 ```go
-// Import the artifact tracker from the Axe kernel
+// Import host functions from the Axe kernel
 //go:wasmimport axe_kernel track_artifact
 func track_artifact_host(ptr uint32, size uint32, artifactSize int64)
+
+//go:wasmimport axe_kernel get_budget_used
+func get_budget_used_host() uint64
 
 // A helper to easily track artifacts back to the host
 func TrackArtifact(path string, size int64) {
