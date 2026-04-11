@@ -1758,6 +1758,16 @@ func TestScaffold_IncludesTopLevelTimeout(t *testing.T) {
 	}
 }
 
+func TestScaffold_IncludesFormat(t *testing.T) {
+	out, err := Scaffold("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, `# format = "json"`) {
+		t.Errorf("scaffold output missing '# format = \"json\"'\nfull output:\n%s", out)
+	}
+}
+
 func TestValidate_Artifacts(t *testing.T) {
 	cases := []struct {
 		name    string

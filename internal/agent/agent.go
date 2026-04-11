@@ -340,6 +340,9 @@ description = ""
 # Full provider/model per models.dev
 model = "provider/model-name"
 
+# Structured output (optional, Ollama only)
+# format = "json"
+
 # Agent persona (optional)
 # system_prompt = ""
 
