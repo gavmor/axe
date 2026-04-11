@@ -1,13 +1,14 @@
 module github.com/jrswab/axe
 
-go 1.25.0
+go 1.26.1
 
 require (
 	github.com/BurntSushi/toml v1.6.0
+	github.com/eliben/watgo v0.4.0
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/spf13/cobra v1.10.2
+	github.com/tetratelabs/wazero v1.11.0
 	golang.org/x/net v0.51.0
-	golang.org/x/tools v0.41.0
 )
 
 require (

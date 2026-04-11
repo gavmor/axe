@@ -23,6 +23,7 @@ import (
 	"github.com/jrswab/axe/internal/refusal"
 	"github.com/jrswab/axe/internal/resolve"
 	"github.com/jrswab/axe/internal/tool"
+	"github.com/jrswab/axe/internal/wasmloader"
 	"github.com/jrswab/axe/internal/xdg"
 	"github.com/jrswab/axe/pkg/kernel"
 	"github.com/spf13/cobra"
@@ -50,6 +51,7 @@ func init() {
 	runCmd.Flags().String("skill", "", "Override the agent's default skill path")
 	runCmd.Flags().String("workdir", "", "Override the working directory")
 	runCmd.Flags().String("agents-dir", "", "Additional agents directory to search before global config")
+	runCmd.Flags().String("plugins-dir", "", "Directory containing .wasm plugins to load")
 	runCmd.Flags().String("model", "", "Override the model (provider/model-name format)")
 	runCmd.Flags().Int("timeout", 120, "Request timeout in seconds")
 	runCmd.Flags().Bool("dry-run", false, "Show resolved context without calling the LLM")
@@ -466,6 +468,18 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Resolve plugins directory
+	flagPluginsDir, _ := cmd.Flags().GetString("plugins-dir")
+	var loader *wasmloader.Loader
+	if flagPluginsDir != "" {
+		l, err := wasmloader.New(ctx)
+		if err != nil {
+			return &ExitError{Code: 1, Err: fmt.Errorf("failed to initialize wasm loader: %w", err)}
+		}
+		loader = l
+		defer loader.Close(ctx)
+	}
+
 	// Step 18: Call provider via Kernel
 	start := time.Now()
 	k := &kernel.Kernel{
@@ -474,6 +488,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		AgentName:       agentName,
 		Workdir:         workdir,
 		AgentsDir:       flagAgentsDir,
+		PluginsDir:      flagPluginsDir,
 		Verbose:         verbose,
 		JsonOutput:      jsonOutput,
 		Stderr:          cmd.ErrOrStderr(),
@@ -483,6 +498,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		KeepArtifacts:   keepArtifacts,
 		ArtifactTracker: artifactTracker,
 		BudgetTracker:   tracker,
+		WasmLoader:      loader,
 	}
 
 	resp, allToolCallDetails, totalInputTokens, totalOutputTokens, totalToolCalls, budgetExceeded, err := k.Run(ctx, prov, req, registry, mcpRouter, streamEnabled)

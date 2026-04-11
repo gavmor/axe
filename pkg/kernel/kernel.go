@@ -17,6 +17,7 @@ import (
 	"github.com/jrswab/axe/internal/mcpclient"
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/tool"
+	"github.com/jrswab/axe/internal/wasmloader"
 )
 
 // Kernel handles the core orchestration of an agent run.
@@ -26,6 +27,7 @@ type Kernel struct {
 	AgentName       string
 	Workdir         string
 	AgentsDir       string
+	PluginsDir      string
 	Verbose         bool
 	JsonOutput      bool
 	Stderr          io.Writer
@@ -35,6 +37,7 @@ type Kernel struct {
 	KeepArtifacts   bool
 	ArtifactTracker *artifact.Tracker
 	BudgetTracker   *budget.BudgetTracker
+	WasmLoader      *wasmloader.Loader
 }
 
 const maxConversationTurns = 50
@@ -56,6 +59,16 @@ type ToolExecResult struct {
 
 // Run executes the agent conversation loop.
 func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.Request, registry *tool.Registry, mcpRouter *mcpclient.Router, streamEnabled bool) (*provider.Response, []ToolCallDetail, int, int, int, bool, error) {
+	// Load WASM plugins if a loader and directory are provided
+	if k.WasmLoader != nil && k.PluginsDir != "" {
+		registry.SetLoader(k.WasmLoader)
+		if err := registry.LoadPlugins(ctx, k.PluginsDir); err != nil {
+			if k.Verbose {
+				_, _ = fmt.Fprintf(k.Stderr, "Warning: failed to load plugins from %s: %v\n", k.PluginsDir, err)
+			}
+		}
+	}
+
 	start := time.Now()
 
 	// Determine parallel execution setting.
