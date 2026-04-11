@@ -278,6 +278,22 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 	return resp, allToolCallDetails, totalInputTokens, totalOutputTokens, totalToolCalls, budgetExceeded, nil
 }
 
+// LoadPlugin validates, instantiates and registers a Wasm plugin from bytes.
+func (k *Kernel) LoadPlugin(ctx context.Context, registry *tool.Registry, wasmBytes []byte) error {
+	if k.WasmLoader == nil {
+		return fmt.Errorf("wasm loader not configured")
+	}
+	if err := k.WasmLoader.ValidateBytes(wasmBytes); err != nil {
+		return err
+	}
+	t, err := k.WasmLoader.InstantiateBytes(ctx, wasmBytes)
+	if err != nil {
+		return err
+	}
+	registry.Register(t.Definition().Name, t)
+	return nil
+}
+
 func (k *Kernel) TruncateOutput(s string) string {
 	if len(s) <= maxToolOutputBytes {
 		return s

@@ -39,7 +39,11 @@ func (l *Loader) Validate(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read wasm file: %w", err)
 	}
+	return l.ValidateBytes(data)
+}
 
+// ValidateBytes checks if Wasm binary bytes satisfy the Axe microkernel contract.
+func (l *Loader) ValidateBytes(data []byte) error {
 	module, err := watgo.DecodeWASM(data)
 	if err != nil {
 		return fmt.Errorf("failed to decode wasm binary: %w", err)
@@ -69,13 +73,22 @@ func (l *Loader) Instantiate(ctx context.Context, path string) (protocol.Tool, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to read wasm file: %w", err)
 	}
+	return l.InstantiateBytes(ctx, data)
+}
 
+// InstantiateBytes creates a new Tool from Wasm binary bytes.
+func (l *Loader) InstantiateBytes(ctx context.Context, data []byte) (protocol.Tool, error) {
 	compiled, err := l.runtime.CompileModule(ctx, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile wasm module: %w", err)
 	}
 
 	return NewWasmTool(l.runtime, compiled), nil
+}
+
+// Runtime returns the wazero runtime used by the loader.
+func (l *Loader) Runtime() wazero.Runtime {
+	return l.runtime
 }
 
 // Close cleans up the loader's runtime and cache.
