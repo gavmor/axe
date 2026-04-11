@@ -23,16 +23,16 @@ Load and validate agent TOML files.
 - [X] `axe agents init <agent>` — scaffold a new TOML
 - [X] `axe agents edit <agent>` — open in $EDITOR
 
-## M3: Single Agent Run
+## M3: Core System Orchestration
 
-The core loop — load config, build prompt, call LLM, print result.
+The foundational core loop — orchestrating config loading, prompt resolution, LLM execution, and result processing.
 
 - [X] Resolve `workdir` (flag → TOML → cwd)
 - [X] Resolve file globs from workdir
 - [X] Load SKILL.md contents
 - [X] Build system prompt + context payload
 - [X] Read stdin when piped
-- [X] LLM provider integration (start with one: Anthropic or OpenAI)
+- [X] LLM Provider Plugin integration (providing LLM interfaces; start with Anthropic or OpenAI)
 - [X] Print response to stdout
 - [X] `--model` flag override
 - [X] `--skill` flag override
@@ -45,7 +45,7 @@ The core loop — load config, build prompt, call LLM, print result.
 
 ## M4: Multi-Provider Support
 
-Support any provider/model from models.dev.
+Extending the Provider Plugin Interface to support any model from models.dev.
 
 - [X] Provider abstraction interface
 - [X] Anthropic provider
@@ -53,9 +53,9 @@ Support any provider/model from models.dev.
 - [X] Ollama / local provider
 - [X] API key config (env vars, config file, or both)
 
-## M5: Sub-Agents
+## M5: Sub-Agents (Recursive Core Invocation)
 
-Parent agents can delegate to child agents.
+Parent agents can delegate to child agents via recursive core execution.
 
 - [X] Inject `call_agent` tool when `sub_agents` is defined
 - [X] Intercept tool call, load sub-agent config
@@ -86,7 +86,7 @@ Pattern detection and memory trimming.
 - [ ] Trim to last_n entries
 - [ ] Suggestions output to stdout
 
-## Future (v2+)
+## M9+ Extensibility (Future)
 
 - Built-in file watcher trigger
 - Built-in webhook server
@@ -94,5 +94,5 @@ Pattern detection and memory trimming.
 - Structured JSON sub-agent output
 - Shared memory between parent/sub-agents
 - Token cost tracking
-- Plugin system for custom tools
+- Wasm Plugin Components (providing custom tools and core extensions)
 - Community skill registry

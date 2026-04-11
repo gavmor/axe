@@ -1,15 +1,15 @@
-# Specification: M3 - Single Agent Run
+# Specification: M3 - Core System Orchestration
 
 **Status:** Draft
 **Version:** 1.0
 **Created:** 2026-02-27
-**Scope:** Load agent config, resolve context, call LLM, print result
+**Scope:** Core system orchestration — resolve context, build prompt, call LLM, process result
 
 ---
 
 ## 1. Purpose
 
-Implement the core execution loop for Axe: the `axe run <agent>` command. This milestone takes an agent TOML config (from M2), resolves all runtime context (working directory, file globs, SKILL.md, stdin), builds a prompt, calls the Anthropic Messages API, and prints the response. CLI flags provide runtime overrides and output control. This is the first milestone where Axe produces useful output from an LLM.
+Implement the Core System Orchestration for Axe: the `axe run <agent>` command. This milestone establishes the core conversation loop, resolving all runtime context (working directory, file globs, SKILL.md, stdin), constructing the system prompt, and executing the request via the Shared Protocol. CLI flags provide runtime overrides and output control.
 
 ---
 
@@ -19,20 +19,20 @@ Implement the core execution loop for Axe: the `axe run <agent>` command. This m
 
 **Requirement 1.1:** Create package `internal/resolve/` for all context resolution logic (working directory, file globs, skill loading, stdin reading, prompt assembly).
 
-**Requirement 1.2:** Create package `internal/provider/` for LLM provider types, interface, and the Anthropic implementation.
+**Requirement 1.2:** Create the Shared Protocol package at `pkg/protocol/` for LLM provider types, interface, and tool contracts.
 
 **Requirement 1.3:** No new external dependencies. All HTTP and JSON handling must use Go standard library (`net/http`, `encoding/json`, `io`, `context`).
 
-### 2.2 Provider Types (`internal/provider/`)
+### 2.2 Shared Protocol Types (`pkg/protocol/`)
 
-**Requirement 2.1:** Define a `Message` struct representing a single message in the conversation:
+**Requirement 2.1:** Define a `Message` struct representing a single message in the core conversation:
 
 | Go Field | JSON Key | Go Type | Description |
 |----------|----------|---------|-------------|
 | `Role` | `role` | `string` | Message role: `"user"` or `"assistant"` |
 | `Content` | `content` | `string` | Message text content |
 
-**Requirement 2.2:** Define a `Request` struct representing an LLM completion request:
+**Requirement 2.2:** Define a `Request` struct representing an LLM completion request within the protocol:
 
 | Go Field | Go Type | Description |
 |----------|---------|-------------|
@@ -42,7 +42,7 @@ Implement the core execution loop for Axe: the `axe run <agent>` command. This m
 | `Temperature` | `float64` | Sampling temperature (0 means omit from request, use provider default) |
 | `MaxTokens` | `int` | Maximum output tokens (0 means use a sensible default; see Requirement 3.8) |
 
-**Requirement 2.3:** Define a `Response` struct representing an LLM completion response:
+**Requirement 2.3:** Define a `Response` struct representing an LLM completion response within the protocol:
 
 | Go Field | Go Type | Description |
 |----------|---------|-------------|
@@ -88,9 +88,9 @@ Where `ErrorCategory` is a string type with the following constants:
 
 **Requirement 2.7:** `ProviderError` must implement `Unwrap() error` to support `errors.Is` and `errors.As` chaining.
 
-### 2.3 Anthropic Provider (`internal/provider/`)
+### 2.3 LLM Provider Plugin Implementation (`internal/provider/`)
 
-**Requirement 3.1:** Implement an `Anthropic` struct that satisfies the `Provider` interface.
+**Requirement 3.1:** Implement an `Anthropic` struct that satisfies the `Provider` interface defined in the Shared Protocol.
 
 **Requirement 3.2:** Constructor function signature:
 
@@ -268,8 +268,8 @@ func BuildSystemPrompt(systemPrompt, skillContent string, files []FileContent) s
 
 **Requirement 5.2:** The `run` command must have:
 - `Use`: `"run"`
-- `Short`: `"Run an agent"`
-- `Long`: A description explaining that this command loads an agent config, resolves context, calls the LLM, and prints the response.
+- `Short`: `"Run a Core Orchestration session"`
+- `Long`: A description explaining that this command loads configuration, resolves context via the Core System, executes the conversation loop, and processes the result.
 - `Args`: `cobra.ExactArgs(1)` — the agent name is required
 
 **Requirement 5.3:** Register the following flags on the `run` command:
@@ -284,9 +284,9 @@ func BuildSystemPrompt(systemPrompt, skillContent string, files []FileContent) s
 | `--verbose` | `bool` | `false` | `-v` | Print debug info to stderr |
 | `--json` | `bool` | `false` | none | Wrap output in JSON with metadata |
 
-**Requirement 5.4:** The `run` command `RunE` function must execute the following steps in order:
+**Requirement 5.4:** The `run` command `RunE` function must execute the core orchestration steps in order:
 
-1. Load agent config via `agent.Load(args[0])`
+1. Load configuration via `agent.Load(args[0])`
 2. Apply `--model` flag override if non-empty (replaces `AgentConfig.Model`)
 3. Apply `--skill` flag override if non-empty (replaces `AgentConfig.Skill`)
 4. Parse the model string to extract provider name and model name (split on first `/`)
@@ -299,9 +299,9 @@ func BuildSystemPrompt(systemPrompt, skillContent string, files []FileContent) s
 11. If `--dry-run`: print resolved context and exit (see Requirement 5.8)
 12. Resolve API key from environment variable `ANTHROPIC_API_KEY`
 13. If the API key is empty, return an error with exit code 3: `ANTHROPIC_API_KEY environment variable is not set`
-14. Create the provider via `provider.NewAnthropic(apiKey)`
+14. Create the provider plugin via `provider.NewAnthropic(apiKey)`
 15. Build the user message: stdin content if present, otherwise `"Execute the task described in your instructions."`
-16. Build the `provider.Request` with model name, system prompt, user message, temperature, and max tokens from agent config
+16. Build the `protocol.Request` with model name, system prompt, user message, temperature, and max tokens from configuration
 17. Create a `context.Context` with timeout from `--timeout` flag
 18. Call `provider.Send(ctx, req)`
 19. If `--json`: print JSON envelope (see Requirement 5.9)
@@ -705,8 +705,8 @@ No test may make real HTTP requests to external APIs. All HTTP interactions must
 
 | Criterion | Test |
 |-----------|------|
-| Provider Types | `internal/provider/provider.go` defines `Message`, `Request`, `Response`, `Provider`, `ProviderError`, `ErrorCategory` |
-| Anthropic Provider | `provider.NewAnthropic(key)` creates a working provider that calls the Messages API |
+| Shared Protocol | `pkg/protocol/protocol.go` defines `Message`, `Request`, `Response`, `Provider`, `ProviderError`, `ErrorCategory` |
+| Anthropic Provider | `provider.NewAnthropic(key)` creates a working provider plugin that calls the Messages API |
 | Auth Header | HTTP requests include `x-api-key` header with the provided API key |
 | Error Mapping | HTTP 401→auth, 429→rate_limit, 500→server, 529→overloaded, 400→bad_request |
 | Timeout | Context cancellation aborts the request and returns timeout error |
@@ -716,9 +716,9 @@ No test may make real HTTP requests to external APIs. All HTTP interactions must
 | Skill Loading | Absolute and relative paths resolve correctly |
 | Stdin Detection | Piped stdin is read; terminal stdin is ignored |
 | Prompt Assembly | System prompt + skill + files assembled with correct delimiters |
-| `axe run <agent>` | Loads config, resolves context, calls LLM, prints response |
-| `--dry-run` | Shows all resolved context without calling LLM |
-| `--verbose` | Debug info to stderr before and after LLM call |
+| `axe run <agent>` | Orchestrates configuration loading, context resolution, and core conversation loop |
+| `--dry-run` | Shows all resolved core context without calling LLM |
+| `--verbose` | Debug info to stderr before and after core orchestration |
 | `--json` | Structured JSON output with token counts and duration |
 | `--model` | Overrides agent config model |
 | `--skill` | Overrides agent config skill path |
@@ -737,18 +737,18 @@ No test may make real HTTP requests to external APIs. All HTTP interactions must
 
 The following items are explicitly **not** included in M3:
 
-1. OpenAI provider (M4)
-2. Ollama / local provider (M4)
+1. OpenAI provider plugin (M4)
+2. Ollama / local provider plugin (M4)
 3. Provider abstraction routing by name (M4 — M3 hardcodes `"anthropic"` check)
-4. API key from config file (M4 — M3 reads from environment variables only)
-5. Sub-agent invocation or `call_agent` tool injection (M5)
+4. API key from configuration file (M4 — M3 reads from environment variables only)
+5. Sub-agent invocation or `call_agent` plugin injection (M5)
 6. Memory read/write (M6)
 7. Garbage collection (M7)
 8. Streaming output (Future)
 9. Retry logic or exponential backoff
 10. Response caching
 11. Token cost estimation or budget tracking
-12. Multi-turn conversations (one user message per run)
+12. Multi-turn core conversations (one user message per run)
 13. Image or non-text content in messages
 14. Tool use / function calling in the LLM request
 15. Interactive prompts or TUI elements
@@ -772,13 +772,13 @@ The following items are explicitly **not** included in M3:
 
 ## 10. Notes
 
-- The `Provider` interface is intentionally minimal (one method). M4 will add provider routing and potentially extend the interface, but M3 callers only need `Send`.
-- The `Anthropic` struct uses functional options (`WithBaseURL`) specifically to support test injection. The option pattern is chosen over struct fields to keep the public API clean and prevent misconfiguration.
-- The `resolve` package name was chosen over `context` to avoid import shadowing with Go's standard `context` package.
-- Stdin is sent as the user message, not embedded in the system prompt. This follows the Anthropic best practice of keeping system instructions in the system prompt and user-provided content in user messages.
-- The default user message `"Execute the task described in your instructions."` is used when no stdin is piped. This signals to the LLM that it should follow its system prompt/skill instructions without additional user input.
-- The `**` glob implementation using `filepath.WalkDir` is a pragmatic choice to avoid adding a dependency like `doublestar`. It handles the common case (`**/*.ext`) but does not need to support every edge case of full doublestar spec. Specifically, patterns like `a/**/b/**/c` must work, but `{a,b}` brace expansion is not required.
-- Binary file detection (null byte check in first 512 bytes) is a simple heuristic. It will correctly skip most binary files (images, compiled objects, etc.) but may miss some edge cases. This is acceptable for M3.
-- Exit code differentiation requires modifying `Execute()` in `root.go`. This is a breaking change to the error handling pattern — all existing commands that return errors will continue to exit with code 1 (unchanged behavior) unless they explicitly return an `ExitError`.
-- The `--json` output is compact (single line) to support piping to tools like `jq`. Pretty-printing could be added as a future enhancement but is not part of M3.
-- The `--timeout` default of 120 seconds matches common LLM API timeouts. Long-running agents (e.g. processing large codebases) may need higher values.
+- The `Provider` interface is part of the Shared Protocol and is intentionally minimal.
+- The `Anthropic` struct uses functional options (`WithBaseURL`) specifically to support test injection.
+- The `resolve` package handles core system context resolution.
+- Stdin is sent as the user message, following the Anthropic best practice.
+- The default user message `"Execute the task described in your instructions."` is used when no stdin is piped.
+- The `**` glob implementation using `filepath.WalkDir` is a pragmatic choice to avoid adding a dependency.
+- Binary file detection (null byte check in first 512 bytes) is a simple heuristic.
+- Exit code differentiation requires modifying `Execute()` in `root.go`.
+- The `--json` output is compact (single line) to support piping to tools like `jq`.
+- The `--timeout` default of 120 seconds matches common LLM API timeouts.

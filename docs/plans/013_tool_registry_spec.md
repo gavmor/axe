@@ -1,19 +1,19 @@
-# Specification: Tool Call M2 — Tool Registry
+# Specification: Tool Call M2 — Plugin Registry
 
 **Status:** Draft
 **Version:** 1.0
 **Created:** 2026-03-01
-**Scope:** Central registry that maps tool names to definitions and executors, replacing hardcoded `call_agent`-only dispatch in three locations
+**Scope:** Central registry that maps tool names to implementations and executors, following the microkernel registry pattern.
 
 ---
 
 ## 1. Purpose
 
-Create a `Registry` type in `internal/tool/` that maps tool names to their definitions (for the LLM) and executors (for runtime dispatch). This replaces the current pattern where the only recognized tool is `call_agent`, and anything else returns "Unknown tool" errors.
+Create a `Registry` type in `internal/tool/` that maps tool names to their definitions (for the core system) and executors (for runtime dispatch). This implements the microkernel registry pattern, replacing hardcoded dispatch sites with a dynamic, metadata-driven system.
 
-M1 (012) added the `Tools []string` field to `AgentConfig`. That field is currently unused at runtime. M2 provides the infrastructure to resolve those tool names into `provider.Tool` definitions (sent to the LLM) and dispatch LLM-requested tool calls to the correct executor.
+M1 (012) added the `Tools []string` field to `AgentConfig`. M2 provides the infrastructure to resolve those names into Shared Protocol definitions and dispatch calls to the correct tool executor.
 
-This milestone does NOT implement any tool executors (M3–M7). It provides the registry mechanism and refactors the three existing dispatch sites to use it.
+This milestone does NOT implement any specific tool components (M3–M7). It provides the registry mechanism and refactors existing dispatch sites to use it.
 
 ---
 
@@ -21,19 +21,19 @@ This milestone does NOT implement any tool executors (M3–M7). It provides the 
 
 The following decisions were made during planning and are binding for implementation:
 
-1. **`call_agent` stays outside the registry.** The `call_agent` tool requires runtime state (`allowedAgents`, depth tracking, provider creation, `ExecuteOptions`) that is fundamentally different from generic tools. Its definition depends on `allowedAgents` which varies per agent invocation. The registry does NOT register `call_agent`. The three dispatch sites keep their existing `call_agent` special-case branches. The registry handles everything else.
+1. **`call_agent` stays outside the registry.** The `call_agent` logic requires runtime state for recursive core invocation that is fundamentally different from generic tool components. The registry does NOT register `call_agent`.
 
-2. **`NewRegistry()` returns an empty registry.** No tools are pre-loaded. M3–M7 milestones will each register their tool into the registry when implemented. This keeps the registry stateless and decoupled from specific tool implementations.
+2. **`NewRegistry()` returns an empty registry.** No tool components are pre-loaded. M3–M7 milestones will each register their component into the registry when implemented.
 
-3. **`Dispatch` returns `(ToolResult, error)`.** Infrastructure errors (unknown tool, nil executor) are returned as `error`. Tool execution results (including tool-level errors) are returned as `ToolResult`. The caller at each dispatch site converts dispatch errors into error `ToolResult`s for the LLM.
+3. **`Dispatch` returns `(ToolResult, error)`.** Infrastructure errors (unknown tool, nil executor) are returned as `error`. Component execution results are returned as `ToolResult`.
 
-4. **`ExecContext` is minimal.** It contains only the fields needed by generic tool executors: `Workdir`, `Stderr`, `Verbose`. It does NOT contain depth tracking, `GlobalConfig`, or other `call_agent`-specific fields.
+4. **`ExecContext` is minimal.** It contains only the fields needed by generic tool executors: `Workdir`, `Stderr`, `Verbose`. It does NOT contain recursive core invocation state.
 
-5. **Registry is passed explicitly.** No global registry. `NewRegistry()` is called at each entry point (`cmd/run.go` for top-level, `ExecuteCallAgent` for sub-agents) and passed through to dispatch functions. This follows the project's "no global state" principle.
+5. **Registry is passed explicitly.** No global registry. `NewRegistry()` is called at each entry point following the project's "no global state" principle.
 
 6. **No new external dependencies.** This milestone uses only Go standard library and existing dependencies.
 
-7. **Workdir for ExecContext comes from `resolve.Workdir()`.** In `cmd/run.go`, the workdir is already resolved (line 104). In `ExecuteCallAgent`, the workdir is resolved at line 142. These resolved values are used when constructing `ExecContext`.
+7. **Workdir for ExecContext comes from `resolve.Workdir()`.** These resolved values are used when constructing `ExecContext`.
 
 ---
 
