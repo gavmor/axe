@@ -359,10 +359,24 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		streamEnabled = false
 	}
 
-	if cfg.Format != nil && provName != "ollama" {
-		return &ExitError{
-			Code: 2,
-			Err:  fmt.Errorf("format is only supported with provider %q; remove format or switch model provider", "ollama"),
+	var reqFormat *provider.ResponseFormat
+	if cfg.Format != nil {
+		reqFormat = &provider.ResponseFormat{}
+		switch v := cfg.Format.(type) {
+		case string:
+			if v == "json" {
+				reqFormat.Type = provider.FormatJSON
+			}
+		case map[string]interface{}:
+			reqFormat.Type = provider.FormatSchema
+			reqFormat.Schema = v
+		}
+
+		if reqFormat.Type != provider.FormatNone && !retryProv.SupportsFormat(reqFormat) {
+			return &ExitError{
+				Code: 2,
+				Err:  fmt.Errorf("provider %q does not support the requested structured output format; remove format or switch model provider", provName),
+			}
 		}
 	}
 
@@ -373,7 +387,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		Messages:    []provider.Message{{Role: "user", Content: userMessage}},
 		Temperature: cfg.Params.Temperature,
 		MaxTokens:   cfg.Params.MaxTokens,
-		Format:      cfg.Format,
+		Format:      reqFormat,
 	}
 
 	// Step 16b: Create tool registry and resolve configured tools

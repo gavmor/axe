@@ -15,6 +15,8 @@ type (
 	ToolCall         = protocol.ToolCall
 	ToolResult       = protocol.ToolResult
 	Message          = protocol.Message
+	FormatType       = protocol.FormatType
+	ResponseFormat   = protocol.ResponseFormat
 	Request          = protocol.Request
 	Response         = protocol.Response
 	Provider         = protocol.Provider
@@ -32,6 +34,10 @@ const (
 	ErrCategoryOverloaded = protocol.ErrCategoryOverloaded
 	ErrCategoryBadRequest = protocol.ErrCategoryBadRequest
 	ErrCategoryServer     = protocol.ErrCategoryServer
+
+	FormatNone   = protocol.FormatNone
+	FormatJSON   = protocol.FormatJSON
+	FormatSchema = protocol.FormatSchema
 
 	StreamEventText      = protocol.StreamEventText
 	StreamEventToolStart = protocol.StreamEventToolStart
