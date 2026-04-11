@@ -347,7 +347,7 @@ type anthropicBlockInfo struct {
 	name string
 }
 
-func (a *Anthropic) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	maxTokens := req.MaxTokens
 	if maxTokens == 0 {
 		maxTokens = defaultMaxTokens

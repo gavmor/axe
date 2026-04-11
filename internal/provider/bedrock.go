@@ -67,9 +67,9 @@ func NewBedrock(region string, opts ...BedrockOption) (*Bedrock, error) {
 // bedrockRequest is the JSON body sent to the Bedrock Converse API.
 type bedrockRequest struct {
 	Messages        []bedrockMessage        `json:"messages"`
-	System          []bedrockSystemBlock     `json:"system,omitempty"`
-	InferenceConfig *bedrockInferenceConfig  `json:"inferenceConfig,omitempty"`
-	ToolConfig      *bedrockToolConfig       `json:"toolConfig,omitempty"`
+	System          []bedrockSystemBlock    `json:"system,omitempty"`
+	InferenceConfig *bedrockInferenceConfig `json:"inferenceConfig,omitempty"`
+	ToolConfig      *bedrockToolConfig      `json:"toolConfig,omitempty"`
 }
 
 // bedrockMessage is the wire format for a message in the Bedrock API.
@@ -80,9 +80,9 @@ type bedrockMessage struct {
 
 // bedrockBlock is a content block in a Bedrock message.
 type bedrockBlock struct {
-	Text       string              `json:"text,omitempty"`
-	ToolUse    *bedrockToolUse     `json:"toolUse,omitempty"`
-	ToolResult *bedrockToolResult  `json:"toolResult,omitempty"`
+	Text       string             `json:"text,omitempty"`
+	ToolUse    *bedrockToolUse    `json:"toolUse,omitempty"`
+	ToolResult *bedrockToolResult `json:"toolResult,omitempty"`
 }
 
 // bedrockToolUse represents a tool invocation in a Bedrock response.
@@ -94,9 +94,9 @@ type bedrockToolUse struct {
 
 // bedrockToolResult represents a tool result sent back to Bedrock.
 type bedrockToolResult struct {
-	ToolUseID string                    `json:"toolUseId"`
+	ToolUseID string                     `json:"toolUseId"`
 	Content   []bedrockToolResultContent `json:"content"`
-	Status    string                    `json:"status"`
+	Status    string                     `json:"status"`
 }
 
 // bedrockToolResultContent is the text content inside a tool result.

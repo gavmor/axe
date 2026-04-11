@@ -512,11 +512,11 @@ func TestRetrySend_ContextCanceled_NotProviderError(t *testing.T) {
 // streamMockProvider implements both Provider and StreamProvider.
 type streamMockProvider struct {
 	retryMockProvider
-	streamResult *EventStream
+	streamResult EventStream
 	streamErr    error
 }
 
-func (m *streamMockProvider) SendStream(_ context.Context, _ *Request) (*EventStream, error) {
+func (m *streamMockProvider) SendStream(_ context.Context, _ *Request) (EventStream, error) {
 	return m.streamResult, m.streamErr
 }
 

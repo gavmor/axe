@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/jrswab/axe/internal/agent"
 	"github.com/jrswab/axe/internal/artifact"
@@ -25,30 +24,12 @@ import (
 	"github.com/jrswab/axe/internal/resolve"
 	"github.com/jrswab/axe/internal/tool"
 	"github.com/jrswab/axe/internal/xdg"
+	"github.com/jrswab/axe/pkg/kernel"
 	"github.com/spf13/cobra"
 )
 
 // defaultUserMessage is sent when no stdin content is piped.
 const defaultUserMessage = "Execute the task described in your instructions."
-
-// maxConversationTurns is the safety limit for the conversation loop.
-const maxConversationTurns = 50
-
-const maxToolOutputBytes = 1024
-
-type toolCallDetail struct {
-	Name       string            `json:"name"`
-	Input      map[string]string `json:"input"`
-	Output     string            `json:"output"`
-	IsError    bool              `json:"is_error"`
-	Turn       int               `json:"turn"`
-	DurationMs int64             `json:"duration_ms"`
-}
-
-type toolExecResult struct {
-	Result   provider.ToolResult
-	Duration time.Duration
-}
 
 var runCmd = &cobra.Command{
 	Use:   "run <agent>",
@@ -100,20 +81,6 @@ func parseModel(model string) (providerName, modelName string, err error) {
 	}
 
 	return providerName, modelName, nil
-}
-
-func truncateOutput(s string) string {
-	if len(s) <= maxToolOutputBytes {
-		return s
-	}
-
-	// Backtrack from the byte limit to avoid splitting a multi-byte UTF-8 rune.
-	i := maxToolOutputBytes
-	for i > 0 && !utf8.RuneStart(s[i]) {
-		i--
-	}
-
-	return s[:i] + "... (truncated)"
 }
 
 func runAgent(cmd *cobra.Command, args []string) error {
@@ -319,7 +286,6 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		streamEnabled, _ = cmd.Flags().GetBool("stream")
 	}
 
-
 	// Resolve effective budget
 	flagMaxTokens, _ := cmd.Flags().GetInt("max-tokens")
 	effectiveMaxTokens := cfg.Budget.MaxTokens
@@ -500,228 +466,39 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Step 18: Call provider (conversation loop when tools are present)
+	// Step 18: Call provider via Kernel
 	start := time.Now()
-
-	// Determine parallel execution setting.
-	// Default is true (per spec). Only false if explicitly set via TOML.
-	// Using *bool allows distinguishing "not set" (nil) from "set to false".
-	parallel := true
-	if cfg.SubAgentsConf.Parallel != nil {
-		parallel = *cfg.SubAgentsConf.Parallel
+	k := &kernel.Kernel{
+		Config:          cfg,
+		GlobalCfg:       globalCfg,
+		AgentName:       agentName,
+		Workdir:         workdir,
+		AgentsDir:       flagAgentsDir,
+		Verbose:         verbose,
+		JsonOutput:      jsonOutput,
+		Stderr:          cmd.ErrOrStderr(),
+		Stdout:          cmd.OutOrStdout(),
+		MaxTokens:       effectiveMaxTokens,
+		ArtifactDir:     artifactDir,
+		KeepArtifacts:   keepArtifacts,
+		ArtifactTracker: artifactTracker,
+		BudgetTracker:   tracker,
 	}
 
-	var resp *provider.Response
-	var totalInputTokens int
-	var totalOutputTokens int
-	var totalToolCalls int
-	var allToolCallDetails []toolCallDetail
-	var budgetExceeded bool
-	var streamedText bool
-
-	if len(req.Tools) == 0 {
-		// Single-shot: no tools, no conversation loop
-		if streamEnabled {
-			if sp, ok := prov.(provider.StreamProvider); ok {
-				stream, streamErr := sp.SendStream(ctx, req)
-				if streamErr != nil {
-					durationMs := time.Since(start).Milliseconds()
-					if verbose {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-					}
-					return mapProviderError(streamErr)
-				}
-				var textWriter io.Writer
-				if !jsonOutput {
-					textWriter = cmd.OutOrStdout()
-				}
-				resp, err = drainEventStream(stream, textWriter)
-				if err != nil {
-					return mapProviderError(err)
-				}
-				if !jsonOutput {
-					streamedText = true
-				}
-			} else {
-				resp, err = prov.Send(ctx, req)
+	resp, allToolCallDetails, totalInputTokens, totalOutputTokens, totalToolCalls, budgetExceeded, err := k.Run(ctx, prov, req, registry, mcpRouter, streamEnabled)
+	if err != nil {
+		var provErr *provider.ProviderError
+		if errors.As(err, &provErr) {
+			switch provErr.Category {
+			case provider.ErrCategoryAuth, provider.ErrCategoryRateLimit,
+				provider.ErrCategoryTimeout, provider.ErrCategoryOverloaded,
+				provider.ErrCategoryServer:
+				return &ExitError{Code: 3, Err: provErr}
+			case provider.ErrCategoryBadRequest:
+				return &ExitError{Code: 1, Err: provErr}
 			}
-		} else {
-			resp, err = prov.Send(ctx, req)
 		}
-		if err != nil {
-			durationMs := time.Since(start).Milliseconds()
-			if verbose {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-			}
-			return mapProviderError(err)
-		}
-		totalInputTokens = resp.InputTokens
-		totalOutputTokens = resp.OutputTokens
-		tracker.Add(resp.InputTokens, resp.OutputTokens)
-
-		if tracker.Exceeded() {
-			budgetExceeded = true
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "budget exceeded: used %d of %d tokens\n", tracker.Used(), tracker.Max())
-		}
-
-		if verbose {
-			durationMs := time.Since(start).Milliseconds()
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-			if tracker.Max() > 0 {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output (cumulative, budget: %d/%d)\n", resp.InputTokens, resp.OutputTokens, tracker.Used(), tracker.Max())
-			} else {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output\n", resp.InputTokens, resp.OutputTokens)
-			}
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
-		}
-	} else {
-		// Conversation loop: handle tool calls
-		for turn := 0; turn < maxConversationTurns; turn++ {
-			// Check budget before making LLM call
-			if tracker.Exceeded() {
-				break
-			}
-
-			if verbose {
-				pendingToolCalls := 0
-				for _, m := range req.Messages {
-					if m.Role == "tool" {
-						pendingToolCalls += len(m.ToolResults)
-					}
-				}
-				if streamEnabled {
-					if _, ok := prov.(provider.StreamProvider); ok {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Streaming request (%d messages)\n", turn+1, len(req.Messages))
-					} else {
-						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Sending request (%d messages, %d tool calls pending)\n", turn+1, len(req.Messages), pendingToolCalls)
-					}
-				} else {
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] Sending request (%d messages, %d tool calls pending)\n", turn+1, len(req.Messages), pendingToolCalls)
-				}
-			}
-
-			if streamEnabled {
-				if sp, ok := prov.(provider.StreamProvider); ok {
-					stream, streamErr := sp.SendStream(ctx, req)
-					if streamErr != nil {
-						durationMs := time.Since(start).Milliseconds()
-						if verbose {
-							_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-						}
-						return mapProviderError(streamErr)
-					}
-					var textWriter io.Writer
-					if !jsonOutput {
-						textWriter = cmd.OutOrStdout()
-					}
-					resp, err = drainEventStream(stream, textWriter)
-					if err != nil {
-						return mapProviderError(err)
-					}
-					if !jsonOutput && resp.Content != "" {
-						streamedText = true
-					}
-				} else {
-					resp, err = prov.Send(ctx, req)
-				}
-			} else {
-				resp, err = prov.Send(ctx, req)
-			}
-			if err != nil {
-				durationMs := time.Since(start).Milliseconds()
-				if verbose {
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-				}
-				return mapProviderError(err)
-			}
-
-			totalInputTokens += resp.InputTokens
-			totalOutputTokens += resp.OutputTokens
-			tracker.Add(resp.InputTokens, resp.OutputTokens)
-
-			if verbose {
-				label := "Received response"
-				if streamEnabled {
-					if _, ok := prov.(provider.StreamProvider); ok {
-						label = "Stream complete"
-					}
-				}
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[turn %d] %s: %s (%d tool calls)\n", turn+1, label, resp.StopReason, len(resp.ToolCalls))
-			}
-
-			// No tool calls: conversation is done
-			if len(resp.ToolCalls) == 0 {
-				break
-			}
-
-			// Stop before executing tools if budget is exceeded
-			if tracker.Exceeded() {
-				break
-			}
-
-			// Append assistant message with tool calls
-			assistantMsg := provider.Message{
-				Role:      "assistant",
-				Content:   resp.Content,
-				ToolCalls: resp.ToolCalls,
-			}
-			req.Messages = append(req.Messages, assistantMsg)
-
-			// Execute tool calls
-			results := executeToolCalls(ctx, resp.ToolCalls, cfg, globalCfg, registry, mcpRouter, depth, effectiveMaxDepth, parallel, verbose, cmd.ErrOrStderr(), workdir, tracker, flagAgentsDir, workdir, artifactDir, artifactTracker)
-			totalToolCalls += len(resp.ToolCalls)
-
-			if jsonOutput {
-				for i, tc := range resp.ToolCalls {
-					input := tc.Arguments
-					if input == nil {
-						input = map[string]string{}
-					}
-
-					allToolCallDetails = append(allToolCallDetails, toolCallDetail{
-						Name:       tc.Name,
-						Input:      input,
-						Output:     truncateOutput(results[i].Result.Content),
-						IsError:    results[i].Result.IsError,
-						Turn:       turn,
-						DurationMs: results[i].Duration.Milliseconds(),
-					})
-				}
-			}
-
-			// Append tool result message
-			toolResults := make([]provider.ToolResult, len(results))
-			for i, r := range results {
-				toolResults[i] = r.Result
-			}
-			toolMsg := provider.Message{
-				Role:        "tool",
-				ToolResults: toolResults,
-			}
-			req.Messages = append(req.Messages, toolMsg)
-		}
-
-		// Check if we exhausted turns
-		if resp != nil && len(resp.ToolCalls) > 0 {
-			return &ExitError{Code: 1, Err: fmt.Errorf("agent exceeded maximum conversation turns (%d)", maxConversationTurns)}
-		}
-
-		// Check if budget was exceeded
-		if tracker.Exceeded() {
-			budgetExceeded = true
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "budget exceeded: used %d of %d tokens\n", tracker.Used(), tracker.Max())
-		}
-
-		if verbose {
-			durationMs := time.Since(start).Milliseconds()
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Duration: %dms\n", durationMs)
-			if tracker.Max() > 0 {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output (cumulative, budget: %d/%d)\n", totalInputTokens, totalOutputTokens, tracker.Used(), tracker.Max())
-			} else {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Tokens:   %d input, %d output (cumulative)\n", totalInputTokens, totalOutputTokens)
-			}
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Stop:     %s\n", resp.StopReason)
-		}
+		return &ExitError{Code: 1, Err: err}
 	}
 
 	durationMs := time.Since(start).Milliseconds()
@@ -729,7 +506,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 	// Step 19: JSON output
 	if jsonOutput {
 		if allToolCallDetails == nil {
-			allToolCallDetails = make([]toolCallDetail, 0)
+			allToolCallDetails = make([]kernel.ToolCallDetail, 0)
 		}
 
 		envelope := map[string]interface{}{
@@ -766,7 +543,7 @@ func runAgent(cmd *cobra.Command, args []string) error {
 			return &ExitError{Code: 1, Err: fmt.Errorf("failed to marshal JSON output: %w", err)}
 		}
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(data))
-	} else if !streamedText {
+	} else if resp.Content != "" && !streamEnabled {
 		// Step 20: Default output (skip if text was already streamed to stdout)
 		_, _ = fmt.Fprint(cmd.OutOrStdout(), resp.Content)
 	}
@@ -886,196 +663,4 @@ func printDryRun(cmd *cobra.Command, cfg *agent.AgentConfig, provName, modelName
 	}
 
 	return nil
-}
-
-// executeToolCalls dispatches tool calls and returns results.
-// When parallel is true and there are multiple calls, they run concurrently.
-func executeToolCalls(ctx context.Context, toolCalls []provider.ToolCall, cfg *agent.AgentConfig, globalCfg *config.GlobalConfig, registry *tool.Registry, mcpRouter *mcpclient.Router, depth, maxDepth int, parallel, verbose bool, stderr io.Writer, workdir string, budgetTracker *budget.BudgetTracker, agentsDir string, agentsBase string, artifactDir string, artifactTracker *artifact.Tracker) []toolExecResult {
-	results := make([]toolExecResult, len(toolCalls))
-
-	execOpts := tool.ExecuteOptions{
-		AllowedAgents:   cfg.SubAgents,
-		ParentModel:     cfg.Model,
-		Depth:           depth,
-		MaxDepth:        maxDepth,
-		Timeout:         cfg.SubAgentsConf.Timeout,
-		GlobalConfig:    globalCfg,
-		MCPRouter:       mcpRouter,
-		Verbose:         verbose,
-		Stderr:          stderr,
-		BudgetTracker:   budgetTracker,
-		AgentsDir:       agentsDir,
-		AgentsBase:      agentsBase,
-		AllowedHosts:    cfg.AllowedHosts,
-		ArtifactDir:     artifactDir,
-		ArtifactTracker: artifactTracker,
-	}
-
-	if len(toolCalls) == 1 || !parallel {
-		// Sequential execution (also used for single call)
-		for i, tc := range toolCalls {
-			start := time.Now()
-			var r provider.ToolResult
-			if mcpRouter != nil && mcpRouter.Has(tc.Name) {
-				r = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-			} else if tc.Name == tool.CallAgentToolName {
-				r = tool.ExecuteCallAgent(ctx, tc, execOpts)
-			} else {
-				r = dispatchToolCall(ctx, tc, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-			}
-			results[i] = toolExecResult{Result: r, Duration: time.Since(start)}
-		}
-	} else {
-		// Parallel execution
-		type indexedResult struct {
-			index  int
-			result toolExecResult
-		}
-		ch := make(chan indexedResult, len(toolCalls))
-		for i, tc := range toolCalls {
-			go func(idx int, call provider.ToolCall) {
-				start := time.Now()
-				var res provider.ToolResult
-				if mcpRouter != nil && mcpRouter.Has(call.Name) {
-					res = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-				} else if call.Name == tool.CallAgentToolName {
-					res = tool.ExecuteCallAgent(ctx, call, execOpts)
-				} else {
-					res = dispatchToolCall(ctx, call, registry, mcpRouter, verbose, stderr, workdir, cfg.AllowedHosts, artifactDir, artifactTracker)
-				}
-				ch <- indexedResult{index: idx, result: toolExecResult{Result: res, Duration: time.Since(start)}}
-			}(i, tc)
-		}
-		for range toolCalls {
-			ir := <-ch
-			results[ir.index] = ir.result
-		}
-	}
-
-	return results
-}
-
-func dispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, verbose bool, stderr io.Writer, workdir string, allowedHosts []string, artifactDir string, artifactTracker *artifact.Tracker) provider.ToolResult {
-	if mcpRouter != nil && mcpRouter.Has(tc.Name) {
-		if verbose && stderr != nil {
-			if serverName, ok := mcpRouter.ServerName(tc.Name); ok {
-				_, _ = fmt.Fprintf(stderr, "[mcp] Routing tool %q to server %q\n", tc.Name, serverName)
-			}
-		}
-		result, err := mcpRouter.Dispatch(ctx, tc)
-		if err != nil {
-			return provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}
-		}
-		return result
-	}
-
-	result, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{
-		Workdir:         workdir,
-		Stderr:          stderr,
-		Verbose:         verbose,
-		AllowedHosts:    allowedHosts,
-		ArtifactDir:     artifactDir,
-		ArtifactTracker: artifactTracker,
-	})
-	if dispatchErr != nil {
-		return provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}
-	}
-	return result
-}
-
-// drainEventStream consumes all events from a stream and constructs a Response.
-// If w is non-nil, text events are written to it incrementally.
-func drainEventStream(stream *provider.EventStream, w io.Writer) (*provider.Response, error) {
-	defer func() { _ = stream.Close() }()
-
-	var content strings.Builder
-	var toolCalls []provider.ToolCall
-	var inputTokens, outputTokens int
-	var stopReason string
-
-	type pendingCall struct {
-		id   string
-		name string
-		args strings.Builder
-	}
-	pending := make(map[string]*pendingCall)
-
-	for {
-		ev, err := stream.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		switch ev.Type {
-		case provider.StreamEventText:
-			content.WriteString(ev.Text)
-			if w != nil {
-				_, _ = io.WriteString(w, ev.Text)
-			}
-
-		case provider.StreamEventToolStart:
-			pc := &pendingCall{id: ev.ToolCallID, name: ev.ToolName}
-			if ev.ToolInput != "" {
-				pc.args.WriteString(ev.ToolInput)
-			}
-			pending[ev.ToolCallID] = pc
-
-		case provider.StreamEventToolDelta:
-			if pc, ok := pending[ev.ToolCallID]; ok {
-				pc.args.WriteString(ev.ToolInput)
-			}
-
-		case provider.StreamEventToolEnd:
-			if pc, ok := pending[ev.ToolCallID]; ok {
-				args := make(map[string]string)
-				raw := pc.args.String()
-				if raw != "" {
-					var parsed map[string]interface{}
-					if jsonErr := json.Unmarshal([]byte(raw), &parsed); jsonErr == nil {
-						for k, v := range parsed {
-							args[k] = fmt.Sprintf("%v", v)
-						}
-					}
-				}
-				toolCalls = append(toolCalls, provider.ToolCall{
-					ID:        pc.id,
-					Name:      pc.name,
-					Arguments: args,
-				})
-				delete(pending, ev.ToolCallID)
-			}
-
-		case provider.StreamEventDone:
-			inputTokens = ev.InputTokens
-			outputTokens = ev.OutputTokens
-			stopReason = ev.StopReason
-		}
-	}
-
-	return &provider.Response{
-		Content:      content.String(),
-		ToolCalls:    toolCalls,
-		InputTokens:  inputTokens,
-		OutputTokens: outputTokens,
-		StopReason:   stopReason,
-	}, nil
-}
-
-// mapProviderError converts a provider error to an ExitError with the correct exit code.
-func mapProviderError(err error) error {
-	var provErr *provider.ProviderError
-	if errors.As(err, &provErr) {
-		switch provErr.Category {
-		case provider.ErrCategoryAuth, provider.ErrCategoryRateLimit,
-			provider.ErrCategoryTimeout, provider.ErrCategoryOverloaded,
-			provider.ErrCategoryServer:
-			return &ExitError{Code: 3, Err: provErr}
-		case provider.ErrCategoryBadRequest:
-			return &ExitError{Code: 1, Err: provErr}
-		}
-	}
-	return &ExitError{Code: 1, Err: err}
 }

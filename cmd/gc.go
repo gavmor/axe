@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -165,7 +166,18 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string, searchDirs []string)
 
 	resp, err := prov.Send(ctx, req)
 	if err != nil {
-		return mapProviderError(err)
+		var provErr *provider.ProviderError
+		if errors.As(err, &provErr) {
+			switch provErr.Category {
+			case provider.ErrCategoryAuth, provider.ErrCategoryRateLimit,
+				provider.ErrCategoryTimeout, provider.ErrCategoryOverloaded,
+				provider.ErrCategoryServer:
+				return &ExitError{Code: 3, Err: provErr}
+			case provider.ErrCategoryBadRequest:
+				return &ExitError{Code: 1, Err: provErr}
+			}
+		}
+		return &ExitError{Code: 1, Err: err}
 	}
 
 	// Step 10: Print analysis (Req 3.9)

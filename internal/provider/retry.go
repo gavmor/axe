@@ -120,7 +120,7 @@ func (r *RetryProvider) SupportsStream() bool {
 
 // SendStream delegates to the inner provider's SendStream if it implements StreamProvider.
 // No retry wrapping is applied to streaming requests.
-func (r *RetryProvider) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (r *RetryProvider) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	sp, ok := r.inner.(StreamProvider)
 	if !ok {
 		return nil, &ProviderError{

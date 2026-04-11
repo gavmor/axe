@@ -7,6 +7,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.51.0
+	golang.org/x/tools v0.41.0
 )
 
 require (

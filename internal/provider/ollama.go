@@ -330,7 +330,7 @@ func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 }
 
 // SendStream makes a streaming completion request to the Ollama Chat API.
-func (o *Ollama) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *Ollama) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	var messages []Message
 	if req.System != "" {
 		messages = append(messages, Message{Role: "system", Content: req.System})

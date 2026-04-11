@@ -348,7 +348,7 @@ func (o *OpenAI) handleErrorResponse(status int, body []byte) *ProviderError {
 }
 
 // SendStream makes a streaming completion request to the OpenAI Chat Completions API.
-func (o *OpenAI) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *OpenAI) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	var messages []Message
 	if req.System != "" {
 		messages = append(messages, Message{Role: "system", Content: req.System})
@@ -557,17 +557,17 @@ type openaiStreamChoice struct {
 
 // openaiStreamDelta is the delta object within a streaming choice.
 type openaiStreamDelta struct {
-	Content   *string                   `json:"content,omitempty"`
-	Role      string                    `json:"role,omitempty"`
-	ToolCalls []openaiStreamToolCall    `json:"tool_calls,omitempty"`
+	Content   *string                `json:"content,omitempty"`
+	Role      string                 `json:"role,omitempty"`
+	ToolCalls []openaiStreamToolCall `json:"tool_calls,omitempty"`
 }
 
 // openaiStreamToolCall is a tool call entry within a streaming delta.
 type openaiStreamToolCall struct {
-	Index    int                             `json:"index"`
-	ID       string                          `json:"id,omitempty"`
-	Type     string                          `json:"type,omitempty"`
-	Function *openaiStreamToolCallFunction   `json:"function,omitempty"`
+	Index    int                           `json:"index"`
+	ID       string                        `json:"id,omitempty"`
+	Type     string                        `json:"type,omitempty"`
+	Function *openaiStreamToolCallFunction `json:"function,omitempty"`
 }
 
 // openaiStreamToolCallFunction holds function info within a streaming tool call.

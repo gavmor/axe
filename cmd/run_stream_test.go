@@ -21,7 +21,7 @@ func (nopCloser) Close() error { return nil }
 
 // makeStream creates an EventStream from a slice of events.
 // After all events are consumed, it returns io.EOF.
-func makeStream(events []provider.StreamEvent) *provider.EventStream {
+func makeStream(events []provider.StreamEvent) provider.EventStream {
 	i := 0
 	return provider.NewEventStream(nopCloser{}, func() (provider.StreamEvent, error) {
 		if i >= len(events) {
@@ -35,7 +35,7 @@ func makeStream(events []provider.StreamEvent) *provider.EventStream {
 
 // errStream creates an EventStream that emits the given events,
 // then returns the specified error.
-func errStream(events []provider.StreamEvent, err error) *provider.EventStream {
+func errStream(events []provider.StreamEvent, err error) provider.EventStream {
 	i := 0
 	return provider.NewEventStream(nopCloser{}, func() (provider.StreamEvent, error) {
 		if i >= len(events) {
