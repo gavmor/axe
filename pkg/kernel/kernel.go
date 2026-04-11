@@ -15,10 +15,40 @@ import (
 	"github.com/jrswab/axe/internal/budget"
 	"github.com/jrswab/axe/internal/config"
 	"github.com/jrswab/axe/internal/mcpclient"
+	"github.com/jrswab/axe/internal/memory"
 	"github.com/jrswab/axe/internal/provider"
-	"github.com/jrswab/axe/internal/tool"
+	"github.com/jrswab/axe/internal/resolve"
+	"github.com/jrswab/axe/internal/toolname"
 	"github.com/jrswab/axe/internal/wasmloader"
+	"github.com/jrswab/axe/internal/xdg"
+	"github.com/jrswab/axe/pkg/protocol"
 )
+
+// ExecContext holds the context needed by tool executors.
+type ExecContext struct {
+	Workdir         string
+	Stderr          io.Writer
+	Verbose         bool
+	AllowedHosts    []string
+	ArtifactDir     string
+	ArtifactTracker *artifact.Tracker
+}
+
+// ToolEntry holds a tool's definition and executor functions.
+type ToolEntry struct {
+	Definition func() protocol.ToolDefinition
+	Execute    func(ctx context.Context, call protocol.ToolCall, ec ExecContext) protocol.ToolResult
+}
+
+// Registry interface defines the operations for tool registration and dispatch.
+type Registry interface {
+	Register(name string, t protocol.Tool)
+	Has(name string) bool
+	Resolve(names []string) ([]protocol.ToolDefinition, error)
+	Dispatch(ctx context.Context, call protocol.ToolCall, ec ExecContext) (protocol.ToolResult, error)
+	SetLoader(l *wasmloader.Loader)
+	LoadPlugins(ctx context.Context, dir string) error
+}
 
 // Kernel handles the core orchestration of an agent run.
 type Kernel struct {
@@ -38,6 +68,8 @@ type Kernel struct {
 	ArtifactTracker *artifact.Tracker
 	BudgetTracker   *budget.BudgetTracker
 	WasmLoader      *wasmloader.Loader
+	// RegisterTools is a callback to register all tools in a registry.
+	RegisterTools func(r Registry)
 }
 
 const maxConversationTurns = 50
@@ -53,12 +85,12 @@ type ToolCallDetail struct {
 }
 
 type ToolExecResult struct {
-	Result   provider.ToolResult
+	Result   protocol.ToolResult
 	Duration time.Duration
 }
 
 // Run executes the agent conversation loop.
-func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.Request, registry *tool.Registry, mcpRouter *mcpclient.Router, streamEnabled bool) (*provider.Response, []ToolCallDetail, int, int, int, bool, error) {
+func (k *Kernel) Run(ctx context.Context, prov protocol.Provider, req *protocol.Request, registry Registry, mcpRouter *mcpclient.Router, streamEnabled bool) (*protocol.Response, []ToolCallDetail, int, int, int, bool, error) {
 	// Load WASM plugins if a loader and directory are provided
 	if k.WasmLoader != nil && k.PluginsDir != "" {
 		registry.SetLoader(k.WasmLoader)
@@ -77,16 +109,15 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 		parallel = *k.Config.SubAgentsConf.Parallel
 	}
 
-	var resp *provider.Response
+	var resp *protocol.Response
 	var err error
 	var totalInputTokens int
 	var totalOutputTokens int
 	var totalToolCalls int
 	var allToolCallDetails []ToolCallDetail
 	var budgetExceeded bool
-	var streamedText bool
 
-	depth := 0 // Current depth, could be passed in if we want to support nested kernels
+	depth := 0 // Current depth
 	effectiveMaxDepth := 3
 	if k.Config.SubAgentsConf.MaxDepth > 0 && k.Config.SubAgentsConf.MaxDepth <= 5 {
 		effectiveMaxDepth = k.Config.SubAgentsConf.MaxDepth
@@ -95,7 +126,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 	if len(req.Tools) == 0 {
 		// Single-shot: no tools, no conversation loop
 		if streamEnabled {
-			if sp, ok := prov.(provider.StreamProvider); ok {
+			if sp, ok := prov.(protocol.StreamProvider); ok {
 				stream, streamErr := sp.SendStream(ctx, req)
 				if streamErr != nil {
 					return nil, nil, 0, 0, 0, false, k.MapProviderError(streamErr)
@@ -107,9 +138,6 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 				resp, err = k.DrainEventStream(stream, textWriter)
 				if err != nil {
 					return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
-				}
-				if !k.JsonOutput {
-					streamedText = true
 				}
 			} else {
 				resp, err = prov.Send(ctx, req)
@@ -158,7 +186,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			}
 
 			if streamEnabled {
-				if sp, ok := prov.(provider.StreamProvider); ok {
+				if sp, ok := prov.(protocol.StreamProvider); ok {
 					stream, streamErr := sp.SendStream(ctx, req)
 					if streamErr != nil {
 						return nil, nil, 0, 0, 0, false, k.MapProviderError(streamErr)
@@ -170,9 +198,6 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 					resp, err = k.DrainEventStream(stream, textWriter)
 					if err != nil {
 						return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
-					}
-					if !k.JsonOutput && resp.Content != "" {
-						streamedText = true
 					}
 				} else {
 					resp, err = prov.Send(ctx, req)
@@ -191,7 +216,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			if k.Verbose {
 				label := "Received response"
 				if streamEnabled {
-					if _, ok := prov.(provider.StreamProvider); ok {
+					if _, ok := prov.(protocol.StreamProvider); ok {
 						label = "Stream complete"
 					}
 				}
@@ -209,7 +234,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			}
 
 			// Append assistant message with tool calls
-			assistantMsg := provider.Message{
+			assistantMsg := protocol.Message{
 				Role:      "assistant",
 				Content:   resp.Content,
 				ToolCalls: resp.ToolCalls,
@@ -239,11 +264,11 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			}
 
 			// Append tool result message
-			toolResults := make([]provider.ToolResult, len(results))
+			toolResults := make([]protocol.ToolResult, len(results))
 			for i, r := range results {
 				toolResults[i] = r.Result
 			}
-			toolMsg := provider.Message{
+			toolMsg := protocol.Message{
 				Role:        "tool",
 				ToolResults: toolResults,
 			}
@@ -273,8 +298,6 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 		}
 	}
 
-	_ = streamedText // Used to decide if we print content later, but it's handled via k.Stdout in DrainEventStream
-
 	return resp, allToolCallDetails, totalInputTokens, totalOutputTokens, totalToolCalls, budgetExceeded, nil
 }
 
@@ -292,36 +315,16 @@ func (k *Kernel) TruncateOutput(s string) string {
 	return s[:i] + "... (truncated)"
 }
 
-func (k *Kernel) ExecuteToolCalls(ctx context.Context, toolCalls []provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router, depth, maxDepth int, parallel bool) []ToolExecResult {
+func (k *Kernel) ExecuteToolCalls(ctx context.Context, toolCalls []protocol.ToolCall, registry Registry, mcpRouter *mcpclient.Router, depth, maxDepth int, parallel bool) []ToolExecResult {
 	results := make([]ToolExecResult, len(toolCalls))
-
-	execOpts := tool.ExecuteOptions{
-		AllowedAgents:   k.Config.SubAgents,
-		ParentModel:     k.Config.Model,
-		Depth:           depth,
-		MaxDepth:        maxDepth,
-		Timeout:         k.Config.SubAgentsConf.Timeout,
-		GlobalConfig:    k.GlobalCfg,
-		MCPRouter:       mcpRouter,
-		Verbose:         k.Verbose,
-		Stderr:          k.Stderr,
-		BudgetTracker:   k.BudgetTracker,
-		AgentsDir:       k.AgentsDir,
-		AgentsBase:      k.Workdir,
-		AllowedHosts:    k.Config.AllowedHosts,
-		ArtifactDir:     k.ArtifactDir,
-		ArtifactTracker: k.ArtifactTracker,
-	}
 
 	if len(toolCalls) == 1 || !parallel {
 		// Sequential execution (also used for single call)
 		for i, tc := range toolCalls {
 			start := time.Now()
-			var r provider.ToolResult
-			if mcpRouter != nil && mcpRouter.Has(tc.Name) {
-				r = k.DispatchToolCall(ctx, tc, registry, mcpRouter)
-			} else if tc.Name == tool.CallAgentToolName {
-				r = tool.ExecuteCallAgent(ctx, tc, execOpts)
+			var r protocol.ToolResult
+			if tc.Name == toolname.CallAgent {
+				r = k.ExecuteCallAgent(ctx, tc, depth, maxDepth)
 			} else {
 				r = k.DispatchToolCall(ctx, tc, registry, mcpRouter)
 			}
@@ -335,13 +338,11 @@ func (k *Kernel) ExecuteToolCalls(ctx context.Context, toolCalls []provider.Tool
 		}
 		ch := make(chan indexedResult, len(toolCalls))
 		for i, tc := range toolCalls {
-			go func(idx int, call provider.ToolCall) {
+			go func(idx int, call protocol.ToolCall) {
 				start := time.Now()
-				var res provider.ToolResult
-				if mcpRouter != nil && mcpRouter.Has(call.Name) {
-					res = k.DispatchToolCall(ctx, call, registry, mcpRouter)
-				} else if call.Name == tool.CallAgentToolName {
-					res = tool.ExecuteCallAgent(ctx, call, execOpts)
+				var res protocol.ToolResult
+				if call.Name == toolname.CallAgent {
+					res = k.ExecuteCallAgent(ctx, call, depth, maxDepth)
 				} else {
 					res = k.DispatchToolCall(ctx, call, registry, mcpRouter)
 				}
@@ -357,7 +358,7 @@ func (k *Kernel) ExecuteToolCalls(ctx context.Context, toolCalls []provider.Tool
 	return results
 }
 
-func (k *Kernel) DispatchToolCall(ctx context.Context, tc provider.ToolCall, registry *tool.Registry, mcpRouter *mcpclient.Router) provider.ToolResult {
+func (k *Kernel) DispatchToolCall(ctx context.Context, tc protocol.ToolCall, registry Registry, mcpRouter *mcpclient.Router) protocol.ToolResult {
 	if mcpRouter != nil && mcpRouter.Has(tc.Name) {
 		if k.Verbose && k.Stderr != nil {
 			if serverName, ok := mcpRouter.ServerName(tc.Name); ok {
@@ -366,12 +367,12 @@ func (k *Kernel) DispatchToolCall(ctx context.Context, tc provider.ToolCall, reg
 		}
 		result, err := mcpRouter.Dispatch(ctx, tc)
 		if err != nil {
-			return provider.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}
+			return protocol.ToolResult{CallID: tc.ID, Content: err.Error(), IsError: true}
 		}
 		return result
 	}
 
-	result, dispatchErr := registry.Dispatch(ctx, tc, tool.ExecContext{
+	result, dispatchErr := registry.Dispatch(ctx, tc, ExecContext{
 		Workdir:         k.Workdir,
 		Stderr:          k.Stderr,
 		Verbose:         k.Verbose,
@@ -380,16 +381,183 @@ func (k *Kernel) DispatchToolCall(ctx context.Context, tc provider.ToolCall, reg
 		ArtifactTracker: k.ArtifactTracker,
 	})
 	if dispatchErr != nil {
-		return provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}
+		return protocol.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}
 	}
 	return result
 }
 
-func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*provider.Response, error) {
+// CallAgentTool returns the call_agent tool definition.
+func CallAgentTool(allowedAgents []string) protocol.ToolDefinition {
+	agentList := strings.Join(allowedAgents, ", ")
+	return protocol.ToolDefinition{
+		Name:        toolname.CallAgent,
+		Description: "Delegate a task to a sub-agent. The sub-agent runs independently with its own context and returns only its final result. Available agents: " + agentList,
+		Parameters: map[string]protocol.ToolParameter{
+			"agent": {
+				Type:        "string",
+				Description: "Name of the sub-agent to invoke (must be one of: " + agentList + ")",
+				Required:    true,
+			},
+			"task": {
+				Type:        "string",
+				Description: "What you need the sub-agent to do",
+				Required:    true,
+			},
+			"context": {
+				Type:        "string",
+				Description: "Additional context from your conversation to pass along",
+				Required:    false,
+			},
+		},
+	}
+}
+
+// ExecuteCallAgent executes a sub-agent delegation.
+func (k *Kernel) ExecuteCallAgent(ctx context.Context, call protocol.ToolCall, depth, maxDepth int) protocol.ToolResult {
+	agentName := call.Arguments["agent"]
+	task := call.Arguments["task"]
+	taskContext := call.Arguments["context"]
+
+	if agentName == "" {
+		return protocol.ToolResult{CallID: call.ID, Content: `call_agent error: "agent" argument is required`, IsError: true}
+	}
+	if task == "" {
+		return protocol.ToolResult{CallID: call.ID, Content: `call_agent error: "task" argument is required`, IsError: true}
+	}
+
+	allowed := false
+	for _, a := range k.Config.SubAgents {
+		if a == agentName {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return protocol.ToolResult{CallID: call.ID, Content: fmt.Sprintf("call_agent error: agent %q is not in this agent's sub_agents list", agentName), IsError: true}
+	}
+
+	if depth >= maxDepth {
+		return protocol.ToolResult{CallID: call.ID, Content: fmt.Sprintf("call_agent error: maximum sub-agent depth (%d) reached", maxDepth), IsError: true}
+	}
+
+	if k.Verbose && k.Stderr != nil {
+		taskPreview := task
+		if len(taskPreview) > 80 {
+			taskPreview = taskPreview[:80] + "..."
+		}
+		_, _ = fmt.Fprintf(k.Stderr, "[sub-agent] Calling %q (depth %d) with task: %s\n", agentName, depth+1, taskPreview)
+	}
+
+	start := time.Now()
+
+	searchDirs := agent.BuildSearchDirs(k.AgentsDir, k.Workdir)
+	cfg, err := agent.Load(agentName, searchDirs)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to load agent %q: %s", agentName, err))
+	}
+
+	provName, modelName, err := k.parseModel(cfg.Model)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("invalid model for agent %q: %s", agentName, err))
+	}
+
+	workdir, err := resolve.Workdir("", cfg.Workdir)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to resolve workdir for agent %q: %s", agentName, err))
+	}
+
+	files, err := resolve.Files(cfg.Files, workdir)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to resolve files for agent %q: %s", agentName, err))
+	}
+
+	configDir, err := xdg.GetConfigDir()
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to get config dir: %s", err))
+	}
+
+	skillContent, err := resolve.Skill(cfg.Skill, configDir)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to load skill for agent %q: %s", agentName, err))
+	}
+
+	systemPrompt := resolve.BuildSystemPrompt(cfg.SystemPrompt, skillContent, files)
+
+	if cfg.Memory.Enabled {
+		memPath, memErr := memory.FilePath(agentName, cfg.Memory.Path)
+		if memErr == nil {
+			entries, _ := memory.LoadEntries(memPath, cfg.Memory.LastN)
+			if entries != "" {
+				systemPrompt += "\n\n---\n\n## Memory\n\n" + entries
+			}
+		}
+	}
+
+	apiKey := k.GlobalCfg.ResolveAPIKey(provName)
+	baseURL := k.GlobalCfg.ResolveBaseURL(provName)
+
+	if provider.Supported(provName) && provName != "ollama" && apiKey == "" {
+		envVar := config.APIKeyEnvVar(provName)
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("API key for provider %q is not configured (set %s or add to config.toml)", provName, envVar))
+	}
+
+	prov, err := provider.New(provName, apiKey, baseURL)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, fmt.Sprintf("failed to create provider for agent %q: %s", agentName, err))
+	}
+
+	var userMessage string
+	if strings.TrimSpace(taskContext) != "" {
+		userMessage = fmt.Sprintf("Task: %s\n\nContext:\n%s", task, taskContext)
+	} else {
+		userMessage = fmt.Sprintf("Task: %s", task)
+	}
+
+	req := &protocol.Request{
+		Model:       modelName,
+		System:      systemPrompt,
+		Messages:    []protocol.Message{{Role: "user", Content: userMessage}},
+		Temperature: cfg.Params.Temperature,
+		MaxTokens:   cfg.Params.MaxTokens,
+	}
+
+	newDepth := depth + 1
+	if len(cfg.SubAgents) > 0 && newDepth < maxDepth {
+		req.Tools = []protocol.ToolDefinition{CallAgentTool(cfg.SubAgents)}
+	}
+
+	// We'll need a way to create a new registry for the sub-agent.
+	// But wait, we can just pass the original registry or create a new one.
+	// For simplicity, let's assume we can use the same registry type.
+	// However, we need a concrete implementation of Registry to instantiate it.
+	// Let's assume there is a NewRegistry implementation provided by the caller.
+	// Actually, k.RegisterTools can be used.
+}
+
+func (k *Kernel) errorResult(callID, agentName, errMsg string) protocol.ToolResult {
+	if k.Verbose && k.Stderr != nil {
+		_, _ = fmt.Fprintf(k.Stderr, "[sub-agent] %q failed: %s\n", agentName, errMsg)
+	}
+	return protocol.ToolResult{
+		CallID:  callID,
+		Content: fmt.Sprintf("Error: sub-agent %q failed - %s. You may retry or proceed without this result.", agentName, errMsg),
+		IsError: true,
+	}
+}
+
+func (k *Kernel) parseModel(model string) (string, string, error) {
+	idx := strings.Index(model, "/")
+	if idx < 0 {
+		return "", "", fmt.Errorf("invalid model format %q: expected provider/model-name", model)
+	}
+	return model[:idx], model[idx+1:], nil
+}
+
+func (k *Kernel) DrainEventStream(stream protocol.EventStream, w io.Writer) (*protocol.Response, error) {
 	defer func() { _ = stream.Close() }()
 
 	var content strings.Builder
-	var toolCalls []provider.ToolCall
+	var toolCalls []protocol.ToolCall
 	var inputTokens, outputTokens int
 	var stopReason string
 
@@ -410,25 +578,25 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 		}
 
 		switch ev.Type {
-		case provider.StreamEventText:
+		case protocol.StreamEventText:
 			content.WriteString(ev.Text)
 			if w != nil {
 				_, _ = io.WriteString(w, ev.Text)
 			}
 
-		case provider.StreamEventToolStart:
+		case protocol.StreamEventToolStart:
 			pc := &pendingCall{id: ev.ToolCallID, name: ev.ToolName}
 			if ev.ToolInput != "" {
 				pc.args.WriteString(ev.ToolInput)
 			}
 			pending[ev.ToolCallID] = pc
 
-		case provider.StreamEventToolDelta:
+		case protocol.StreamEventToolDelta:
 			if pc, ok := pending[ev.ToolCallID]; ok {
 				pc.args.WriteString(ev.ToolInput)
 			}
 
-		case provider.StreamEventToolEnd:
+		case protocol.StreamEventToolEnd:
 			if pc, ok := pending[ev.ToolCallID]; ok {
 				args := make(map[string]string)
 				raw := pc.args.String()
@@ -440,7 +608,7 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 						}
 					}
 				}
-				toolCalls = append(toolCalls, provider.ToolCall{
+				toolCalls = append(toolCalls, protocol.ToolCall{
 					ID:        pc.id,
 					Name:      pc.name,
 					Arguments: args,
@@ -448,14 +616,14 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 				delete(pending, ev.ToolCallID)
 			}
 
-		case provider.StreamEventDone:
+		case protocol.StreamEventDone:
 			inputTokens = ev.InputTokens
 			outputTokens = ev.OutputTokens
 			stopReason = ev.StopReason
 		}
 	}
 
-	return &provider.Response{
+	return &protocol.Response{
 		Content:      content.String(),
 		ToolCalls:    toolCalls,
 		InputTokens:  inputTokens,
@@ -465,11 +633,8 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 }
 
 func (k *Kernel) MapProviderError(err error) error {
-	var provErr *provider.ProviderError
+	var provErr *protocol.ProviderError
 	if errors.As(err, &provErr) {
-		// We can't easily return ExitError from here without importing cmd package
-		// (which would be circular). Instead, we return the error and let cmd wrap it.
-		// However, the caller might need to know the exit code.
 		return provErr
 	}
 	return err

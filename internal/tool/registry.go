@@ -11,24 +11,15 @@ import (
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
 	"github.com/jrswab/axe/internal/wasmloader"
+	"github.com/jrswab/axe/pkg/kernel"
 	"github.com/jrswab/axe/pkg/protocol"
 )
 
-// ExecContext holds the minimal context needed by generic tool executors.
-type ExecContext struct {
-	Workdir         string
-	Stderr          io.Writer
-	Verbose         bool
-	AllowedHosts    []string
-	ArtifactDir     string
-	ArtifactTracker *artifact.Tracker
-}
-
-// builtinToolAdapter wraps the legacy functional tools to satisfy the protocol.Tool interface.
+// builtinToolAdapter wraps functional tools to satisfy the protocol.Tool interface.
 type builtinToolAdapter struct {
 	definition func() protocol.ToolDefinition
-	execute    func(ctx context.Context, call protocol.ToolCall, ec ExecContext) protocol.ToolResult
-	ec         ExecContext
+	execute    func(ctx context.Context, call protocol.ToolCall, ec kernel.ExecContext) protocol.ToolResult
+	ec         kernel.ExecContext
 }
 
 func (a *builtinToolAdapter) Definition() protocol.ToolDefinition {
@@ -102,7 +93,7 @@ func (r *Registry) Resolve(names []string) ([]protocol.ToolDefinition, error) {
 }
 
 // Dispatch executes the named tool.
-func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec ExecContext) (protocol.ToolResult, error) {
+func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec kernel.ExecContext) (protocol.ToolResult, error) {
 	r.mu.RLock()
 	t, ok := r.tools[call.Name]
 	r.mu.RUnlock()
@@ -113,9 +104,6 @@ func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec Exec
 
 	// For built-in tools that need ExecContext, we inject it here if it's an adapter.
 	if adapter, ok := t.(*builtinToolAdapter); ok {
-		if adapter.execute == nil {
-			return protocol.ToolResult{}, fmt.Errorf("tool %q has no executor", call.Name)
-		}
 		adapter.ec = ec
 	}
 
@@ -158,27 +146,31 @@ func (r *Registry) LoadPlugins(ctx context.Context, dir string) error {
 	return nil
 }
 
-// ToolEntry holds a tool's definition and executor functions (legacy compatibility).
-type ToolEntry struct {
-	Definition func() provider.Tool
-	Execute    func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult
-}
-
 // RegisterAll registers all built-in tool entries.
-func RegisterAll(r *Registry) {
-	r.RegisterBuiltin(toolname.ListDirectory, listDirectoryEntry())
-	r.RegisterBuiltin(toolname.ReadFile, readFileEntry())
-	r.RegisterBuiltin(toolname.WriteFile, writeFileEntry())
-	r.RegisterBuiltin(toolname.EditFile, editFileEntry())
-	r.RegisterBuiltin(toolname.RunCommand, runCommandEntry())
-	r.RegisterBuiltin(toolname.URLFetch, urlFetchEntry())
-	r.RegisterBuiltin(toolname.WebSearch, webSearchEntry())
+func RegisterAll(r kernel.Registry) {
+	reg, ok := r.(*Registry)
+	if !ok {
+		return
+	}
+	reg.RegisterBuiltin(toolname.ListDirectory, listDirectoryEntry())
+	reg.RegisterBuiltin(toolname.ReadFile, readFileEntry())
+	reg.RegisterBuiltin(toolname.WriteFile, writeFileEntry())
+	reg.RegisterBuiltin(toolname.EditFile, editFileEntry())
+	reg.RegisterBuiltin(toolname.RunCommand, runCommandEntry())
+	reg.RegisterBuiltin(toolname.URLFetch, urlFetchEntry())
+	reg.RegisterBuiltin(toolname.WebSearch, webSearchEntry())
 }
 
 // RegisterBuiltin registers a built-in tool entry (legacy compatibility).
-func (r *Registry) RegisterBuiltin(name string, entry ToolEntry) {
+func (r *Registry) RegisterBuiltin(name string, entry kernel.ToolEntry) {
 	r.Register(name, &builtinToolAdapter{
 		definition: entry.Definition,
 		execute:    entry.Execute,
 	})
 }
+
+// Re-export kernel types for compatibility where needed.
+type (
+	ExecContext = kernel.ExecContext
+	ToolEntry   = kernel.ToolEntry
+)
