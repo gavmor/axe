@@ -340,7 +340,7 @@ description = ""
 # Full provider/model per models.dev
 model = "provider/model-name"
 
-# Structured output (optional, Ollama only)
+# Structured output (optional, supported by most providers)
 # format = "json"
 
 # Agent persona (optional)
@@ -423,3 +423,4 @@ func BuildSearchDirs(flagDir string, baseDir string) []string {
 
 // tomlDecode is a package-level wrapper for toml.Decode, used by tests.
 var tomlDecode = toml.Decode
+Decode

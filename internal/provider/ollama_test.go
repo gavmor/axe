@@ -839,7 +839,7 @@ func TestOllama_SendStream_RequestFormat(t *testing.T) {
 	stream, err := o.SendStream(context.Background(), &Request{
 		Model:    "llama3",
 		Messages: []Message{{Role: "user", Content: "Hi"}},
-		Format:   "json",
+		Format:   &ResponseFormat{Type: FormatJSON},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

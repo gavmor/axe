@@ -198,6 +198,11 @@ func convertToOllamaTools(tools []Tool) []ollamaToolDef {
 	return result
 }
 
+// SupportsFormat returns true, as Ollama natively supports both JSON mode and JSON Schema formats.
+func (o *Ollama) SupportsFormat(format *ResponseFormat) bool {
+	return true
+}
+
 // Send makes a completion request to the Ollama Chat API.
 func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 	var messages []Message
@@ -234,7 +239,11 @@ func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 	}
 
 	if req.Format != nil {
-		body.Format = req.Format
+		if req.Format.Type == FormatJSON {
+			body.Format = "json"
+		} else if req.Format.Type == FormatSchema {
+			body.Format = req.Format.Schema
+		}
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -370,7 +379,11 @@ func (o *Ollama) SendStream(ctx context.Context, req *Request) (*EventStream, er
 	}
 
 	if req.Format != nil {
-		body.Format = req.Format
+		if req.Format.Type == FormatJSON {
+			body.Format = "json"
+		} else if req.Format.Type == FormatSchema {
+			body.Format = req.Format.Schema
+		}
 	}
 
 	jsonBody, err := json.Marshal(body)

@@ -126,16 +126,18 @@ model = "fakeprovider/some-model"`,
 			wantSubstrs: []string{`unsupported provider "fakeprovider"`, "anthropic, openai, ollama"},
 		},
 		{
-			name:      "format requires ollama",
-			agentName: "format-agent",
-			agentToml: `name = "format-agent"
-model = "openai/gpt-4o"
+			name:      "unsupported format",
+			agentName: "unsupported-format",
+			agentToml: `name = "unsupported-format"
+model = "bedrock/anthropic.claude-v2"
 format = "json"`,
 			envSetup: func(t *testing.T) {
-				t.Setenv("OPENAI_API_KEY", "dummy")
+				t.Setenv("AWS_REGION", "us-east-1")
+				t.Setenv("AWS_ACCESS_KEY_ID", "dummy")
+				t.Setenv("AWS_SECRET_ACCESS_KEY", "dummy")
 			},
 			wantCode:    2,
-			wantSubstrs: []string{`format is only supported with provider "ollama"`},
+			wantSubstrs: []string{`provider "bedrock" does not support the requested structured output format`},
 		},
 	}
 
