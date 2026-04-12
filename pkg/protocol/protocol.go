@@ -9,46 +9,40 @@ import (
 type ErrorCategory string
 
 const (
-	// ErrCategoryAuth indicates authentication failure (missing/invalid API key).
-	ErrCategoryAuth ErrorCategory = "auth"
-	// ErrCategoryRateLimit indicates the provider rate limited the request.
-	ErrCategoryRateLimit ErrorCategory = "rate_limit"
-	// ErrCategoryTimeout indicates the request timed out.
-	ErrCategoryTimeout ErrorCategory = "timeout"
-	// ErrCategoryOverloaded indicates the provider is overloaded (529).
+	ErrCategoryAuth       ErrorCategory = "auth"
+	ErrCategoryRateLimit  ErrorCategory = "rate_limit"
+	ErrCategoryTimeout    ErrorCategory = "timeout"
 	ErrCategoryOverloaded ErrorCategory = "overloaded"
-	// ErrCategoryBadRequest indicates a malformed request (invalid model, etc.).
 	ErrCategoryBadRequest ErrorCategory = "bad_request"
-	// ErrCategoryServer indicates a provider server error (5xx).
-	ErrCategoryServer ErrorCategory = "server"
+	ErrCategoryServer     ErrorCategory = "server"
 )
 
 // ToolParameter describes a single parameter of a tool definition.
 type ToolParameter struct {
-	Type        string
-	Description string
-	Required    bool
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
 }
 
 // ToolDefinition represents a tool definition sent to the LLM.
 type ToolDefinition struct {
-	Name        string
-	Description string
-	Parameters  map[string]ToolParameter
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
+	Parameters  map[string]ToolParameter `json:"parameters"`
 }
 
 // ToolCall represents a tool invocation requested by the LLM.
 type ToolCall struct {
-	ID        string
-	Name      string
-	Arguments map[string]string
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Arguments map[string]string `json:"arguments"`
 }
 
 // ToolResult represents the result of a tool execution.
 type ToolResult struct {
-	CallID  string
-	Content string
-	IsError bool
+	CallID  string `json:"call_id"`
+	Content string `json:"content"`
+	IsError bool   `json:"is_error"`
 }
 
 // Tool interface defines an executable tool the agent can use.
@@ -61,51 +55,54 @@ type Tool interface {
 type Message struct {
 	Role        string       `json:"role"`
 	Content     string       `json:"content"`
-	ToolCalls   []ToolCall   // Tool calls in an assistant message (non-nil when LLM called tools)
-	ToolResults []ToolResult // Tool results in a tool-result message (non-nil when role is "tool")
-}
-
-// FormatType defines the type of requested formatting.
-type FormatType string
-
-const (
-	FormatNone   FormatType = ""
-	FormatJSON   FormatType = "json"
-	FormatSchema FormatType = "schema"
-)
-
-// ResponseFormat represents the internal structured output requirement.
-type ResponseFormat struct {
-	Type   FormatType
-	Schema map[string]interface{}
+	ToolCalls   []ToolCall   `json:"tool_calls,omitempty"`
+	ToolResults []ToolResult `json:"tool_results,omitempty"`
 }
 
 // Request represents an LLM completion request.
 type Request struct {
-	Model       string
-	System      string
-	Messages    []Message
-	Temperature float64
-	MaxTokens   int
-	Tools       []ToolDefinition // Tool definitions to send to the LLM. If nil or empty, no tools are sent.
-	Format      *ResponseFormat  // Optional: defines the requested response formatting.
+	Model       string                 `json:"model"`
+	System      string                 `json:"system"`
+	Messages    []Message              `json:"messages"`
+	Temperature float64                `json:"temperature"`
+	MaxTokens   int                    `json:"max_tokens"`
+	Tools       []ToolDefinition       `json:"tools,omitempty"`
+	Extensions  map[string]interface{} `json:"extensions,omitempty"`
 }
 
 // Response represents an LLM completion response.
 type Response struct {
-	Content      string
-	Model        string
-	InputTokens  int
-	OutputTokens int
-	StopReason   string
-	ToolCalls    []ToolCall // Tool calls requested by the LLM. Empty if no tools called.
+	Content      string                 `json:"content"`
+	Model        string                 `json:"model"`
+	InputTokens  int                    `json:"input_tokens"`
+	OutputTokens int                    `json:"output_tokens"`
+	StopReason   string                 `json:"stop_reason"`
+	ToolCalls    []ToolCall             `json:"tool_calls,omitempty"`
+	Extensions   map[string]interface{} `json:"extensions,omitempty"`
 }
 
 // Provider defines the interface for LLM providers.
 type Provider interface {
 	Send(ctx context.Context, req *Request) (*Response, error)
-	SupportsFormat(format *ResponseFormat) bool
+	// SupportsExtension allows the host or plugins to query capability support.
+	SupportsExtension(key string, value interface{}) bool
 }
+
+// --- Event Bus Protocol ---
+
+type Event struct {
+	Topic    string                 `json:"topic"`
+	Payload  map[string]interface{} `json:"payload"`
+	Metadata map[string]string      `json:"metadata"`
+}
+
+const (
+	TopicResponseReceived = "core.response_received"
+	TopicToolExecuted     = "core.tool_executed"
+	TopicErrorOccurred    = "core.error"
+)
+
+// --- Provider Streaming ---
 
 const (
 	StreamEventText      = "text"
@@ -116,14 +113,14 @@ const (
 )
 
 type StreamEvent struct {
-	Type         string
-	Text         string
-	ToolCallID   string
-	ToolName     string
-	ToolInput    string
-	InputTokens  int
-	OutputTokens int
-	StopReason   string
+	Type         string `json:"type"`
+	Text         string `json:"text,omitempty"`
+	ToolCallID   string `json:"tool_call_id,omitempty"`
+	ToolName     string `json:"tool_name,omitempty"`
+	ToolInput    string `json:"tool_input,omitempty"`
+	InputTokens  int    `json:"input_tokens,omitempty"`
+	OutputTokens int    `json:"output_tokens,omitempty"`
+	StopReason   string `json:"stop_reason,omitempty"`
 }
 
 type EventStream interface {
@@ -136,7 +133,7 @@ type StreamProvider interface {
 	SendStream(ctx context.Context, req *Request) (EventStream, error)
 }
 
-// ProviderError wraps provider-specific errors with categorization.
+// ProviderError wraps provider-specific errors.
 type ProviderError struct {
 	Category ErrorCategory
 	Status   int
@@ -144,12 +141,10 @@ type ProviderError struct {
 	Err      error
 }
 
-// Error returns a formatted error message: "<category>: <message>".
 func (e *ProviderError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Category, e.Message)
 }
 
-// Unwrap returns the wrapped error, supporting errors.Is and errors.As.
 func (e *ProviderError) Unwrap() error {
 	return e.Err
 }

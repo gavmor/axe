@@ -341,6 +341,16 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		return &ExitError{Code: 1, Err: err}
 	}
 
+	// Validate structured output support
+	if cfg.Format != nil {
+		if !prov.SupportsExtension("structured_output", cfg.Format) {
+			return &ExitError{
+				Code: 2,
+				Err:  fmt.Errorf("provider %q does not support the requested structured output format", provName),
+			}
+		}
+	}
+
 	// Step 14b: Wrap provider with retry decorator
 	retryProv := provider.NewRetry(prov, provider.RetryConfig{
 		MaxRetries:     cfg.Retry.MaxRetries,
@@ -366,6 +376,11 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		Messages:    []provider.Message{{Role: "user", Content: userMessage}},
 		Temperature: cfg.Params.Temperature,
 		MaxTokens:   cfg.Params.MaxTokens,
+		Extensions:  make(map[string]interface{}),
+	}
+
+	if cfg.Format != nil {
+		req.Extensions["structured_output"] = cfg.Format
 	}
 
 	// Step 16b: Create tool registry and resolve configured tools
@@ -499,6 +514,10 @@ func runAgent(cmd *cobra.Command, args []string) error {
 		ArtifactTracker: artifactTracker,
 		BudgetTracker:   tracker,
 		WasmLoader:      loader,
+		RegisterTools:   tool.RegisterAll,
+		NewRegistry: func() kernel.Registry {
+			return tool.NewRegistry()
+		},
 	}
 
 	resp, allToolCallDetails, totalInputTokens, totalOutputTokens, totalToolCalls, budgetExceeded, err := k.Run(ctx, prov, req, registry, mcpRouter, streamEnabled)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
 )
 
 const (
@@ -216,9 +217,11 @@ func convertToAnthropicTools(tools []Tool) []anthropicToolDef {
 	return result
 }
 
-// SupportsFormat returns true as Anthropic supports JSON mode (via prompt injection) and JSON Schema (via tool use).
-func (a *Anthropic) SupportsFormat(format *ResponseFormat) bool {
-	return true
+func (a *Anthropic) SupportsExtension(key string, value interface{}) bool {
+	if key == "structured_output" {
+		return true
+	}
+	return false
 }
 
 // Send makes a completion request to the Anthropic Messages API.
@@ -244,21 +247,24 @@ func (a *Anthropic) Send(ctx context.Context, req *Request) (*Response, error) {
 		body.Tools = convertToAnthropicTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case map[string]interface{}:
 			// Add forced tool call for schema enforcement
 			body.Tools = append(body.Tools, anthropicToolDef{
 				Name:        "print_output",
 				Description: "Outputs the response in the requested structured format.",
-				InputSchema: req.Format.Schema,
+				InputSchema: v,
 			})
 			body.ToolChoice = &anthropicToolChoice{Type: "tool", Name: "print_output"}
-		} else if req.Format.Type == FormatJSON {
-			// Prompt injection for JSON mode
-			if body.System != "" {
-				body.System += "\n\n"
+		case string:
+			if v == "json" {
+				// Prompt injection for JSON mode
+				if body.System != "" {
+					body.System += "\n\n"
+				}
+				body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 			}
-			body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 		}
 	}
 
@@ -330,7 +336,14 @@ func (a *Anthropic) Send(ctx context.Context, req *Request) (*Response, error) {
 		case "text":
 			textContent += block.Text
 		case "tool_use":
-			if req.Format != nil && req.Format.Type == FormatSchema && block.Name == "print_output" {
+			var isFormatEnforcement bool
+			if ext, ok := req.Extensions["structured_output"]; ok {
+				if _, isSchema := ext.(map[string]interface{}); isSchema && block.Name == "print_output" {
+					isFormatEnforcement = true
+				}
+			}
+
+			if isFormatEnforcement {
 				marshaled, _ := json.Marshal(block.Input)
 				textContent = string(marshaled)
 				// Clear tool calls as this was a format enforcement tool
@@ -406,21 +419,24 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 		body.Tools = convertToAnthropicTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case map[string]interface{}:
 			// Add forced tool call for schema enforcement
 			body.Tools = append(body.Tools, anthropicToolDef{
 				Name:        "print_output",
 				Description: "Outputs the response in the requested structured format.",
-				InputSchema: req.Format.Schema,
+				InputSchema: v,
 			})
 			body.ToolChoice = &anthropicToolChoice{Type: "tool", Name: "print_output"}
-		} else if req.Format.Type == FormatJSON {
-			// Prompt injection for JSON mode
-			if body.System != "" {
-				body.System += "\n\n"
+		case string:
+			if v == "json" {
+				// Prompt injection for JSON mode
+				if body.System != "" {
+					body.System += "\n\n"
+				}
+				body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 			}
-			body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 		}
 	}
 
@@ -507,7 +523,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					inputTokens = event.Message.Usage.InputTokens
 				}
 				continue
-
 			case "content_block_start":
 				if event.ContentBlock != nil {
 					blocks[event.Index] = anthropicBlockInfo{
@@ -524,7 +539,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					}
 				}
 				continue
-
 			case "content_block_delta":
 				if event.Delta == nil {
 					continue
@@ -553,7 +567,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					}, nil
 				}
 				continue
-
 			case "content_block_stop":
 				block, ok := blocks[event.Index]
 				if ok && block.typ == "tool_use" {
@@ -563,7 +576,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					}, nil
 				}
 				continue
-
 			case "message_delta":
 				var stopReason string
 				if event.Delta != nil {
@@ -579,13 +591,10 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					InputTokens:  inputTokens,
 					OutputTokens: outputTokens,
 				}, nil
-
 			case "message_stop":
 				return StreamEvent{}, io.EOF
-
 			case "ping":
 				continue
-
 			case "error":
 				if event.Error != nil {
 					return StreamEvent{}, &ProviderError{
@@ -597,7 +606,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 					Category: ErrCategoryServer,
 					Message:  "unknown stream error",
 				}
-
 			default:
 				continue
 			}
@@ -607,22 +615,6 @@ func (a *Anthropic) SendStream(ctx context.Context, req *Request) (EventStream, 
 	return NewEventStream(httpResp.Body, nextFunc), nil
 }
 
-func mapStreamErrorType(errorType string) ErrorCategory {
-	switch errorType {
-	case "overloaded_error":
-		return ErrCategoryOverloaded
-	case "rate_limit_error":
-		return ErrCategoryRateLimit
-	case "api_error":
-		return ErrCategoryServer
-	case "authentication_error":
-		return ErrCategoryAuth
-	default:
-		return ErrCategoryServer
-	}
-}
-
-// mapStatusToCategory maps HTTP status codes to error categories.
 func (a *Anthropic) mapStatusToCategory(status int) ErrorCategory {
 	switch status {
 	case 401:
@@ -635,6 +627,21 @@ func (a *Anthropic) mapStatusToCategory(status int) ErrorCategory {
 		return ErrCategoryOverloaded
 	case 500, 502, 503:
 		return ErrCategoryServer
+	default:
+		return ErrCategoryServer
+	}
+}
+
+func mapStreamErrorType(typ string) ErrorCategory {
+	switch typ {
+	case "authentication_error":
+		return ErrCategoryAuth
+	case "invalid_request_error":
+		return ErrCategoryBadRequest
+	case "rate_limit_error":
+		return ErrCategoryRateLimit
+	case "overloaded_error":
+		return ErrCategoryOverloaded
 	default:
 		return ErrCategoryServer
 	}

@@ -30,7 +30,7 @@ func (m *retryMockProvider) Send(ctx context.Context, req *Request) (*Response, 
 	return &Response{Content: "ok"}, nil
 }
 
-func (m *retryMockProvider) SupportsFormat(format *ResponseFormat) bool {
+func (m *retryMockProvider) SupportsExtension(key string, value interface{}) bool {
 	return false
 }
 

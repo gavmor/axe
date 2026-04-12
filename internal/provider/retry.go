@@ -47,8 +47,8 @@ func (r *RetryProvider) Attempts() int {
 }
 
 // SupportsFormat delegates format support checking to the inner provider.
-func (r *RetryProvider) SupportsFormat(format *ResponseFormat) bool {
-	return r.inner.SupportsFormat(format)
+func (r *RetryProvider) SupportsExtension(key string, value interface{}) bool {
+	return r.inner.SupportsExtension(key, value)
 }
 
 // Send delegates to the wrapped provider with retry logic.

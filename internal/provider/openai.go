@@ -230,8 +230,16 @@ func convertToOpenAITools(tools []Tool) []openaiToolDef {
 }
 
 // SupportsFormat returns true as OpenAI supports both JSON mode and JSON Schema.
-func (o *OpenAI) SupportsFormat(format *ResponseFormat) bool {
-	return true
+func (o *OpenAI) SupportsExtension(key string, value interface{}) bool {
+	if key == "structured_output" {
+		switch v := value.(type) {
+		case string:
+			return v == "json"
+		case map[string]interface{}:
+			return true
+		}
+	}
+	return false
 }
 
 // Send makes a completion request to the OpenAI Chat Completions API.
@@ -261,16 +269,19 @@ func (o *OpenAI) Send(ctx context.Context, req *Request) (*Response, error) {
 		body.Tools = convertToOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &openaiResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &openaiResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &openaiResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &openaiJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}
@@ -408,16 +419,19 @@ func (o *OpenAI) SendStream(ctx context.Context, req *Request) (EventStream, err
 		body.Tools = convertToOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &openaiResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &openaiResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &openaiResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &openaiJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}

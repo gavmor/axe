@@ -248,8 +248,16 @@ func convertToGeminiTools(tools []Tool) []geminiToolDef {
 // --- Send method ---
 
 // SupportsFormat returns true as Gemini supports both JSON mode and JSON Schema.
-func (g *Gemini) SupportsFormat(format *ResponseFormat) bool {
-	return true
+func (g *Gemini) SupportsExtension(key string, value interface{}) bool {
+	if key == "structured_output" {
+		switch v := value.(type) {
+		case string:
+			return v == "json"
+		case map[string]interface{}:
+			return true
+		}
+	}
+	return false
 }
 
 // Send makes a completion request to the Google Gemini API.
@@ -282,13 +290,16 @@ func (g *Gemini) Send(ctx context.Context, req *Request) (*Response, error) {
 		hasGenCfg = true
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				genCfg.ResponseMimeType = "application/json"
+				hasGenCfg = true
+			}
+		case map[string]interface{}:
 			genCfg.ResponseMimeType = "application/json"
-			hasGenCfg = true
-		} else if req.Format.Type == FormatSchema {
-			genCfg.ResponseMimeType = "application/json"
-			genCfg.ResponseSchema = req.Format.Schema
+			genCfg.ResponseSchema = v
 			hasGenCfg = true
 		}
 	}
@@ -426,13 +437,16 @@ func (g *Gemini) SendStream(ctx context.Context, req *Request) (EventStream, err
 		hasGenCfg = true
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				genCfg.ResponseMimeType = "application/json"
+				hasGenCfg = true
+			}
+		case map[string]interface{}:
 			genCfg.ResponseMimeType = "application/json"
-			hasGenCfg = true
-		} else if req.Format.Type == FormatSchema {
-			genCfg.ResponseMimeType = "application/json"
-			genCfg.ResponseSchema = req.Format.Schema
+			genCfg.ResponseSchema = v
 			hasGenCfg = true
 		}
 	}

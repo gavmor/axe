@@ -10,14 +10,13 @@ import (
 	"github.com/jrswab/axe/pkg/protocol"
 )
 
-// buildPlugin is a helper to compile our code to WASM before each test run
+// buildPlugin compiles the code to WASM
 func buildPlugin(t *testing.T) string {
 	t.Helper()
 	wasmPath := filepath.Join(t.TempDir(), "plugin.wasm")
 	
-	// Ensure we are in the directory containing the plugin source
 	cmd := exec.Command("go", "build", "-buildmode=c-shared", "-o", wasmPath, ".")
-	cmd.Dir = "../../cmd/telemetry"
+	cmd.Dir = "./"
 	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 	
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -55,8 +54,8 @@ func TestPlugin_Metadata(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if def.Name != "telemetry" {
-		t.Errorf("expected name 'telemetry', got %q", def.Name)
+	if def.Name != "structured_output_validator" {
+		t.Errorf("expected name 'structured_output_validator', got %q", def.Name)
 	}
 }
 
@@ -69,12 +68,10 @@ func TestPlugin_Execute_Success(t *testing.T) {
 	h.Load(wasmBytes)
 
 	call := protocol.ToolCall{
-		Name: "telemetry",
+		Name: "structured_output_validator",
 		Arguments: map[string]string{
-			"event_json": func() string {
-				// Simplified for test
-				return "{}"
-			}(),
+			"provider": "anthropic",
+			"format":   "json",
 		},
 	}
 
@@ -87,38 +84,37 @@ func TestPlugin_Execute_Success(t *testing.T) {
 		t.Fatalf("expected success, got error: %s", result.Content)
 	}
 	
-	if result.Content != "Telemetry recorded" {
-		t.Errorf("expected 'Telemetry recorded', got %q", result.Content)
+	if result.Content != "valid" {
+		t.Errorf("expected 'valid', got %q", result.Content)
 	}
 }
 
-func TestPlugin_ArtifactTracking(t *testing.T) {
+func TestPlugin_Execute_BedrockFailure(t *testing.T) {
 	wasmPath := buildPlugin(t)
 	wasmBytes, _ := os.ReadFile(wasmPath)
 
-	// Enable the mock artifact tracker in the harness
-	h := plugintest.NewHarness().WithMockArtifactTracker()
+	h := plugintest.NewHarness()
 	defer h.Close()
 	h.Load(wasmBytes)
 
 	call := protocol.ToolCall{
-		Name: "telemetry",
+		Name: "structured_output_validator",
 		Arguments: map[string]string{
-			"event_json": `{"topic":"core.response_received"}`,
+			"provider": "bedrock",
+			"format":   "json",
 		},
 	}
 
-	_, err := h.CallExecute(call)
+	result, err := h.CallExecute(call)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify the plugin called the host function 'track_artifact'
-	artifacts := h.TrackedArtifacts()
-	if len(artifacts) != 1 {
-		t.Fatalf("expected 1 artifact to be tracked, got %d", len(artifacts))
+	if !result.IsError {
+		t.Fatal("expected error for bedrock")
 	}
-	if artifacts[0].Path != "/tmp/telemetry.json" {
-		t.Errorf("expected path '/tmp/telemetry.json', got %q", artifacts[0].Path)
+	
+	if result.Content != `provider "bedrock" does not support structured output` {
+		t.Errorf("unexpected error content: %q", result.Content)
 	}
 }

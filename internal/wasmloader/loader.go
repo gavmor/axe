@@ -46,7 +46,7 @@ func (l *Loader) Validate(path string) error {
 	}
 
 	// Required exports for our microkernel contract
-	required := []string{"_initialize", "Execute", "Metadata"}
+	required := []string{"_initialize", "Execute", "Metadata", "allocate"}
 	exports := make(map[string]bool)
 	for _, exp := range module.Exports {
 		if exp.Kind == wasmir.ExternalKindFunction {

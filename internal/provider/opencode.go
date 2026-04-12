@@ -57,8 +57,16 @@ func NewOpenCode(apiKey string, opts ...OpenCodeOption) (*OpenCode, error) {
 }
 
 // SupportsFormat returns true as OpenCode Zen routes to Claude or OpenAI formats, both are supported.
-func (o *OpenCode) SupportsFormat(format *ResponseFormat) bool {
-	return true
+func (o *OpenCode) SupportsExtension(key string, value interface{}) bool {
+	if key == "structured_output" {
+		switch v := value.(type) {
+		case string:
+			return v == "json"
+		case map[string]interface{}:
+			return true
+		}
+	}
+	return false
 }
 
 // Send dispatches the request to the appropriate Zen endpoint based on the model name prefix.
@@ -310,25 +318,28 @@ func (o *OpenCode) sendClaude(ctx context.Context, req *Request) (*Response, err
 		body.Tools = convertToOCAnthropicTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case map[string]interface{}:
 			// Add forced tool call for schema enforcement
 			body.Tools = append(body.Tools, ocAnthropicToolDef{
 				Name:        "print_output",
 				Description: "Outputs the response in the requested structured format.",
 				InputSchema: ocAnthropicInputSchema{
 					Type:       "object",
-					Properties: convertToOCAnthropicJSONSchemaProps(req.Format.Schema),
-					Required:   convertToOCAnthropicRequiredProps(req.Format.Schema),
+					Properties: convertToOCAnthropicJSONSchemaProps(v),
+					Required:   convertToOCAnthropicRequiredProps(v),
 				},
 			})
 			body.ToolChoice = &ocAnthropicToolChoice{Type: "tool", Name: "print_output"}
-		} else if req.Format.Type == FormatJSON {
-			// Prompt injection for JSON mode
-			if body.System != "" {
-				body.System += "\n\n"
+		case string:
+			if v == "json" {
+				// Prompt injection for JSON mode
+				if body.System != "" {
+					body.System += "\n\n"
+				}
+				body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 			}
-			body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 		}
 	}
 
@@ -384,7 +395,14 @@ func (o *OpenCode) sendClaude(ctx context.Context, req *Request) (*Response, err
 		case "text":
 			result.Content += block.Text
 		case "tool_use":
-			if req.Format != nil && req.Format.Type == FormatSchema && block.Name == "print_output" {
+			var isFormatEnforcement bool
+			if ext, ok := req.Extensions["structured_output"]; ok {
+				if _, isSchema := ext.(map[string]interface{}); isSchema && block.Name == "print_output" {
+					isFormatEnforcement = true
+				}
+			}
+			
+			if isFormatEnforcement {
 				marshaled, _ := json.Marshal(block.Input)
 				result.Content = string(marshaled)
 				// Clear tool calls as this was a format enforcement tool
@@ -458,25 +476,28 @@ func (o *OpenCode) streamClaude(ctx context.Context, req *Request) (EventStream,
 		body.Tools = convertToOCAnthropicTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case map[string]interface{}:
 			// Add forced tool call for schema enforcement
 			body.Tools = append(body.Tools, ocAnthropicToolDef{
 				Name:        "print_output",
 				Description: "Outputs the response in the requested structured format.",
 				InputSchema: ocAnthropicInputSchema{
 					Type:       "object",
-					Properties: convertToOCAnthropicJSONSchemaProps(req.Format.Schema),
-					Required:   convertToOCAnthropicRequiredProps(req.Format.Schema),
+					Properties: convertToOCAnthropicJSONSchemaProps(v),
+					Required:   convertToOCAnthropicRequiredProps(v),
 				},
 			})
 			body.ToolChoice = &ocAnthropicToolChoice{Type: "tool", Name: "print_output"}
-		} else if req.Format.Type == FormatJSON {
-			// Prompt injection for JSON mode
-			if body.System != "" {
-				body.System += "\n\n"
+		case string:
+			if v == "json" {
+				// Prompt injection for JSON mode
+				if body.System != "" {
+					body.System += "\n\n"
+				}
+				body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 			}
-			body.System += "You must output your response in valid JSON. Do not include any markdown formatting, preamble, or conversational text. Output only the JSON."
 		}
 	}
 
@@ -655,16 +676,19 @@ func (o *OpenCode) streamGPT(ctx context.Context, req *Request) (EventStream, er
 		body.Tools = convertToOCOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &ocResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &ocJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}
@@ -812,16 +836,19 @@ func (o *OpenCode) streamChatCompletions(ctx context.Context, req *Request) (Eve
 		body.Tools = convertToOCOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &ocResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &ocJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}
@@ -1125,16 +1152,19 @@ func (o *OpenCode) sendGPT(ctx context.Context, req *Request) (*Response, error)
 		body.Tools = convertToOCOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &ocResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &ocJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}
@@ -1310,16 +1340,19 @@ func (o *OpenCode) sendChatCompletions(ctx context.Context, req *Request) (*Resp
 		body.Tools = convertToOCOpenAITools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
-		} else if req.Format.Type == FormatSchema {
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.ResponseFormat = &ocResponseFormat{Type: "json_object"}
+			}
+		case map[string]interface{}:
 			body.ResponseFormat = &ocResponseFormat{
 				Type: "json_schema",
 				JSONSchema: &ocJSONSchemaDef{
 					Name:   "structured_output",
 					Strict: true,
-					Schema: req.Format.Schema,
+					Schema: v,
 				},
 			}
 		}

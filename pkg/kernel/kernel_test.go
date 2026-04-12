@@ -15,6 +15,8 @@ import (
 	"github.com/jrswab/axe/internal/config"
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
+	"github.com/jrswab/axe/internal/wasmloader"
+	"github.com/jrswab/axe/pkg/protocol"
 )
 
 func setupKernelTestAgentsDir(t *testing.T) string {
@@ -35,6 +37,17 @@ func writeKernelTestAgent(t *testing.T, agentsDir, name, content string) {
 		t.Fatalf("failed to write agent file: %v", err)
 	}
 }
+
+type mockRegistry struct{}
+
+func (m *mockRegistry) Register(name string, t protocol.Tool)                                     {}
+func (m *mockRegistry) Has(name string) bool                                                     { return false }
+func (m *mockRegistry) Resolve(names []string) ([]protocol.ToolDefinition, error)                { return nil, nil }
+func (m *mockRegistry) Dispatch(ctx context.Context, call protocol.ToolCall, ec ExecContext) (protocol.ToolResult, error) {
+	return protocol.ToolResult{}, nil
+}
+func (m *mockRegistry) SetLoader(l *wasmloader.Loader)        {}
+func (m *mockRegistry) LoadPlugins(ctx context.Context, dir string) error { return nil }
 
 func TestExecuteCallAgent_EmptyAgentName(t *testing.T) {
 	k := &Kernel{
@@ -148,6 +161,10 @@ system_prompt = "You are a helper."
 		Config:        &agent.AgentConfig{SubAgents: []string{"helper"}},
 		GlobalCfg:     &config.GlobalConfig{},
 		BudgetTracker: budget.New(0),
+		NewRegistry: func() Registry {
+			return &mockRegistry{}
+		},
+		RegisterTools: func(r Registry) {},
 	}
 
 	call := provider.ToolCall{

@@ -1,4 +1,4 @@
-module github.com/jrswab/axe-plugin-telemetry
+module github.com/jrswab/axe-plugin-structured-output
 
 go 1.26.1
 

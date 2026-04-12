@@ -283,7 +283,7 @@ func (b *Bedrock) mapStatusToCategory(status int) ErrorCategory {
 }
 
 // SupportsFormat returns false as Bedrock structured output is not yet implemented.
-func (b *Bedrock) SupportsFormat(format *ResponseFormat) bool {
+func (b *Bedrock) SupportsExtension(key string, value interface{}) bool {
 	return false
 }
 

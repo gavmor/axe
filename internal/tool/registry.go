@@ -3,12 +3,9 @@ package tool
 import (
 	"context"
 	"fmt"
-	"io"
 	"path/filepath"
 	"sync"
 
-	"github.com/jrswab/axe/internal/artifact"
-	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
 	"github.com/jrswab/axe/internal/wasmloader"
 	"github.com/jrswab/axe/pkg/kernel"
@@ -102,8 +99,11 @@ func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec kern
 		return protocol.ToolResult{}, fmt.Errorf("unknown tool %q", call.Name)
 	}
 
-	// For built-in tools that need ExecContext, we inject it here if it's an adapter.
+	// Check for nil executor if it's a built-in adapter
 	if adapter, ok := t.(*builtinToolAdapter); ok {
+		if adapter.execute == nil {
+			return protocol.ToolResult{}, fmt.Errorf("tool %q has no executor", call.Name)
+		}
 		adapter.ec = ec
 	}
 

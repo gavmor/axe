@@ -67,7 +67,7 @@ func (m *mockProvider) Send(ctx context.Context, req *Request) (*Response, error
 	return nil, nil
 }
 
-func (m *mockProvider) SupportsFormat(format *ResponseFormat) bool {
+func (m *mockProvider) SupportsExtension(key string, value interface{}) bool {
 	return false
 }
 

@@ -199,8 +199,16 @@ func convertToOllamaTools(tools []Tool) []ollamaToolDef {
 }
 
 // SupportsFormat returns true, as Ollama natively supports both JSON mode and JSON Schema formats.
-func (o *Ollama) SupportsFormat(format *ResponseFormat) bool {
-	return true
+func (o *Ollama) SupportsExtension(key string, value interface{}) bool {
+	if key == "structured_output" {
+		switch v := value.(type) {
+		case string:
+			return v == "json"
+		case map[string]interface{}:
+			return true
+		}
+	}
+	return false
 }
 
 // Send makes a completion request to the Ollama Chat API.
@@ -238,11 +246,14 @@ func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 		body.Tools = convertToOllamaTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.Format = "json"
-		} else if req.Format.Type == FormatSchema {
-			body.Format = req.Format.Schema
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.Format = "json"
+			}
+		case map[string]interface{}:
+			body.Format = v
 		}
 	}
 
@@ -378,11 +389,14 @@ func (o *Ollama) SendStream(ctx context.Context, req *Request) (EventStream, err
 		body.Tools = convertToOllamaTools(req.Tools)
 	}
 
-	if req.Format != nil {
-		if req.Format.Type == FormatJSON {
-			body.Format = "json"
-		} else if req.Format.Type == FormatSchema {
-			body.Format = req.Format.Schema
+	if ext, ok := req.Extensions["structured_output"]; ok {
+		switch v := ext.(type) {
+		case string:
+			if v == "json" {
+				body.Format = "json"
+			}
+		case map[string]interface{}:
+			body.Format = v
 		}
 	}
 

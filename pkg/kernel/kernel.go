@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -70,6 +71,32 @@ type Kernel struct {
 	WasmLoader      *wasmloader.Loader
 	// RegisterTools is a callback to register all tools in a registry.
 	RegisterTools func(r Registry)
+	// NewRegistry is a callback to create a new registry instance.
+	NewRegistry func() Registry
+
+	// Event Bus fields
+	subscribers map[string][]func(protocol.Event)
+	mu          sync.RWMutex
+}
+
+// SimpleEventBus methods
+func (k *Kernel) Subscribe(topic string, handler func(protocol.Event)) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	if k.subscribers == nil {
+		k.subscribers = make(map[string][]func(protocol.Event))
+	}
+	k.subscribers[topic] = append(k.subscribers[topic], handler)
+}
+
+func (k *Kernel) Publish(event protocol.Event) {
+	k.mu.RLock()
+	handlers := k.subscribers[event.Topic]
+	k.mu.RUnlock()
+
+	for _, h := range handlers {
+		go h(event)
+	}
 }
 
 const maxConversationTurns = 50
@@ -148,6 +175,19 @@ func (k *Kernel) Run(ctx context.Context, prov protocol.Provider, req *protocol.
 		if err != nil {
 			return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
 		}
+
+		// Publish core event
+		k.Publish(protocol.Event{
+			Topic: protocol.TopicResponseReceived,
+			Payload: map[string]interface{}{
+				"model":         resp.Model,
+				"input_tokens":  resp.InputTokens,
+				"output_tokens": resp.OutputTokens,
+				"stop_reason":   resp.StopReason,
+			},
+			Metadata: map[string]string{"agent": k.AgentName},
+		})
+
 		totalInputTokens = resp.InputTokens
 		totalOutputTokens = resp.OutputTokens
 		k.BudgetTracker.Add(resp.InputTokens, resp.OutputTokens)
@@ -209,6 +249,18 @@ func (k *Kernel) Run(ctx context.Context, prov protocol.Provider, req *protocol.
 				return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
 			}
 
+			// Publish core event
+			k.Publish(protocol.Event{
+				Topic: protocol.TopicResponseReceived,
+				Payload: map[string]interface{}{
+					"model":         resp.Model,
+					"input_tokens":  resp.InputTokens,
+					"output_tokens": resp.OutputTokens,
+					"stop_reason":   resp.StopReason,
+				},
+				Metadata: map[string]string{"agent": k.AgentName},
+			})
+
 			totalInputTokens += resp.InputTokens
 			totalOutputTokens += resp.OutputTokens
 			k.BudgetTracker.Add(resp.InputTokens, resp.OutputTokens)
@@ -261,6 +313,19 @@ func (k *Kernel) Run(ctx context.Context, prov protocol.Provider, req *protocol.
 						DurationMs: results[i].Duration.Milliseconds(),
 					})
 				}
+			}
+
+			// Publish tool execution events
+			for i, r := range results {
+				k.Publish(protocol.Event{
+					Topic: protocol.TopicToolExecuted,
+					Payload: map[string]interface{}{
+						"name":     resp.ToolCalls[i].Name,
+						"duration": r.Duration.Seconds(),
+						"is_error": r.Result.IsError,
+					},
+					Metadata: map[string]string{"agent": k.AgentName},
+				})
 			}
 
 			// Append tool result message
@@ -339,14 +404,30 @@ func (k *Kernel) ExecuteToolCalls(ctx context.Context, toolCalls []protocol.Tool
 		ch := make(chan indexedResult, len(toolCalls))
 		for i, tc := range toolCalls {
 			go func(idx int, call protocol.ToolCall) {
-				start := time.Now()
+				startTime := time.Now()
+				defer func() {
+					if r := recover(); r != nil {
+						errMsg := fmt.Sprintf("tool execution panic: %v", r)
+						ch <- indexedResult{
+							index: idx,
+							result: ToolExecResult{
+								Result: protocol.ToolResult{
+									CallID:  call.ID,
+									Content: errMsg,
+									IsError: true,
+								},
+								Duration: time.Since(startTime),
+							},
+						}
+					}
+				}()
 				var res protocol.ToolResult
 				if call.Name == toolname.CallAgent {
 					res = k.ExecuteCallAgent(ctx, call, depth, maxDepth)
 				} else {
 					res = k.DispatchToolCall(ctx, call, registry, mcpRouter)
 				}
-				ch <- indexedResult{index: idx, result: ToolExecResult{Result: res, Duration: time.Since(start)}}
+				ch <- indexedResult{index: idx, result: ToolExecResult{Result: res, Duration: time.Since(startTime)}}
 			}(i, tc)
 		}
 		for range toolCalls {
@@ -526,12 +607,50 @@ func (k *Kernel) ExecuteCallAgent(ctx context.Context, call protocol.ToolCall, d
 		req.Tools = []protocol.ToolDefinition{CallAgentTool(cfg.SubAgents)}
 	}
 
-	// We'll need a way to create a new registry for the sub-agent.
-	// But wait, we can just pass the original registry or create a new one.
-	// For simplicity, let's assume we can use the same registry type.
-	// However, we need a concrete implementation of Registry to instantiate it.
-	// Let's assume there is a NewRegistry implementation provided by the caller.
-	// Actually, k.RegisterTools can be used.
+	if k.NewRegistry == nil || k.RegisterTools == nil {
+		return k.errorResult(call.ID, agentName, "kernel is not properly initialized: NewRegistry and RegisterTools are required for sub-agents")
+	}
+
+	subRegistry := k.NewRegistry()
+	k.RegisterTools(subRegistry)
+
+	// Create a sub-kernel for the sub-agent
+	subKernel := &Kernel{
+		Config:          cfg,
+		GlobalCfg:       k.GlobalCfg,
+		AgentName:       agentName,
+		Workdir:         workdir,
+		AgentsDir:       k.AgentsDir,
+		PluginsDir:      k.PluginsDir,
+		Verbose:         k.Verbose,
+		JsonOutput:      k.JsonOutput,
+		Stderr:          k.Stderr,
+		Stdout:          k.Stdout,
+		MaxTokens:       k.MaxTokens,
+		ArtifactDir:     k.ArtifactDir,
+		KeepArtifacts:   k.KeepArtifacts,
+		ArtifactTracker: k.ArtifactTracker,
+		BudgetTracker:   k.BudgetTracker,
+		WasmLoader:      k.WasmLoader,
+		RegisterTools:   k.RegisterTools,
+		NewRegistry:     k.NewRegistry,
+	}
+
+	resp, _, _, _, _, _, err := subKernel.Run(ctx, prov, req, subRegistry, nil, false)
+	if err != nil {
+		return k.errorResult(call.ID, agentName, err.Error())
+	}
+
+	durationMs := time.Since(start).Milliseconds()
+	if k.Verbose && k.Stderr != nil {
+		_, _ = fmt.Fprintf(k.Stderr, "[sub-agent] %q completed in %dms (%d chars returned)\n", agentName, durationMs, len(resp.Content))
+	}
+
+	return protocol.ToolResult{
+		CallID:  call.ID,
+		Content: resp.Content,
+		IsError: false,
+	}
 }
 
 func (k *Kernel) errorResult(callID, agentName, errMsg string) protocol.ToolResult {
