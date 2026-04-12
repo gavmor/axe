@@ -51,6 +51,14 @@ type ToolResult struct {
 	IsError bool
 }
 
+// EventDTO is the envelope sent to event-processing plugins.
+type EventDTO struct {
+	Type      string            `json:"type"`
+	ID        string            `json:"id,omitempty"`
+	Name      string            `json:"name,omitempty"`
+	Arguments map[string]string `json:"arguments,omitempty"`
+}
+
 // Tool interface defines an executable tool the agent can use.
 type Tool interface {
 	Definition() ToolDefinition
