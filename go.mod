@@ -5,6 +5,7 @@ go 1.26.1
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/eliben/watgo v0.4.0
+	github.com/gavmor/wasm-microkernel v0.1.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/spf13/cobra v1.10.2
 	github.com/tetratelabs/wazero v1.11.0
@@ -12,6 +13,7 @@ require (
 )
 
 require (
+	github.com/gavmor/axe-protocol v0.1.1
 	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect

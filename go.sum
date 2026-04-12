@@ -3,6 +3,10 @@ github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/eliben/watgo v0.4.0 h1:XWD881qw9Tv8jmatBS5WyY1e9Hy3CEExvJbaTRyZanE=
 github.com/eliben/watgo v0.4.0/go.mod h1:bGzjtoRhlWSviwGA8Hhl1z8Jcv7s4ogE3oi2cS1IffE=
+github.com/gavmor/axe-protocol v0.1.1 h1:VxNcMxSSvkYYTtfZ62nDavAG+/24sd4KD6uKnjc1ZeU=
+github.com/gavmor/axe-protocol v0.1.1/go.mod h1:e5e1rz1ePBQ9gLTn1nnbhX/b9S4CA5AH8NJa4P4FxdE=
+github.com/gavmor/wasm-microkernel v0.1.1 h1:H6Zms9YCnkL4dOErx+hCBY2KxD5f/D+QhxI+P5Kibcw=
+github.com/gavmor/wasm-microkernel v0.1.1/go.mod h1:B0OZkn6KcmZqAIXDwVDKohWHa8rMk3KtF7XKxBXA6gw=
 github.com/golang-jwt/jwt/v5 v5.3.0 h1:pv4AsKCKKZuqlgs5sUmn4x8UlGa0kEVt/puTpKx9vvo=
 github.com/golang-jwt/jwt/v5 v5.3.0/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=

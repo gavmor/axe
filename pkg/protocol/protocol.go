@@ -3,61 +3,28 @@ package protocol
 import (
 	"context"
 	"fmt"
+
+	"github.com/gavmor/axe-protocol"
 )
+
+// Re-export types from the domain protocol for host-side convenience.
+type ToolDefinition = protocol.ToolDefinition
+type ToolCall = protocol.ToolCall
+type ToolResult = protocol.ToolResult
+type EventDTO = protocol.EventDTO
+type ToolParameter = protocol.ToolParameter
 
 // ErrorCategory classifies provider errors for exit code mapping.
 type ErrorCategory string
 
 const (
-	// ErrCategoryAuth indicates authentication failure (missing/invalid API key).
-	ErrCategoryAuth ErrorCategory = "auth"
-	// ErrCategoryRateLimit indicates the provider rate limited the request.
-	ErrCategoryRateLimit ErrorCategory = "rate_limit"
-	// ErrCategoryTimeout indicates the request timed out.
-	ErrCategoryTimeout ErrorCategory = "timeout"
-	// ErrCategoryOverloaded indicates the provider is overloaded (529).
+	ErrCategoryAuth       ErrorCategory = "auth"
+	ErrCategoryRateLimit  ErrorCategory = "rate_limit"
+	ErrCategoryTimeout    ErrorCategory = "timeout"
 	ErrCategoryOverloaded ErrorCategory = "overloaded"
-	// ErrCategoryBadRequest indicates a malformed request (invalid model, etc.).
 	ErrCategoryBadRequest ErrorCategory = "bad_request"
-	// ErrCategoryServer indicates a provider server error (5xx).
-	ErrCategoryServer ErrorCategory = "server"
+	ErrCategoryServer     ErrorCategory = "server"
 )
-
-// ToolParameter describes a single parameter of a tool definition.
-type ToolParameter struct {
-	Type        string
-	Description string
-	Required    bool
-}
-
-// ToolDefinition represents a tool definition sent to the LLM.
-type ToolDefinition struct {
-	Name        string
-	Description string
-	Parameters  map[string]ToolParameter
-}
-
-// ToolCall represents a tool invocation requested by the LLM.
-type ToolCall struct {
-	ID        string
-	Name      string
-	Arguments map[string]string
-}
-
-// ToolResult represents the result of a tool execution.
-type ToolResult struct {
-	CallID  string
-	Content string
-	IsError bool
-}
-
-// EventDTO is the envelope sent to event-processing plugins.
-type EventDTO struct {
-	Type      string            `json:"type"`
-	ID        string            `json:"id,omitempty"`
-	Name      string            `json:"name,omitempty"`
-	Arguments map[string]string `json:"arguments,omitempty"`
-}
 
 // Tool interface defines an executable tool the agent can use.
 type Tool interface {
@@ -69,8 +36,8 @@ type Tool interface {
 type Message struct {
 	Role        string       `json:"role"`
 	Content     string       `json:"content"`
-	ToolCalls   []ToolCall   // Tool calls in an assistant message (non-nil when LLM called tools)
-	ToolResults []ToolResult // Tool results in a tool-result message (non-nil when role is "tool")
+	ToolCalls   []ToolCall   // Tool calls in an assistant message
+	ToolResults []ToolResult // Tool results in a tool-result message
 }
 
 // Request represents an LLM completion request.
@@ -80,7 +47,7 @@ type Request struct {
 	Messages    []Message
 	Temperature float64
 	MaxTokens   int
-	Tools       []ToolDefinition // Tool definitions to send to the LLM. If nil or empty, no tools are sent.
+	Tools       []ToolDefinition
 }
 
 // Response represents an LLM completion response.
@@ -90,7 +57,7 @@ type Response struct {
 	InputTokens  int
 	OutputTokens int
 	StopReason   string
-	ToolCalls    []ToolCall // Tool calls requested by the LLM. Empty if no tools called.
+	ToolCalls    []ToolCall
 }
 
 // Provider defines the interface for LLM providers.
@@ -135,12 +102,10 @@ type ProviderError struct {
 	Err      error
 }
 
-// Error returns a formatted error message: "<category>: <message>".
 func (e *ProviderError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Category, e.Message)
 }
 
-// Unwrap returns the wrapped error, supporting errors.Is and errors.As.
 func (e *ProviderError) Unwrap() error {
 	return e.Err
 }
