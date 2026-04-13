@@ -15,48 +15,56 @@ import (
 type WasmTool struct {
 	runtime  wazero.Runtime
 	compiled wazero.CompiledModule
+	config   wazero.ModuleConfig
 	pool     sync.Pool
 	def      protocol.ToolDefinition
 }
 
 // NewWasmTool creates a new Tool implementation from a compiled wazero module.
-func NewWasmTool(r wazero.Runtime, compiled wazero.CompiledModule) *WasmTool {
+// It eagerly instantiates one sandbox to fetch metadata, surfacing any instantiation
+// errors (e.g. unsatisfied imports) immediately instead of swallowing them in sync.Pool.
+func NewWasmTool(r wazero.Runtime, compiled wazero.CompiledModule) (*WasmTool, error) {
+	config := wazero.NewModuleConfig().
+		WithName("").
+		WithStartFunctions("_initialize")
+
 	t := &WasmTool{
 		runtime:  r,
 		compiled: compiled,
+		config:   config,
 	}
 
-	t.pool.New = func() interface{} {
-		// Use anonymous name to avoid collisions in the runtime registry
-		config := wazero.NewModuleConfig().
-			WithName("").
-			WithStartFunctions("_initialize")
-
-		// Use background context for initialization as the pool New doesn't have a request context
-		mod, err := r.InstantiateModule(context.Background(), compiled, config)
-		if err != nil {
-			return nil
-		}
-		return mod
+	// Eagerly instantiate to fetch metadata and prove the module is viable.
+	ctx := context.Background()
+	mod, err := r.InstantiateModule(ctx, compiled, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate wasm sandbox: %w", err)
 	}
 
-	// Pre-load metadata using a temporary instance from the pool
-	modObj := t.pool.Get()
-	if modObj != nil {
-		mod := modObj.(api.Module)
-		def, err := t.fetchMetadata(context.Background(), mod)
-		if err == nil {
-			t.def = def
-		}
-		t.pool.Put(mod)
+	def, err := t.fetchMetadata(ctx, mod)
+	if err != nil {
+		_ = mod.Close(ctx)
+		return nil, fmt.Errorf("failed to read plugin metadata: %w", err)
 	}
+	t.def = def
+	t.pool.Put(mod)
 
-	return t
+	return t, nil
 }
 
 // Definition returns the tool's metadata.
 func (w *WasmTool) Definition() protocol.ToolDefinition {
 	return w.def
+}
+
+// instantiate creates a new module instance, handling errors explicitly
+// rather than swallowing them inside sync.Pool.New.
+func (w *WasmTool) instantiate(ctx context.Context) (api.Module, error) {
+	mod, err := w.runtime.InstantiateModule(ctx, w.compiled, w.config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate wasm sandbox: %w", err)
+	}
+	return mod, nil
 }
 
 // fetchMetadata retrieves tool metadata from a specific Wasm module instance.
@@ -95,11 +103,18 @@ func (w *WasmTool) fetchMetadata(ctx context.Context, mod api.Module) (protocol.
 
 // Execute triggers the tool's core logic within a pooled Wasm sandbox.
 func (w *WasmTool) Execute(ctx context.Context, call protocol.ToolCall) protocol.ToolResult {
-	modObj := w.pool.Get()
-	if modObj == nil {
-		return protocol.ToolResult{CallID: call.ID, Content: "failed to acquire wasm instance from pool", IsError: true}
+	// Attempt to grab an existing instance from the pool.
+	var mod api.Module
+	if pooled := w.pool.Get(); pooled != nil {
+		mod = pooled.(api.Module)
+	} else {
+		// Pool empty — instantiate manually so errors surface.
+		var err error
+		mod, err = w.instantiate(ctx)
+		if err != nil {
+			return protocol.ToolResult{CallID: call.ID, Content: err.Error(), IsError: true}
+		}
 	}
-	mod := modObj.(api.Module)
 	defer w.pool.Put(mod)
 
 	fn := mod.ExportedFunction("Execute")

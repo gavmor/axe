@@ -114,6 +114,7 @@ func TestRegistry_FactoryDispensation(t *testing.T) {
 		}
 		defer loader.Close(ctx)
 
+		loader.AllowHostModule("test_env")
 		_, err = loader.Runtime().NewHostModuleBuilder("test_env").
 			NewFunctionBuilder().
 			WithGoFunction(api.GoFunc(func(ctx context.Context, stack []uint64) {
@@ -189,6 +190,41 @@ func TestRegistry_FactoryDispensation(t *testing.T) {
 		close(blockCh)
 		wg.Wait()
 	})
+}
+
+func TestPluginRejection_MissingHostFunction(t *testing.T) {
+	ctx := context.Background()
+	loader, err := wasmloader.New(ctx)
+	if err != nil {
+		t.Fatalf("failed to create wasm loader: %v", err)
+	}
+	defer loader.Close(ctx)
+
+	k := &kernel.Kernel{
+		WasmLoader: loader,
+		Config:     &agent.AgentConfig{},
+	}
+	reg := tool.NewRegistry()
+	reg.SetLoader(loader)
+
+	// A plugin that imports an unregistered capability (do_magic)
+	badPluginWAT := `(module
+		(import "axe_kernel" "do_magic" (func $do_magic))
+		(memory (export "memory") 1)
+		(func (export "_initialize"))
+		(func (export "allocate") (param i32) (result i32) (i32.const 1024))
+		(func (export "Metadata") (result i64) (i64.const 0))
+		(func (export "Execute") (param i32 i32) (result i64) (i64.const 0))
+	)`
+
+	wasmBytes := compileWAT(t, badPluginWAT)
+	err = k.LoadPlugin(ctx, reg, wasmBytes)
+	if err == nil {
+		t.Fatal("expected error due to missing host import 'do_magic', got nil")
+	}
+	if !strings.Contains(err.Error(), "do_magic") {
+		t.Fatalf("expected error to mention 'do_magic', got: %v", err)
+	}
 }
 
 func TestHostFunction_CapabilityInjection(t *testing.T) {

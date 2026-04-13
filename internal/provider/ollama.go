@@ -65,6 +65,7 @@ type ollamaRequest struct {
 	Stream   bool            `json:"stream"`
 	Options  *ollamaOptions  `json:"options,omitempty"`
 	Tools    []ollamaToolDef `json:"tools,omitempty"`
+	Think    *bool           `json:"think,omitempty"`
 }
 
 // ollamaMessage is the wire format for a message in the Ollama API.
@@ -208,6 +209,7 @@ func (o *Ollama) Send(ctx context.Context, req *Request) (*Response, error) {
 		Model:    req.Model,
 		Messages: convertToOllamaMessages(messages),
 		Stream:   false,
+		Think:    req.Think,
 	}
 
 	// Build options only if needed
@@ -341,6 +343,7 @@ func (o *Ollama) SendStream(ctx context.Context, req *Request) (EventStream, err
 		Model:    req.Model,
 		Messages: convertToOllamaMessages(messages),
 		Stream:   true,
+		Think:    req.Think,
 	}
 
 	var opts ollamaOptions

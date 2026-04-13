@@ -5,11 +5,21 @@ go 1.26.1
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/eliben/watgo v0.4.0
-	github.com/gavmor/wasm-microkernel v0.1.1
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/spf13/cobra v1.10.2
 	github.com/tetratelabs/wazero v1.11.0
 	golang.org/x/net v0.51.0
+)
+
+require (
+	github.com/gavmor/wasm-microkernel v0.2.0
+	github.com/gopxl/beep/v2 v2.1.1
+)
+
+require (
+	github.com/ebitengine/oto/v3 v3.3.2 // indirect
+	github.com/ebitengine/purego v0.8.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 )
 
 require (

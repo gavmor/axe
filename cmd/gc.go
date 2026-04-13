@@ -172,7 +172,7 @@ func runSingleAgentGC(cmd *cobra.Command, agentName string, searchDirs []string)
 			case provider.ErrCategoryAuth, provider.ErrCategoryRateLimit,
 				provider.ErrCategoryTimeout, provider.ErrCategoryOverloaded,
 				provider.ErrCategoryServer:
-				return &ExitError{Code: 3, Err: provErr}
+				return &ExitError{Code: 1, Err: provErr}
 			case provider.ErrCategoryBadRequest:
 				return &ExitError{Code: 1, Err: provErr}
 			}

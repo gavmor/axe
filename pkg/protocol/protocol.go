@@ -24,6 +24,9 @@ const (
 	ErrCategoryOverloaded ErrorCategory = "overloaded"
 	ErrCategoryBadRequest ErrorCategory = "bad_request"
 	ErrCategoryServer     ErrorCategory = "server"
+	ErrCategoryInput      ErrorCategory = "input"
+	ErrCategoryNetwork    ErrorCategory = "network"
+	ErrCategoryUnknown    ErrorCategory = "unknown"
 )
 
 // Tool interface defines an executable tool the agent can use.
@@ -48,6 +51,7 @@ type Request struct {
 	Temperature float64
 	MaxTokens   int
 	Tools       []ToolDefinition
+	Think       *bool
 }
 
 // Response represents an LLM completion response.

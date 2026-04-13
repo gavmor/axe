@@ -38,9 +38,25 @@ type Kernel struct {
 	ArtifactTracker *artifact.Tracker
 	BudgetTracker   *budget.BudgetTracker
 	WasmLoader      *wasmloader.Loader
+	HideThinking    bool
 }
 
 const maxConversationTurns = 50
+
+// canStream checks if a provider actually supports streaming, not just
+// whether it satisfies the StreamProvider interface shape. This prevents
+// RetryProvider from falsely triggering SendStream when the wrapped
+// provider doesn't support it.
+func canStream(prov provider.Provider) (provider.StreamProvider, bool) {
+	type streamCapable interface {
+		SupportsStream() bool
+	}
+	if sc, ok := prov.(streamCapable); ok && !sc.SupportsStream() {
+		return nil, false
+	}
+	sp, ok := prov.(provider.StreamProvider)
+	return sp, ok
+}
 const maxToolOutputBytes = 1024
 
 type ToolCallDetail struct {
@@ -69,6 +85,11 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 		}
 	}
 
+	// Check if the hide_thinking plugin is loaded.
+	if registry.Has("hide_thinking") {
+		k.HideThinking = true
+	}
+
 	start := time.Now()
 
 	// Determine parallel execution setting.
@@ -95,7 +116,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 	if len(req.Tools) == 0 {
 		// Single-shot: no tools, no conversation loop
 		if streamEnabled {
-			if sp, ok := prov.(provider.StreamProvider); ok {
+			if sp, ok := canStream(prov); ok {
 				stream, streamErr := sp.SendStream(ctx, req)
 				if streamErr != nil {
 					return nil, nil, 0, 0, 0, false, k.MapProviderError(streamErr)
@@ -120,6 +141,11 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 		if err != nil {
 			return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
 		}
+		// Strip inline thinking tokens from non-streaming responses.
+		if k.HideThinking && resp != nil {
+			resp.Content = StripThinkingTokens(resp.Content)
+		}
+
 		totalInputTokens = resp.InputTokens
 		totalOutputTokens = resp.OutputTokens
 		k.BudgetTracker.Add(resp.InputTokens, resp.OutputTokens)
@@ -141,9 +167,11 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 		}
 	} else {
 		// Conversation loop: handle tool calls
+		exitedOnBudget := false
 		for turn := 0; turn < maxConversationTurns; turn++ {
 			// Check budget before making LLM call
 			if k.BudgetTracker.Exceeded() {
+				exitedOnBudget = true
 				break
 			}
 
@@ -158,7 +186,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			}
 
 			if streamEnabled {
-				if sp, ok := prov.(provider.StreamProvider); ok {
+				if sp, ok := canStream(prov); ok {
 					stream, streamErr := sp.SendStream(ctx, req)
 					if streamErr != nil {
 						return nil, nil, 0, 0, 0, false, k.MapProviderError(streamErr)
@@ -184,6 +212,11 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 				return nil, nil, 0, 0, 0, false, k.MapProviderError(err)
 			}
 
+			// Strip inline thinking tokens from non-streaming conversation responses.
+			if k.HideThinking && resp != nil && !streamEnabled {
+				resp.Content = StripThinkingTokens(resp.Content)
+			}
+
 			totalInputTokens += resp.InputTokens
 			totalOutputTokens += resp.OutputTokens
 			k.BudgetTracker.Add(resp.InputTokens, resp.OutputTokens)
@@ -191,7 +224,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			if k.Verbose {
 				label := "Received response"
 				if streamEnabled {
-					if _, ok := prov.(provider.StreamProvider); ok {
+					if _, ok := canStream(prov); ok {
 						label = "Stream complete"
 					}
 				}
@@ -205,6 +238,7 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 
 			// Stop before executing tools if budget is exceeded
 			if k.BudgetTracker.Exceeded() {
+				exitedOnBudget = true
 				break
 			}
 
@@ -250,15 +284,12 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			req.Messages = append(req.Messages, toolMsg)
 		}
 
-		// Check if we exhausted turns
-		if resp != nil && len(resp.ToolCalls) > 0 {
-			return nil, nil, 0, 0, 0, false, fmt.Errorf("agent exceeded maximum conversation turns (%d)", maxConversationTurns)
-		}
-
-		// Check if budget was exceeded
-		if k.BudgetTracker.Exceeded() {
+		// Determine post-loop outcome
+		if exitedOnBudget || k.BudgetTracker.Exceeded() {
 			budgetExceeded = true
 			_, _ = fmt.Fprintf(k.Stderr, "budget exceeded: used %d of %d tokens\n", k.BudgetTracker.Used(), k.BudgetTracker.Max())
+		} else if resp != nil && len(resp.ToolCalls) > 0 {
+			return nil, nil, 0, 0, 0, false, fmt.Errorf("agent exceeded maximum conversation turns (%d); reduce prompt complexity or tool recursion", maxConversationTurns)
 		}
 
 		if k.Verbose {
@@ -269,7 +300,9 @@ func (k *Kernel) Run(ctx context.Context, prov provider.Provider, req *provider.
 			} else {
 				_, _ = fmt.Fprintf(k.Stderr, "Tokens:   %d input, %d output (cumulative)\n", totalInputTokens, totalOutputTokens)
 			}
-			_, _ = fmt.Fprintf(k.Stderr, "Stop:     %s\n", resp.StopReason)
+			if resp != nil {
+				_, _ = fmt.Fprintf(k.Stderr, "Stop:     %s\n", resp.StopReason)
+			}
 		}
 	}
 
@@ -394,6 +427,8 @@ func (k *Kernel) DispatchToolCall(ctx context.Context, tc provider.ToolCall, reg
 		AllowedHosts:    k.Config.AllowedHosts,
 		ArtifactDir:     k.ArtifactDir,
 		ArtifactTracker: k.ArtifactTracker,
+		BudgetTracker:   k.BudgetTracker,
+		AgentName:       k.AgentName,
 	})
 	if dispatchErr != nil {
 		return provider.ToolResult{CallID: tc.ID, Content: dispatchErr.Error(), IsError: true}
@@ -408,6 +443,7 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 	var toolCalls []provider.ToolCall
 	var inputTokens, outputTokens int
 	var stopReason string
+	var thinkingCloseTag string
 
 	type pendingCall struct {
 		id   string
@@ -427,9 +463,15 @@ func (k *Kernel) DrainEventStream(stream provider.EventStream, w io.Writer) (*pr
 
 		switch ev.Type {
 		case provider.StreamEventText:
-			content.WriteString(ev.Text)
-			if w != nil {
-				_, _ = io.WriteString(w, ev.Text)
+			text := ev.Text
+			if k.HideThinking {
+				text, thinkingCloseTag = filterThinkingChunk(text, thinkingCloseTag)
+			}
+			if text != "" {
+				content.WriteString(text)
+				if w != nil {
+					_, _ = io.WriteString(w, text)
+				}
 			}
 
 		case provider.StreamEventToolStart:

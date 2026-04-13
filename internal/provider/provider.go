@@ -29,6 +29,9 @@ const (
 	ErrCategoryOverloaded = protocol.ErrCategoryOverloaded
 	ErrCategoryBadRequest = protocol.ErrCategoryBadRequest
 	ErrCategoryServer     = protocol.ErrCategoryServer
+	ErrCategoryInput      = protocol.ErrCategoryInput
+	ErrCategoryNetwork    = protocol.ErrCategoryNetwork
+	ErrCategoryUnknown    = protocol.ErrCategoryUnknown
 
 	StreamEventText      = protocol.StreamEventText
 	StreamEventToolStart = protocol.StreamEventToolStart

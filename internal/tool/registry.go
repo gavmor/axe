@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jrswab/axe/internal/artifact"
+	"github.com/jrswab/axe/internal/budget"
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
 	"github.com/jrswab/axe/internal/wasmloader"
@@ -22,6 +23,8 @@ type ExecContext struct {
 	AllowedHosts    []string
 	ArtifactDir     string
 	ArtifactTracker *artifact.Tracker
+	BudgetTracker   *budget.BudgetTracker
+	AgentName       string
 }
 
 // builtinToolAdapter wraps the legacy functional tools to satisfy the protocol.Tool interface.
@@ -111,19 +114,21 @@ func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec Exec
 		return protocol.ToolResult{}, fmt.Errorf("unknown tool %q", call.Name)
 	}
 
-	// For built-in tools that need ExecContext, we inject it here if it's an adapter.
+	// For built-in tools, dispatch directly with the per-call ExecContext
+	// to avoid storing mutable state on the shared adapter.
 	if adapter, ok := t.(*builtinToolAdapter); ok {
 		if adapter.execute == nil {
 			return protocol.ToolResult{}, fmt.Errorf("tool %q has no executor", call.Name)
 		}
-		adapter.ec = ec
+		return adapter.execute(ctx, call, ec), nil
 	}
 
-	// For Wasm tools, we inject the kernel state into the context.
+	// For Wasm tools, inject the kernel state into the context.
 	if r.loader != nil {
 		ctx = wasmloader.WithKernelState(ctx, wasmloader.KernelState{
 			ArtifactTracker: ec.ArtifactTracker,
-			AgentName:       "axe", // Should be passed in properly
+			BudgetTracker:   ec.BudgetTracker,
+			AgentName:       ec.AgentName,
 		})
 	}
 
@@ -144,7 +149,7 @@ func (r *Registry) LoadPlugins(ctx context.Context, dir string) error {
 
 	for _, path := range matches {
 		if err := r.loader.Validate(path); err != nil {
-			continue // Skip invalid plugins
+			return fmt.Errorf("plugin %q is invalid: %w", path, err)
 		}
 
 		t, err := r.loader.Instantiate(ctx, path)
@@ -152,7 +157,11 @@ func (r *Registry) LoadPlugins(ctx context.Context, dir string) error {
 			return fmt.Errorf("failed to instantiate plugin %s: %w", path, err)
 		}
 
-		r.Register(t.Definition().Name, t)
+		def := t.Definition()
+		if def.Name == "" {
+			return fmt.Errorf("plugin %q returned empty metadata name", path)
+		}
+		r.Register(def.Name, t)
 	}
 
 	return nil

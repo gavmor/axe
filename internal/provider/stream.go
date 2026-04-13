@@ -16,24 +16,25 @@ type eventStream struct {
 
 func (s *eventStream) Next() (protocol.StreamEvent, error) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.closed {
+		s.mu.Unlock()
 		return protocol.StreamEvent{}, io.EOF
 	}
-
-	return s.nextFunc()
+	next := s.nextFunc
+	s.mu.Unlock()
+	return next()
 }
 
 func (s *eventStream) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.closed {
+		s.mu.Unlock()
 		return nil
 	}
 	s.closed = true
-	return s.body.Close()
+	body := s.body
+	s.mu.Unlock()
+	return body.Close()
 }
 
 // NewEventStream returns a protocol.EventStream adapted from a nextFunc and closer.
