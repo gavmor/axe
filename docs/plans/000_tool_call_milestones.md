@@ -23,18 +23,18 @@ Add a `Tools []string` field to `AgentConfig` so agents can opt into specific to
 
 ---
 
-## M2 — Tool Registry
+## M2 — Plugin Registry
 
-Central registry that maps tool names to definitions and executors. Replaces the hardcoded "Unknown tool" error at all three dispatch sites. `call_agent` stays special-cased outside the registry (it needs depth tracking, provider creation, and runtime state that generic tools don't).
+Central registry that manages plugin components, mapping tool names to their respective implementations and executors. This registry follows the microkernel registry pattern, replacing the hardcoded tool dispatch with a dynamic, metadata-driven system. Note that `call_agent` remains outside the registry to support recursive core invocation logic.
 
 - [x] Create `internal/tool/registry.go`
 - [x] `ExecContext` struct: `Workdir string`, `Stderr io.Writer`, `Verbose bool` (minimal — no call_agent-specific fields)
 - [x] `ToolEntry` struct: `Definition func() provider.Tool`, `Execute func(ctx, ToolCall, ExecContext) ToolResult`
 - [x] `Registry` type with unexported `entries map[string]ToolEntry`
-- [x] `NewRegistry()` returns empty registry (M3–M7 register their own tools)
+- [x] `NewRegistry()` returns empty registry (M3–M7 register their own components)
 - [x] `Register(name, entry)` — adds entry, silent replacement on duplicate
-- [x] `Has(name) bool` — checks if tool is registered
-- [x] `Resolve(names []string) ([]provider.Tool, error)` — validates names, returns definitions in input order
+- [x] `Has(name) bool` — checks if plugin is registered
+- [x] `Resolve(names []string) ([]provider.Tool, error)` — validates names, returns tool definitions in input order
 - [x] `Dispatch(ctx, ToolCall, ExecContext) (ToolResult, error)` — routes by name; errors for unknown tool or nil executor
 - [x] Refactor `cmd/run.go`: create registry in `runAgent`, resolve `cfg.Tools` via `registry.Resolve()`, append to `req.Tools` before `call_agent`
 - [x] Refactor `cmd/run.go:executeToolCalls()`: add `registry` and `workdir` params, dispatch non-`call_agent` calls via `registry.Dispatch`
@@ -44,9 +44,9 @@ Central registry that maps tool names to definitions and executors. Replaces the
 
 ---
 
-## M3 — `list_directory` tool
+## M3 — `list_directory` Plugin Component
 
-Safest tool to start with. Read-only, no side effects. Also introduces `RegisterAll` (single registration point for all tools) and `validatePath` (shared path security for M4–M7).
+Built-in plugin component providing the `list_directory` tool. Safest built-in plugin to start with. Read-only, no side effects. Also introduces `RegisterAll` (single registration point for all components) and `validatePath` (shared path security for M4–M7).
 
 - [x] Create `internal/tool/path_validation.go`: `validatePath(workdir, relPath)` with boundary-safe `isWithinDir` helper — rejects empty paths, absolute paths, `..` traversal, and symlink escapes via `filepath.EvalSymlinks`
 - [x] Create `internal/tool/list_directory.go`: `listDirectoryEntry()` returning `ToolEntry` with `Definition` (name from `toolname.ListDirectory`, `path` parameter) and `Execute` (validates path, reads dir via `os.ReadDir`, formats entries with `/` suffix for subdirectories, one per line)
@@ -59,9 +59,9 @@ Safest tool to start with. Read-only, no side effects. Also introduces `Register
 
 ---
 
-## M4 — `read_file` tool
+## M4 — `read_file` Plugin Component
 
-Read-only file access for the LLM.
+Built-in plugin component providing the `read_file` tool. Read-only file access component for the core system.
 
 - [X] Create `internal/tool/read_file.go`
 - [X] Parameters: `path` (required), `offset` (optional, 1-indexed line number), `limit` (optional, max lines to return)
@@ -73,9 +73,9 @@ Read-only file access for the LLM.
 
 ---
 
-## M5 — `write_file` tool
+## M5 — `write_file` Plugin Component
 
-File creation and overwrite.
+Built-in plugin component providing the `write_file` tool. File creation and mutation component.
 
 - [x] Create `internal/tool/write_file.go`
 - [x] Parameters: `path` (required), `content` (optional — missing/empty creates 0-byte file)
@@ -88,9 +88,9 @@ File creation and overwrite.
 
 ---
 
-## M6 — `edit_file` tool
+## M6 — `edit_file` Plugin Component
 
-Find-and-replace within existing files.
+Built-in plugin component providing the `edit_file` tool. Targeted find-and-replace component.
 
 - [x] Create `internal/tool/edit_file.go`
 - [x] Parameters: `path` (required), `old_string` (required), `new_string` (required), `replace_all` (optional string parsed via `strconv.ParseBool`, default false)
@@ -104,9 +104,9 @@ Find-and-replace within existing files.
 
 ---
 
-## M7 — `run_command` tool
+## M7 — `run_command` Plugin Component
 
-Shell execution. Most powerful tool — implemented last intentionally.
+Built-in plugin component providing the `run_command` tool. System execution component. Most powerful component — implemented last intentionally.
 
 - [x] Create `internal/tool/run_command.go`: `runCommandEntry()` returning `ToolEntry` with `Definition` (name from `toolname.RunCommand`, `command` parameter) and `Execute`
 - [x] Parameters: `command` (required string) — single parameter, no type conversion needed (`map[string]string`)

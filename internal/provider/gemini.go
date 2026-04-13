@@ -379,7 +379,7 @@ func (g *Gemini) Send(ctx context.Context, req *Request) (*Response, error) {
 }
 
 // SendStream makes a streaming completion request to the Google Gemini API.
-func (g *Gemini) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (g *Gemini) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	body := geminiRequest{
 		Contents: convertToGeminiContents(req.Messages),
 	}

@@ -1,67 +1,46 @@
 package provider
 
 import (
-	"context"
 	"io"
 	"sync"
+
+	"github.com/jrswab/axe/pkg/protocol"
 )
 
-const (
-	StreamEventText      = "text"
-	StreamEventToolStart = "tool_start"
-	StreamEventToolDelta = "tool_delta"
-	StreamEventToolEnd   = "tool_end"
-	StreamEventDone      = "done"
-)
-
-type StreamEvent struct {
-	Type         string
-	Text         string
-	ToolCallID   string
-	ToolName     string
-	ToolInput    string
-	InputTokens  int
-	OutputTokens int
-	StopReason   string
-}
-
-type EventStream struct {
-	nextFunc func() (StreamEvent, error)
+type eventStream struct {
+	nextFunc func() (protocol.StreamEvent, error)
 	body     io.Closer
 	closed   bool
 	mu       sync.Mutex
 }
 
-func NewEventStream(body io.Closer, nextFunc func() (StreamEvent, error)) *EventStream {
-	return &EventStream{
-		body:     body,
-		nextFunc: nextFunc,
+func (s *eventStream) Next() (protocol.StreamEvent, error) {
+	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return protocol.StreamEvent{}, io.EOF
 	}
+	next := s.nextFunc
+	s.mu.Unlock()
+	return next()
 }
 
-func (s *EventStream) Next() (StreamEvent, error) {
+func (s *eventStream) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.closed {
-		return StreamEvent{}, io.EOF
-	}
-
-	return s.nextFunc()
-}
-
-func (s *EventStream) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.closed {
+		s.mu.Unlock()
 		return nil
 	}
 	s.closed = true
-	return s.body.Close()
+	body := s.body
+	s.mu.Unlock()
+	return body.Close()
 }
 
-type StreamProvider interface {
-	Provider
-	SendStream(ctx context.Context, req *Request) (*EventStream, error)
+// NewEventStream returns a protocol.EventStream adapted from a nextFunc and closer.
+func NewEventStream(body io.Closer, nextFunc func() (protocol.StreamEvent, error)) protocol.EventStream {
+	return &eventStream{
+		body:     body,
+		nextFunc: nextFunc,
+	}
 }

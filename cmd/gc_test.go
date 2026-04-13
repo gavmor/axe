@@ -425,8 +425,8 @@ enabled = true
 	if !errors.As(err, &exitErr) {
 		t.Fatalf("expected ExitError, got %T: %v", err, err)
 	}
-	if exitErr.Code != 3 {
-		t.Errorf("expected exit code 3, got %d", exitErr.Code)
+	if exitErr.Code != 1 {
+		t.Errorf("expected exit code 1, got %d", exitErr.Code)
 	}
 
 	// Verify memory file is unchanged

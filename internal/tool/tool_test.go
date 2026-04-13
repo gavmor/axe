@@ -1004,7 +1004,7 @@ func TestDispatchToolCall_PassesArtifactContext(t *testing.T) {
 	// Register a test tool that captures the ExecContext
 	var capturedEC ExecContext
 	registry := NewRegistry()
-	registry.Register("test_artifact_capture", ToolEntry{
+	registry.RegisterBuiltin("test_artifact_capture", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{
 				Name:        "test_artifact_capture",

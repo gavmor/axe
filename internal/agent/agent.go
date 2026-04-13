@@ -34,6 +34,7 @@ type MemoryConfig struct {
 type ParamsConfig struct {
 	Temperature float64 `toml:"temperature"`
 	MaxTokens   int     `toml:"max_tokens"`
+	Think       *bool   `toml:"think"`
 }
 
 // RetryConfig holds retry sub-configuration for an agent.

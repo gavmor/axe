@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jrswab/axe/internal/testutil"
+	"github.com/jrswab/axe/pkg/kernel"
 )
 
 // resetRunCmd resets all run command flags and stdin to their defaults between tests.
@@ -710,7 +711,7 @@ func TestTruncateOutputUTF8(t *testing.T) {
 }
 
 func TestToolCallDetailJSON(t *testing.T) {
-	detail := toolCallDetail{
+	detail := kernel.ToolCallDetail{
 		Name:    "read_file",
 		Input:   map[string]string{},
 		Output:  "content",
@@ -745,7 +746,7 @@ func TestToolCallDetailJSON(t *testing.T) {
 		t.Fatalf("expected empty input map, got %v", inputMap)
 	}
 
-	withInput := toolCallDetail{
+	withInput := kernel.ToolCallDetail{
 		Name:    "read_file",
 		Input:   map[string]string{"path": "hello.txt", "mode": "full"},
 		Output:  "ok",

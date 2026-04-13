@@ -108,6 +108,12 @@ git diff | axe run code-reviewer
 
 See [`examples/README.md`](examples/README.md) for full setup instructions.
 
+## Extending Axe
+
+Axe features a microkernel architecture that supports secure, sandboxed extensions via WebAssembly (Wasm). You can build custom tools, telemetry plugins, and logging observers without modifying the core Axe binary.
+
+See the [Axe Plugin Development Guide](docs/plugins.md) to get started.
+
 ## Docker
 
 Axe provides a Docker image for running agents in an isolated, hardened container.

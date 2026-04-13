@@ -323,7 +323,7 @@ func (o *OpenCode) sendClaude(ctx context.Context, req *Request) (*Response, err
 // ---------------------------------------------------------------------------
 
 // SendStream dispatches the streaming request by model prefix.
-func (o *OpenCode) SendStream(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *OpenCode) SendStream(ctx context.Context, req *Request) (EventStream, error) {
 	switch {
 	case strings.HasPrefix(req.Model, "claude-"):
 		return o.streamClaude(ctx, req)
@@ -346,7 +346,7 @@ type ocAnthropicStreamRequest struct {
 	Stream      bool                 `json:"stream"`
 }
 
-func (o *OpenCode) streamClaude(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *OpenCode) streamClaude(ctx context.Context, req *Request) (EventStream, error) {
 	maxTokens := req.MaxTokens
 	if maxTokens == 0 {
 		maxTokens = 4096
@@ -502,10 +502,10 @@ type ocResponsesStreamRequest struct {
 }
 
 type ocRespStreamEvent struct {
-	Type   string          `json:"type"`
-	ItemID string          `json:"item_id,omitempty"`
-	Item   json.RawMessage `json:"item,omitempty"`
-	Delta  string          `json:"delta,omitempty"`
+	Type     string          `json:"type"`
+	ItemID   string          `json:"item_id,omitempty"`
+	Item     json.RawMessage `json:"item,omitempty"`
+	Delta    string          `json:"delta,omitempty"`
 	Response json.RawMessage `json:"response,omitempty"`
 }
 
@@ -522,7 +522,7 @@ type ocRespStreamResponse struct {
 	} `json:"usage"`
 }
 
-func (o *OpenCode) streamGPT(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *OpenCode) streamGPT(ctx context.Context, req *Request) (EventStream, error) {
 	body := ocResponsesStreamRequest{
 		Model:  req.Model,
 		Input:  convertToOCResponsesMessages(req),
@@ -649,20 +649,20 @@ func (o *OpenCode) streamGPT(ctx context.Context, req *Request) (*EventStream, e
 // --- Chat Completions streaming ---
 
 type ocChatStreamRequest struct {
-	Model         string             `json:"model"`
-	Messages      []ocChatMessage    `json:"messages"`
-	Temperature   *float64           `json:"temperature,omitempty"`
-	MaxTokens     *int               `json:"max_tokens,omitempty"`
-	Tools         []ocOpenAIToolDef  `json:"tools,omitempty"`
-	Stream        bool               `json:"stream"`
-	StreamOptions *ocStreamOptions   `json:"stream_options,omitempty"`
+	Model         string            `json:"model"`
+	Messages      []ocChatMessage   `json:"messages"`
+	Temperature   *float64          `json:"temperature,omitempty"`
+	MaxTokens     *int              `json:"max_tokens,omitempty"`
+	Tools         []ocOpenAIToolDef `json:"tools,omitempty"`
+	Stream        bool              `json:"stream"`
+	StreamOptions *ocStreamOptions  `json:"stream_options,omitempty"`
 }
 
 type ocStreamOptions struct {
 	IncludeUsage bool `json:"include_usage"`
 }
 
-func (o *OpenCode) streamChatCompletions(ctx context.Context, req *Request) (*EventStream, error) {
+func (o *OpenCode) streamChatCompletions(ctx context.Context, req *Request) (EventStream, error) {
 	body := ocChatStreamRequest{
 		Model:         req.Model,
 		Messages:      convertToOCChatMessages(req),

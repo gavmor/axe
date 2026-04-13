@@ -26,7 +26,8 @@ func TestRegistry_Register_And_Has(t *testing.T) {
 	}
 
 	// Register a tool
-	r.Register("test_tool", ToolEntry{
+	r.RegisterBuiltin(
+"test_tool", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "test_tool"}
 		},
@@ -43,7 +44,8 @@ func TestRegistry_Register_And_Has(t *testing.T) {
 	}
 
 	// Register same name again — silent replacement
-	r.Register("test_tool", ToolEntry{
+	r.RegisterBuiltin(
+"test_tool", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "test_tool", Description: "replaced"}
 		},
@@ -59,12 +61,14 @@ func TestRegistry_Register_And_Has(t *testing.T) {
 
 func TestRegistry_Resolve_KnownTools(t *testing.T) {
 	r := NewRegistry()
-	r.Register("tool_a", ToolEntry{
+	r.RegisterBuiltin(
+"tool_a", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "tool_a", Description: "Tool A"}
 		},
 	})
-	r.Register("tool_b", ToolEntry{
+	r.RegisterBuiltin(
+"tool_b", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "tool_b", Description: "Tool B"}
 		},
@@ -87,7 +91,8 @@ func TestRegistry_Resolve_KnownTools(t *testing.T) {
 
 func TestRegistry_Resolve_UnknownTool(t *testing.T) {
 	r := NewRegistry()
-	r.Register("tool_a", ToolEntry{
+	r.RegisterBuiltin(
+"tool_a", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "tool_a"}
 		},
@@ -132,7 +137,8 @@ func TestRegistry_Resolve_Empty(t *testing.T) {
 
 func TestRegistry_Resolve_NilDefinition(t *testing.T) {
 	r := NewRegistry()
-	r.Register("bad_tool", ToolEntry{
+	r.RegisterBuiltin(
+"bad_tool", ToolEntry{
 		Definition: nil,
 		Execute: func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult {
 			return provider.ToolResult{}
@@ -150,7 +156,8 @@ func TestRegistry_Resolve_NilDefinition(t *testing.T) {
 
 func TestRegistry_Dispatch_KnownTool(t *testing.T) {
 	r := NewRegistry()
-	r.Register("echo_tool", ToolEntry{
+	r.RegisterBuiltin(
+"echo_tool", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "echo_tool"}
 		},
@@ -200,7 +207,8 @@ func TestRegistry_Dispatch_UnknownTool(t *testing.T) {
 
 func TestRegistry_Dispatch_NilExecutor(t *testing.T) {
 	r := NewRegistry()
-	r.Register("nil_tool", ToolEntry{
+	r.RegisterBuiltin(
+"nil_tool", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "nil_tool"}
 		},
@@ -224,7 +232,8 @@ func TestRegistry_Dispatch_PassesExecContext(t *testing.T) {
 	var capturedEC ExecContext
 
 	r := NewRegistry()
-	r.Register("capture_tool", ToolEntry{
+	r.RegisterBuiltin(
+"capture_tool", ToolEntry{
 		Definition: func() provider.Tool {
 			return provider.Tool{Name: "capture_tool"}
 		},

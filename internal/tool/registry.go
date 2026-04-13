@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"sync"
 
 	"github.com/jrswab/axe/internal/artifact"
+	"github.com/jrswab/axe/internal/budget"
 	"github.com/jrswab/axe/internal/provider"
 	"github.com/jrswab/axe/internal/toolname"
+	"github.com/jrswab/axe/internal/wasmloader"
+	"github.com/jrswab/axe/pkg/protocol"
 )
 
 // ExecContext holds the minimal context needed by generic tool executors.
@@ -18,87 +23,171 @@ type ExecContext struct {
 	AllowedHosts    []string
 	ArtifactDir     string
 	ArtifactTracker *artifact.Tracker
+	BudgetTracker   *budget.BudgetTracker
+	AgentName       string
 }
 
-// ToolEntry holds a tool's definition and executor functions.
+// builtinToolAdapter wraps the legacy functional tools to satisfy the protocol.Tool interface.
+type builtinToolAdapter struct {
+	definition func() protocol.ToolDefinition
+	execute    func(ctx context.Context, call protocol.ToolCall, ec ExecContext) protocol.ToolResult
+	ec         ExecContext
+}
+
+func (a *builtinToolAdapter) Definition() protocol.ToolDefinition {
+	if a.definition == nil {
+		return protocol.ToolDefinition{}
+	}
+	return a.definition()
+}
+
+func (a *builtinToolAdapter) Execute(ctx context.Context, call protocol.ToolCall) protocol.ToolResult {
+	if a.execute == nil {
+		return protocol.ToolResult{CallID: call.ID, Content: "tool has no executor", IsError: true}
+	}
+	return a.execute(ctx, call, a.ec)
+}
+
+// Registry maps tool names to their implementations.
+type Registry struct {
+	mu      sync.RWMutex
+	tools   map[string]protocol.Tool
+	loader  *wasmloader.Loader
+}
+
+// NewRegistry returns a new Registry.
+func NewRegistry() *Registry {
+	return &Registry{
+		tools: make(map[string]protocol.Tool),
+	}
+}
+
+// SetLoader sets the Wasm loader for the registry.
+func (r *Registry) SetLoader(l *wasmloader.Loader) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.loader = l
+}
+
+// Register adds a tool implementation to the registry.
+func (r *Registry) Register(name string, t protocol.Tool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.tools[name] = t
+}
+
+// Has returns true if a tool exists.
+func (r *Registry) Has(name string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	_, ok := r.tools[name]
+	return ok
+}
+
+// Resolve returns tool definitions for the given names.
+func (r *Registry) Resolve(names []string) ([]protocol.ToolDefinition, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	defs := make([]protocol.ToolDefinition, 0, len(names))
+	for _, name := range names {
+		t, ok := r.tools[name]
+		if !ok {
+			return nil, fmt.Errorf("unknown tool %q", name)
+		}
+		def := t.Definition()
+		if def.Name == "" {
+			return nil, fmt.Errorf("tool %q has no definition", name)
+		}
+		defs = append(defs, def)
+	}
+	return defs, nil
+}
+
+// Dispatch executes the named tool.
+func (r *Registry) Dispatch(ctx context.Context, call protocol.ToolCall, ec ExecContext) (protocol.ToolResult, error) {
+	r.mu.RLock()
+	t, ok := r.tools[call.Name]
+	r.mu.RUnlock()
+
+	if !ok {
+		return protocol.ToolResult{}, fmt.Errorf("unknown tool %q", call.Name)
+	}
+
+	// For built-in tools, dispatch directly with the per-call ExecContext
+	// to avoid storing mutable state on the shared adapter.
+	if adapter, ok := t.(*builtinToolAdapter); ok {
+		if adapter.execute == nil {
+			return protocol.ToolResult{}, fmt.Errorf("tool %q has no executor", call.Name)
+		}
+		return adapter.execute(ctx, call, ec), nil
+	}
+
+	// For Wasm tools, inject the kernel state into the context.
+	if r.loader != nil {
+		ctx = wasmloader.WithKernelState(ctx, wasmloader.KernelState{
+			ArtifactTracker: ec.ArtifactTracker,
+			BudgetTracker:   ec.BudgetTracker,
+			AgentName:       ec.AgentName,
+		})
+	}
+
+	return t.Execute(ctx, call), nil
+}
+
+// LoadPlugins scans a directory for .wasm files and registers them as tools.
+func (r *Registry) LoadPlugins(ctx context.Context, dir string) error {
+	if r.loader == nil {
+		return fmt.Errorf("wasm loader not configured")
+	}
+
+	pattern := filepath.Join(dir, "*.wasm")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return err
+	}
+
+	for _, path := range matches {
+		if err := r.loader.Validate(path); err != nil {
+			return fmt.Errorf("plugin %q is invalid: %w", path, err)
+		}
+
+		t, err := r.loader.Instantiate(ctx, path)
+		if err != nil {
+			return fmt.Errorf("failed to instantiate plugin %s: %w", path, err)
+		}
+
+		def := t.Definition()
+		if def.Name == "" {
+			return fmt.Errorf("plugin %q returned empty metadata name", path)
+		}
+		r.Register(def.Name, t)
+	}
+
+	return nil
+}
+
+// ToolEntry holds a tool's definition and executor functions (legacy compatibility).
 type ToolEntry struct {
 	Definition func() provider.Tool
 	Execute    func(ctx context.Context, call provider.ToolCall, ec ExecContext) provider.ToolResult
 }
 
-// Registry maps tool names to their definitions and executors.
-// Registration must happen at startup before any concurrent Dispatch calls.
-// Concurrent Dispatch calls (read-only) are safe after registration is complete.
-type Registry struct {
-	entries map[string]ToolEntry
-}
-
-// NewRegistry returns a new Registry with an empty, initialized entries map.
-func NewRegistry() *Registry {
-	return &Registry{
-		entries: make(map[string]ToolEntry),
-	}
-}
-
-// Register adds a tool entry to the registry, keyed by name.
-// If a tool with the same name already exists, it is silently replaced.
-func (r *Registry) Register(name string, entry ToolEntry) {
-	r.entries[name] = entry
-}
-
-// Has returns true if a tool with the given name exists in the registry.
-func (r *Registry) Has(name string) bool {
-	_, ok := r.entries[name]
-	return ok
-}
-
-// Resolve takes a list of tool names and returns their provider.Tool definitions.
-// Each entry's Definition() is called on every Resolve invocation (not cached).
-// Returns an error if any name is not found in the registry or has a nil Definition.
-// Returns an empty non-nil slice for nil or empty input.
-func (r *Registry) Resolve(names []string) ([]provider.Tool, error) {
-	if len(names) == 0 {
-		return []provider.Tool{}, nil
-	}
-
-	tools := make([]provider.Tool, 0, len(names))
-	for _, name := range names {
-		entry, ok := r.entries[name]
-		if !ok {
-			return nil, fmt.Errorf("unknown tool %q", name)
-		}
-		if entry.Definition == nil {
-			return nil, fmt.Errorf("tool %q has no definition", name)
-		}
-		tools = append(tools, entry.Definition())
-	}
-	return tools, nil
-}
-
-// Dispatch looks up the tool by call.Name and executes it.
-// Returns (ToolResult, nil) on success, or (zero ToolResult, error) for
-// unknown tools or tools with nil executors.
-func (r *Registry) Dispatch(ctx context.Context, call provider.ToolCall, ec ExecContext) (provider.ToolResult, error) {
-	entry, ok := r.entries[call.Name]
-	if !ok {
-		return provider.ToolResult{}, fmt.Errorf("unknown tool %q", call.Name)
-	}
-	if entry.Execute == nil {
-		return provider.ToolResult{}, fmt.Errorf("tool %q has no executor", call.Name)
-	}
-	return entry.Execute(ctx, call, ec), nil
-}
-
-// RegisterAll registers all implemented tool entries into the given registry.
-// Both cmd/run.go and ExecuteCallAgent call this after NewRegistry().
-// Future milestones add lines here — no call-site changes needed.
-// Safe to call multiple times (Register silently replaces duplicates).
+// RegisterAll registers all built-in tool entries.
 func RegisterAll(r *Registry) {
-	r.Register(toolname.ListDirectory, listDirectoryEntry())
-	r.Register(toolname.ReadFile, readFileEntry())
-	r.Register(toolname.WriteFile, writeFileEntry())
-	r.Register(toolname.EditFile, editFileEntry())
-	r.Register(toolname.RunCommand, runCommandEntry())
-	r.Register(toolname.URLFetch, urlFetchEntry())
-	r.Register(toolname.WebSearch, webSearchEntry())
+	r.RegisterBuiltin(toolname.ListDirectory, listDirectoryEntry())
+	r.RegisterBuiltin(toolname.ReadFile, readFileEntry())
+	r.RegisterBuiltin(toolname.WriteFile, writeFileEntry())
+	r.RegisterBuiltin(toolname.EditFile, editFileEntry())
+	r.RegisterBuiltin(toolname.RunCommand, runCommandEntry())
+	r.RegisterBuiltin(toolname.URLFetch, urlFetchEntry())
+	r.RegisterBuiltin(toolname.WebSearch, webSearchEntry())
+}
+
+// RegisterBuiltin registers a built-in tool entry (legacy compatibility).
+func (r *Registry) RegisterBuiltin(name string, entry ToolEntry) {
+	r.Register(name, &builtinToolAdapter{
+		definition: entry.Definition,
+		execute:    entry.Execute,
+	})
 }
