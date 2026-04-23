@@ -423,4 +423,3 @@ func BuildSearchDirs(flagDir string, baseDir string) []string {
 
 // tomlDecode is a package-level wrapper for toml.Decode, used by tests.
 var tomlDecode = toml.Decode
-Decode
